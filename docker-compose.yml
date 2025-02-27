@@ -1,0 +1,12 @@
+version: '3.4'
+
+services:
+  backendinjs:
+    image: backendinjs
+    build:
+      context: BACKEND-IN-JS
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 3000:3000
