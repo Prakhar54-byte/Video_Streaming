@@ -1,9 +1,5 @@
-import React from 'react'
+import { redirect } from "next/dist/server/api-utils";
 
-function page() {
-  return (
-    <div>page</div>
-  )
+export default function Home(){
+    redirect("auth/login")
 }
-
-export default page

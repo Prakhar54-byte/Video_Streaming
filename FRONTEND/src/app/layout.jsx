@@ -1,9 +1,22 @@
-import React from 'react'
+import React from "react";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-function layout() {
+const inter = Inter({ subsets: ["latin"] });
+
+function RootLayout({ children }) {
   return (
-    <div>layout</div>
-  )
+    <html lang="en">
+      <head>
+        <title>Login System</title>
+        <meta
+          name="description"
+          content="Modern login system built with Next.js"
+        />
+      </head>
+      <body className={inter.className}>{children}</body>
+    </html>
+  );
 }
 
-export default layout
+export default RootLayout;
