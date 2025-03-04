@@ -7,7 +7,7 @@
     "url": "https://github.com/Prakhar54-byte/Video_Streaming/issues"
   },
   "repository": {
-    "type": "git",
+    "type": "git,module",
     "url": "git+https://github.com/Prakhar54-byte/Video_Streaming.git"
   },
   "license": "ISC",
