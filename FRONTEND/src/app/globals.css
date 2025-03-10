@@ -70,15 +70,10 @@
 
 @layer base {
   * {
-    @apply border-box;
+    @apply box-border; /* Fixed: Changed border-box to box-border */
   }
   body {
     @apply bg-background text-foreground;
     font-family: "Nunito Sans", sans-serif;
   }
 }
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-
