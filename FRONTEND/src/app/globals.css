@@ -69,20 +69,13 @@
 }
 
 @layer base {
-  * {
-    @apply box-border; /* Fixed: Changed border-box to box-border */
+  :root {
+    --background: 0, 0%, 100%; /* Added commas */
+    --foreground: 222.2, 84%, 4.9%;
   }
-  body {
-    @apply bg-background text-foreground;
-    font-family: "Nunito Sans", sans-serif;
-  }@layer base {
-    :root {
-      --background: 0 0% 100%; /* White */
-    }
-    .dark {
-      --background: 222.2 84% 4.9%; /* Dark mode */
-      --foreground: 210 40% 98%; /* White */
-    }
+  .dark {
+    --background: 222.2, 84%, 4.9%; /* Added commas */
+    --foreground: 210, 40%, 98%;
   }
-  
 }
+
