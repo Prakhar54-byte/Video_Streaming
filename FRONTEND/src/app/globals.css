@@ -75,5 +75,13 @@
   body {
     @apply bg-background text-foreground;
     font-family: "Nunito Sans", sans-serif;
+  }@layer base {
+    :root {
+      --background: 0 0% 100%; /* White */
+    }
+    .dark {
+      --background: 222.2 84% 4.9%; /* Dark mode */
+    }
   }
+  
 }
