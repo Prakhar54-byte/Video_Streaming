@@ -1,43 +1,27 @@
-"use client";
-import  React from 'react'
-import {useState} from 'react'
+"use client"
 
-import Image from 'next/image'
-import Link from 'next/link'
+import { useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
 
-import { Button } from '../ui/Button'
-import { Input } from '../ui/Input'
-import { Label } from '../ui/Label'
-import { CheckBox } from '../ui/CheckBox'
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 
-function LoginForm(){
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+export default function LoginForm() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
 
-  const handelSubmit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
-    console.log({email, password, rememberMe})
+    // Handle login logic here
+    console.log({ email, password, rememberMe })
   }
+
   return (
-    // <div className="flex flex-col items-center justify-center w-full h-full">
-    <div className="flex flex-col items-center justify-center w-full h-full">
-      <div className="flex flex-col items-center justify-center w-96 h-96 bg-white rounded-md shadow-md">
-        <div className="flex items-center justify-center w-full h-20 bg-gray-100 rounded-t-md">
-          <Image src="/logo.png" alt="logo" width={40} height={40} />
-        </div>
-        <form onSubmit={handelSubmit} className="flex flex-col items-center justify-center w-full h-full p-4">
-          <Label htmlFor="email" text="Email" />
-          <Input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <Label htmlFor="password" text="Password" />
-          <Input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-          <CheckBox id="rememberMe" text="Remember me" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
-          <Button text="Login" />
-          <Link href="/auth/register">
-            <a className="text-blue-500">Create an account</a>
-          </Link>
-        </form>
-      </div>    <div className="flex w-full max-w-6xl mx-auto rounded-xl overflow-hidden shadow-lg">
+    <div className="flex w-full max-w-6xl mx-auto rounded-xl overflow-hidden shadow-lg">
       {/* Left side - Illustration */}
       <div className="hidden md:block w-1/2 bg-primary/10 relative p-8">
         <div className="relative h-full w-full">
@@ -115,11 +99,7 @@ function LoginForm(){
 
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="remember"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked )}
-                />
+                <Checkbox id="remember" checked={rememberMe} onCheckedChange={(checked) => setRememberMe(checked)} />
                 <Label
                   htmlFor="remember"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -146,10 +126,6 @@ function LoginForm(){
         </div>
       </div>
     </div>
-    </div>
   )
 }
 
-
-
-export default LoginForm

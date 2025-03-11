@@ -1,22 +1,22 @@
-import React from "react";
-import { Inter } from "next/font/google";
-import "../app/globals.css";
+import { Nunito_Sans } from "next/font/google"
+import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] });
+const nunitoSans = Nunito_Sans({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
+  variable: "--font-nunito-sans",
+})
 
-function RootLayout({ children }) {
-  return (
-    <html lang="en">
-      <head>
-        <title>Login System</title>
-        <meta
-          name="description"
-          content="Modern login system built with Next.js"
-        />
-      </head>
-      <body className={inter.className}>{children}</body>
-    </html>
-  );
+export const metadata = {
+  title: "Login System",
+  description: "Modern login system built with Next.js",
 }
 
-export default RootLayout;
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body className={`${nunitoSans.variable} font-sans`}>{children}</body>
+    </html>
+  )
+}
+
