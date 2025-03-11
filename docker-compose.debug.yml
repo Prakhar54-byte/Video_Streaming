@@ -1,8 +1,8 @@
 version: '3.4'
 
 services:
-  backendinjs:
-    image: backendinjs
+  backends:
+    image: backends
     build:
       context: BACKEND-IN-JS
       dockerfile: ./Dockerfile
