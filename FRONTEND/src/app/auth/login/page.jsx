@@ -12,17 +12,18 @@ const LoginPage = ()=>{
 
 
 
-import { Helmet } from 'react-helmet';
+// import { Helmet } from 'react-helmet';
+import Head from "next/head"
 import React from 'react';
 import { Link } from 'react-router-dom';
 
 const LoginPageMetadata = () => {
     return (
         <>
-      <Helmet>
+      <Head>
         <title>Login | Login System</title>
         <meta name="description" content="Login to your account" />
-      </Helmet>
+      </Head>
       <LoginPage />
     </>
     )
