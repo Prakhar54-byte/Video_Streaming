@@ -66,13 +66,17 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-    font-family: "Nunito Sans", sans-serif;
+@layer utilities {
+  .bg-background {
+    background-color: hsl(var(--background));
   }
 }
 
+@layer base {
+  * {
+    @apply border-border; /* Use border-border instead of border */
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+}
