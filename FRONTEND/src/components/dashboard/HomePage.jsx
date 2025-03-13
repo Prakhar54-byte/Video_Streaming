@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button.jsx"
 import { Input } from "@/components/ui/Input.jsx"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar.jsx"
 import LoginForm from "../auth/LoginForm"
+import Error from "next/error"
 
 export default function HomePage() {
   const router = useRouter()
@@ -26,7 +27,7 @@ export default function HomePage() {
       router.push("/auth/login")
       
     } catch (error) {
-      console.error("Error logging out", error)
+      console.log("Error logging out", error)
       
     }
   }
