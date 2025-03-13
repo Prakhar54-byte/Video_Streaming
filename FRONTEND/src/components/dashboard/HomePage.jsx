@@ -11,8 +11,24 @@ import LoginForm from "../auth/LoginForm"
 export default function HomePage() {
   const router = useRouter()
 
-  const handleLogout = () => {
-    router.push("/auth/login")
+  const handleLogout =async () => {
+    // Ask for confirmation before logging out
+    const isConfirmed = window.confirm("Are you sure you want to logout?")
+    if(!isConfirmed) return
+
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      })
+      if(!response.ok) throw new Error("An error occurred while logging out")
+      router.push("/auth/login")
+      
+    } catch (error) {
+      console.error("Error logging out", error)
+      
+    }
   }
 
   return (
