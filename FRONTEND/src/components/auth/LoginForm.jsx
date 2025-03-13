@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -13,11 +14,14 @@ export default function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
+  const router = useRouter()
 
   const handleSubmit = (e) => {
     e.preventDefault()
     // Handle login logic here
     console.log({ email, password, rememberMe })
+    // Redirect to homepage after login
+    router.push("/")
   }
 
   return (
@@ -112,7 +116,7 @@ export default function LoginForm() {
               </Link>
             </div>
 
-            <Button type="submit" className="w-full h-12">
+            <Button type="submit" className="w-full h-12" onClick={() => router.push("/auth/dashboard")}>
               Login
             </Button>
           </form>
@@ -128,4 +132,3 @@ export default function LoginForm() {
     </div>
   )
 }
-

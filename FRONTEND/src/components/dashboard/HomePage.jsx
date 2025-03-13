@@ -3,9 +3,10 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { Search, Home, User, Hash, List, Bell, MessageSquare, Plus, LogOut } from "lucide-react"
-import { Button } from "@/components/ui/button.jsx"
-import { Input } from "@/components/ui/input.jsx"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar.jsx"
+import { Button } from "@/components/ui/Button.jsx"
+import { Input } from "@/components/ui/Input.jsx"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar.jsx"
+import LoginForm from "../auth/LoginForm"
 
 export default function HomePage() {
   const router = useRouter()
