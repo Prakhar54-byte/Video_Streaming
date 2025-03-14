@@ -1,4 +1,4 @@
-import CreatePage from "@/components/create/Create";
+import CreatePage from "@/components/upload/Create";
 
 export const metadata = {
   title: "Create Video | upload",

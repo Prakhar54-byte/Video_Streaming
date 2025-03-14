@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
@@ -13,6 +13,22 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar"
 export default function HomePage() {
   const router = useRouter()
   const [sidebarVisible, setSidebarVisible] = useState(true)
+  const [videos, setVideos] = useState([])
+
+  // Generate video data on the client side only
+  useEffect(() => {
+    // This ensures the random values are only generated on the client
+    const generatedVideos = Array.from({ length: 25 }, (_, i) => ({
+      id: i + 1,
+      title: `Video Title ${i + 1}`,
+      channel: `Channel ${i + 1}`,
+      views: `${Math.floor(Math.random() * 999) + 1}K`,
+      timeAgo: `${Math.floor(Math.random() * 30) + 1} days ago`,
+      channelInitial: String.fromCharCode(65 + (i % 26)),
+    }))
+
+    setVideos(generatedVideos)
+  }, [])
 
   // Toggle sidebar visibility
   const toggleSidebar = () => {
@@ -37,21 +53,12 @@ export default function HomePage() {
     }
   }
 
-  // Generate video data
-  const [videos,setVideos] = useState([])
-
-  useEffect(() => {
-    setVideos(
-      Array.from({length:25},(_,i) => ({
-        id:i+1,
-        title:`Video Title ${i+1}`,
-        channel:`Channel ${i+1}`,
-        views:`${Math.floor(Math.random()*10000)}K`,
-        timeAgo:`${Math.floor(Math.random()*24)} days ago`,
-        channelInitial:String.fromCharCode(65+(i%20)),
-      }))
-      );
-    },[]);
+  // Handle create button click
+  const handleCreateClick = () => {
+    // For demo purposes, just redirect to the dashboard
+    // In a real app, you would check if the user has a channel first
+    router.push("/channel/dashboard")
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,7 +87,7 @@ export default function HomePage() {
             <Button variant="ghost" size="icon" className="rounded-full">
               <MessageSquare className="h-5 w-5" />
             </Button>
-            <Button variant="default" className="rounded-full gap-2" onClick={() => router.push("/create")}>
+            <Button variant="default" className="rounded-full gap-2" onClick={handleCreateClick}>
               <Plus className="h-4 w-4" />
               <span className="hidden md:inline-block">Create</span>
             </Button>
@@ -161,40 +168,67 @@ export default function HomePage() {
 
         {/* Main Content */}
         <main className={sidebarVisible ? "" : "col-span-full"}>
-          <div
-            className={`grid gap-6 ${
-              sidebarVisible
-                ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-            }`}
-          >
-            {videos.map((video) => (
-              <div key={video.id} className="overflow-hidden rounded-lg border bg-card shadow-sm">
-                <div className="aspect-video relative bg-muted">
-                  <Image
-                    src={`/placeholder.svg?height=200&width=350&text=Video+${video.id}`}
-                    alt={`Video ${video.id}`}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="p-4">
-                  <div className="flex gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback>{video.channelInitial}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-semibold line-clamp-2">{video.title}</h3>
-                      <p className="text-sm text-muted-foreground">{video.channel}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {video.views} views • {video.timeAgo}
-                      </p>
+          {videos.length > 0 ? (
+            <div
+              className={`grid gap-6 ${
+                sidebarVisible
+                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              }`}
+            >
+              {videos.map((video) => (
+                <div key={video.id} className="overflow-hidden rounded-lg border bg-card shadow-sm">
+                  <div className="aspect-video relative bg-muted">
+                    <Image
+                      src={`/placeholder.svg?height=200&width=350&text=Video+${video.id}`}
+                      alt={`Video ${video.id}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="p-4">
+                    <div className="flex gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback>{video.channelInitial}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="font-semibold line-clamp-2">{video.title}</h3>
+                        <p className="text-sm text-muted-foreground">{video.channel}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {video.views} views • {video.timeAgo}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            // Show a loading state while videos are being generated
+            <div
+              className={`grid gap-6 ${
+                sidebarVisible
+                  ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              }`}
+            >
+              {Array.from({ length: 16 }).map((_, i) => (
+                <div key={i} className="overflow-hidden rounded-lg border bg-card shadow-sm animate-pulse">
+                  <div className="aspect-video bg-muted"></div>
+                  <div className="p-4">
+                    <div className="flex gap-3">
+                      <div className="h-10 w-10 rounded-full bg-muted"></div>
+                      <div className="space-y-2">
+                        <div className="h-4 w-32 bg-muted rounded"></div>
+                        <div className="h-3 w-24 bg-muted rounded"></div>
+                        <div className="h-3 w-28 bg-muted rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </main>
       </div>
     </div>
