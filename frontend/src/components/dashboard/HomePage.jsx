@@ -30,9 +30,16 @@ export default function HomePage() {
     setVideos(generatedVideos)
   }, [])
 
-  // Toggle sidebar visibility
+  // Toggle sidebar visibility with smooth transition
   const toggleSidebar = () => {
+    // Add a class to the body to trigger transitions
+    document.body.classList.add('layout-transitioning');
     setSidebarVisible(!sidebarVisible)
+    
+    // Remove the class after transition completes
+    setTimeout(() => {
+      document.body.classList.remove('layout-transitioning');
+    }, 300);
   }
 
   const handleLogout = async () => {
@@ -59,6 +66,34 @@ export default function HomePage() {
     // In a real app, you would check if the user has a channel first
     router.push("/channel/dashboard")
   }
+
+  // Video Card Component for better organization
+  const VideoCard = ({ video }) => (
+    <div className="overflow-hidden rounded-lg border bg-card shadow-sm transition-all duration-300 hover:translate-y-[-4px] hover:shadow-md">
+      <div className="aspect-video relative bg-muted overflow-hidden">
+        <Image
+          src={`/placeholder.svg?height=200&width=350&text=Video+${video.id}`}
+          alt={`Video ${video.id}`}
+          fill
+          className="object-cover transition-transform duration-300 hover:scale-105"
+        />
+      </div>
+      <div className="p-4">
+        <div className="flex gap-3">
+          <Avatar className="h-10 w-10 flex-shrink-0">
+            <AvatarFallback>{video.channelInitial}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h3 className="font-semibold line-clamp-2">{video.title}</h3>
+            <p className="text-sm text-muted-foreground">{video.channel}</p>
+            <p className="text-xs text-muted-foreground">
+              {video.views} views • {video.timeAgo}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,10 +135,8 @@ export default function HomePage() {
       </header>
 
       {/* Main Content */}
-      <div
-        className="container grid grid-cols-1 gap-6 px-4 py-6"
-        style={{ gridTemplateColumns: sidebarVisible ? "1fr 3fr" : "1fr" }}
-      >
+      <div className="container grid gap-6 px-4 py-6 transition-all duration-300 ease-in-out"
+           style={{ gridTemplateColumns: sidebarVisible ? "minmax(240px, 1fr) 3fr" : "1fr" }}>
         {/* Sidebar */}
         {sidebarVisible && (
           <aside className="hidden md:block">
@@ -165,48 +198,25 @@ export default function HomePage() {
             </nav>
           </aside>
         )}
-
+        
         {/* Main Content */}
         <main className={sidebarVisible ? "" : "col-span-full"}>
           {videos.length > 0 ? (
             <div
-              className={`grid gap-6 ${
+              className={`grid gap-4 transition-all duration-300 ease-in-out ${
                 sidebarVisible
                   ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                   : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
               }`}
             >
               {videos.map((video) => (
-                <div key={video.id} className="overflow-hidden rounded-lg border bg-card shadow-sm">
-                  <div className="aspect-video relative bg-muted">
-                    <Image
-                      src={`/placeholder.svg?height=200&width=350&text=Video+${video.id}`}
-                      alt={`Video ${video.id}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <div className="flex gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>{video.channelInitial}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="font-semibold line-clamp-2">{video.title}</h3>
-                        <p className="text-sm text-muted-foreground">{video.channel}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {video.views} views • {video.timeAgo}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <VideoCard key={video.id} video={video} />
               ))}
             </div>
           ) : (
             // Show a loading state while videos are being generated
             <div
-              className={`grid gap-6 ${
+              className={`grid gap-4 transition-all duration-300 ease-in-out ${
                 sidebarVisible
                   ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                   : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
@@ -217,11 +227,11 @@ export default function HomePage() {
                   <div className="aspect-video bg-muted"></div>
                   <div className="p-4">
                     <div className="flex gap-3">
-                      <div className="h-10 w-10 rounded-full bg-muted"></div>
-                      <div className="space-y-2">
-                        <div className="h-4 w-32 bg-muted rounded"></div>
-                        <div className="h-3 w-24 bg-muted rounded"></div>
-                        <div className="h-3 w-28 bg-muted rounded"></div>
+                      <div className="h-10 w-10 rounded-full bg-muted flex-shrink-0"></div>
+                      <div className="space-y-2 w-full">
+                        <div className="h-4 w-full bg-muted rounded"></div>
+                        <div className="h-3 w-3/4 bg-muted rounded"></div>
+                        <div className="h-3 w-1/2 bg-muted rounded"></div>
                       </div>
                     </div>
                   </div>
@@ -231,7 +241,39 @@ export default function HomePage() {
           )}
         </main>
       </div>
+      
+      {/* Add this style tag to the document head or include in your global CSS */}
+      <style jsx global>{`
+        .aspect-video {
+          position: relative;
+          width: 100%;
+          padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        }
+        
+        .aspect-video > * {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        
+        /* Add smooth transitions for all size changes */
+        .overflow-hidden {
+          transition: all 0.3s ease-in-out;
+        }
+        
+        /* Add smooth transitions for layout changes */
+        .layout-transitioning * {
+          transition: width 0.3s ease, height 0.3s ease, margin 0.3s ease, padding 0.3s ease;
+        }
+        
+        /* Ensure images maintain aspect ratio during transitions */
+        img {
+          transition: transform 0.3s ease;
+        }
+      `}</style>
     </div>
   )
 }
-
