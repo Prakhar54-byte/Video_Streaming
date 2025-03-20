@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Upload, X } from "lucide-react"
+import { ArrowLeft, Upload, X } from 'lucide-react'
 
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
@@ -10,9 +10,11 @@ import { Label } from "@/components/ui/Label"
 import { Textarea } from "@/components/ui/Textarea"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
+import { useToast } from "@/hooks/useToast"
 
-export default function UploadPage() {
+export default function UploadVideoForm() {
   const router = useRouter()
+  const { toast } = useToast()
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [videoFile, setVideoFile] = useState(null)
@@ -81,12 +83,20 @@ export default function UploadPage() {
     e.preventDefault()
 
     if (!videoFile) {
-      alert("Please select a video file to upload")
+      toast({
+        title: "Error",
+        description: "Please select a video file to upload",
+        variant: "destructive"
+      })
       return
     }
 
     if (!videoData.title.trim()) {
-      alert("Please enter a video title")
+      toast({
+        title: "Error",
+        description: "Please enter a video title",
+        variant: "destructive"
+      })
       return
     }
 
@@ -120,6 +130,11 @@ export default function UploadPage() {
 
       // Complete progress
       setUploadProgress(100)
+      
+      toast({
+        title: "Success",
+        description: "Video uploaded successfully",
+      })
 
       // Redirect to dashboard after a short delay
       setTimeout(() => {
@@ -127,7 +142,11 @@ export default function UploadPage() {
       }, 1000)
     } catch (error) {
       console.error("Error uploading video:", error)
-      alert("Error uploading video. Please try again.")
+      toast({
+        title: "Error",
+        description: "Error uploading video. Please try again.",
+        variant: "destructive"
+      })
     } finally {
       clearInterval(progressInterval)
       setIsUploading(false)
@@ -298,4 +317,3 @@ export default function UploadPage() {
     </div>
   )
 }
-

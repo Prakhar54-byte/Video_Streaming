@@ -4,14 +4,13 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { Mail, Lock, User, AlertCircle } from 'lucide-react'
+import { Mail, Lock, User, AlertCircle } from "lucide-react"
 
-import { Button } from "@/components/ui/Button"
-import { Input } from "@/components/ui/Input"
-import { Label } from "@/components/ui/Label"
-import { Checkbox } from "@/components/ui/CheckBox"
-import { Alert, AlertDescription } from "@/components/ui/Alert"
-import { useAuth } from "@/hooks/userAuth"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function LoginForm() {
   const [formData, setFormData] = useState({
@@ -21,7 +20,6 @@ export default function LoginForm() {
   })
   const [alertMessage, setAlertMessage] = useState("")
   const router = useRouter()
-  const { login } = useAuth()
 
   const handleChange = (e) => {
     const { id, value } = e.target
@@ -33,7 +31,7 @@ export default function LoginForm() {
     setFormData((prev) => ({ ...prev, rememberMe: checked }))
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
 
     // Simple validation
@@ -48,12 +46,10 @@ export default function LoginForm() {
       return
     }
 
-    try {
-      await login(formData.email, formData.password, formData.rememberMe)
-      router.push("/dashboard")
-    } catch (error) {
-      setAlertMessage(error.message || "Login failed. Please try again.")
-    }
+    // Handle login logic here
+    console.log(formData)
+    // Redirect to dashboard after login
+    router.push("/auth/dashboard")
   }
 
   return (
@@ -64,7 +60,7 @@ export default function LoginForm() {
           <div className="absolute inset-0 flex flex-col justify-center items-center">
             <div className="w-4/5 h-4/5 relative">
               <Image
-                src="/images/login-illustration.svg"
+                src="/placeholder.svg?height=500&width=430"
                 width={430}
                 height={500}
                 alt="Login illustration"
@@ -150,7 +146,7 @@ export default function LoginForm() {
                   Remember Me
                 </Label>
               </div>
-              <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+              <Link href="/auth/forgot-password" className="text-sm font-medium text-primary hover:underline">
                 Forgot Password?
               </Link>
             </div>
@@ -162,7 +158,7 @@ export default function LoginForm() {
 
           <div className="text-center text-sm">
             Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-medium text-primary hover:underline">
+            <Link href="/auth/register" className="font-medium text-primary hover:underline">
               Sign up
             </Link>
           </div>
@@ -171,3 +167,4 @@ export default function LoginForm() {
     </div>
   )
 }
+

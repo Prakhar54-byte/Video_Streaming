@@ -6,9 +6,9 @@ import Image from "next/image"
 import Link from "next/link"
 import { Search, Home, User, Hash, List, Bell, MessageSquare, Plus, LogOut, Menu } from "lucide-react"
 
-import { Button } from "@/components/ui/Button"
-import { Input } from "@/components/ui/Input"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 
 export default function HomePage() {
   const router = useRouter()

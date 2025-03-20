@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation"
+import HomePage from "./home-page";
 
-export default function Home() {
-  // Redirect to login page
-  redirect("/auth/login")
+export  default function Home(){
+  return <HomePage/>
 }
