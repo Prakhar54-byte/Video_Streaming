@@ -337,7 +337,7 @@ export default function HomePage() {
     <div className="group overflow-hidden rounded-lg border bg-card shadow-sm transition-all duration-300 hover:translate-y-[-4px] hover:shadow-md">
       <div className="aspect-video relative bg-muted overflow-hidden">
         <Image
-          src={video.thumbnail || `/placeholder.svg?height=200&width=350&text=Video+${video.id}`}
+          src={video.thumbnail || `/frontend/src/public/images/c5db6fddca613053353a5acb9276c5c8.jpg+${video.id}`}
           alt={video.title}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -634,7 +634,7 @@ export default function HomePage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200">
-                  <AvatarImage src="/placeholder.svg?height=40&width=40" alt="User" />
+                  <AvatarImage src="/frontend/src/public/images/c5db6fddca613053353a5acb9276c5c8.jpg" alt="User" />
                   <AvatarFallback>U</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
@@ -924,7 +924,7 @@ export default function HomePage() {
                     <form onSubmit={handleTweetSubmit}>
                       <div className="flex gap-3">
                         <Avatar className="h-10 w-10 flex-shrink-0">
-                          <AvatarImage src="/placeholder.svg?height=40&width=40" alt="User" />
+                          <AvatarImage src="/frontend/src/public/images/c5db6fddca613053353a5acb9276c5c8.jpg" alt="User" />
                           <AvatarFallback>U</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 space-y-3">
