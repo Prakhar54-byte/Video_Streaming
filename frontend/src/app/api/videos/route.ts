@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       _id: `video_${i + 1}`,
       title: query ? `${query} Video ${i + 1}` : `Video Title ${i + 1}`,
       description: `This is the description for video ${i + 1}`,
-      thumbnail: `/placeholder.svg?height=200&width=350&text=Video+${i + 1}`,
+      thumbnail: `/frontend/src/public/images/thumb-${(i%5)+1}.jpg`,
       duration: Math.floor(Math.random() * 600) + 60, // 1-10 minutes
       views: Math.floor(Math.random() * 10000),
       owner: {
