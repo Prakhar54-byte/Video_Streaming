@@ -6,6 +6,32 @@
       "dom.iterable",
       "esnext"
     ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@app/*": [
+        "./src/app/*"
+      ],
+      "@components/*": [
+        "./src/components/*"
+      ],
+      "@context/*": [
+        "./src/context/*"
+      ],
+      "@hooks/*": [
+        "./src/hooks/*"
+      ],
+      "@lib/*": [
+        "./src/lib/*"
+      ],
+      "@public/*": [
+        "./src/public/*"
+      ],
+      "@styles/*": [
+        "./src/styles/*"
+      ]
+    },
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
