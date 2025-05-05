@@ -27,21 +27,24 @@ export default function DashboardPage() {
     const fetchDashboardData = async () => {
       setIsLoading(true)
       try {
-        // In a real app, you would fetch data from your API
-        // For now, we'll simulate a delay and use mock data
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        setStats({
-          totalViews: 45600,
-          totalSubscribers: 1250,
-          totalVideos: 24,
-          recentActivity: [
-            { id: 1, type: 'comment', user: 'John Doe', content: 'Great video!', time: '2 hours ago' },
-            { id: 2, type: 'subscription', user: 'Jane Smith', content: 'subscribed to your channel', time: '5 hours ago' },
-            { id: 3, type: 'like', user: 'Mike Johnson', content: 'liked your video', time: '1 day ago' },
-            { id: 4, type: 'comment', user: 'Sarah Williams', content: 'This was so helpful, thanks!', time: '2 days ago' },
-          ]
+        // TODO: Fetch dashboard data from your backend API here.
+        // Example:
+        // const response = await fetch('http://localhost:8000/api/v1/dashboard', { credentials: 'include' })
+        // const data = await response.json()
+        // setStats(data)
+
+        const response = await fetch("http://localhost:8000/api/v1/dashboard", {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json"
+          }
         })
+        if (!response.ok) {
+          throw new Error("Network response was not ok")
+        }
+        const data = await response.json()
+        setStats(data)
       } catch (error) {
         console.error("Error fetching dashboard data:", error)
         toast({
@@ -59,6 +62,7 @@ export default function DashboardPage() {
 
   const handleLogout = async () => {
     try {
+      // TODO: Call your backend logout API if needed, then clear auth state.
       await logout()
       router.push("/login")
     } catch (error) {
@@ -94,50 +98,28 @@ export default function DashboardPage() {
           </div>
           <nav className="flex-1 overflow-auto py-4 px-2">
             <div className="space-y-1">
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2 text-primary"
-              >
+              {/* Navigation links */}
+              <Link href="/dashboard" className="flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2 text-primary">
                 <Home className="h-5 w-5" />
                 <span className="font-medium">Dashboard</span>
               </Link>
-              
-              <Link
-                href="/channel/dashboard"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted"
-              >
+              <Link href="/channel/dashboard" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted">
                 <Video className="h-5 w-5" />
                 <span className="font-medium">My Channel</span>
               </Link>
-              
-              <Link
-                href="/analytics"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted"
-              >
+              <Link href="/analytics" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted">
                 <BarChart className="h-5 w-5" />
                 <span className="font-medium">Analytics</span>
               </Link>
-              
-              <Link
-                href="/subscribers"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted"
-              >
+              <Link href="/subscribers" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted">
                 <Users className="h-5 w-5" />
                 <span className="font-medium">Subscribers</span>
               </Link>
-              
-              <Link
-                href="/messages"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted"
-              >
+              <Link href="/messages" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted">
                 <MessageSquare className="h-5 w-5" />
                 <span className="font-medium">Messages</span>
               </Link>
-              
-              <Link
-                href="/settings"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted"
-              >
+              <Link href="/settings" className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted">
                 <Settings className="h-5 w-5" />
                 <span className="font-medium">Settings</span>
               </Link>
@@ -194,6 +176,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {/* Dashboard stats from backend */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Views</CardTitle>
@@ -201,7 +184,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">+18% from last month</p>
+                  {/* Optionally, show trends from backend */}
                 </CardContent>
               </Card>
               <Card>
@@ -211,7 +194,6 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats.totalSubscribers.toLocaleString()}</div>
-                  <p className="text-xs text-muted-foreground">+12% from last month</p>
                 </CardContent>
               </Card>
               <Card>
@@ -221,7 +203,6 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stats.totalVideos}</div>
-                  <p className="text-xs text-muted-foreground">+2 this month</p>
                 </CardContent>
               </Card>
             </div>
@@ -232,6 +213,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    {/* Render recent activity from backend */}
                     {stats.recentActivity.map((activity) => (
                       <div key={activity.id} className="flex items-center gap-4">
                         <Avatar>

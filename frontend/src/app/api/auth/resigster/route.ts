@@ -1,19 +1,25 @@
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+export async function POST(request: Request){
+
   try {
-    const { name, username, email, password } = await request.json();
+    const body = await request.json()
 
-    // Simulated registration logic
-    console.log("Received register request:", { name, username, email });
+    const res = await fetch("http://localhost:8000/api/v1/users/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    })
+    const data = await res.json()
 
-    return NextResponse.json({
-      success: true,
-      message: "Registered successfully",
-      data: { name, username, email },
-    });
+    return NextResponse.json(data,{status: res.status})
+  
+    
   } catch (error) {
-    console.error("Registration error:", error);
-    return NextResponse.json({ message: "Failed to register" }, { status: 500 });
+    console.log(error);
+    return NextResponse.json({error: "Internal Server Error"}, {status: 500});
+    
   }
 }

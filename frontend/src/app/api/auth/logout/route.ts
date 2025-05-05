@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server"
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    // In a real app, this would call your actual backend API
-    // For demo purposes, we'll simulate a successful logout
+    const body = await request.json();
 
-    return NextResponse.json({
-      success: true,
-      message: "Logged out successfully",
-    })
+    const res = await fetch("http://localhost:8000/api/v1/users/logout", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json();
+
+    return NextResponse.json(data, { status: res.status });
   } catch (error) {
-    console.error("Logout error:", error)
-    return NextResponse.json({ message: "Failed to logout" }, { status: 500 })
+    console.error("Login error:", error);
+    return NextResponse.json({ message: "Failed to login" }, { status: 500 });
   }
 }
-

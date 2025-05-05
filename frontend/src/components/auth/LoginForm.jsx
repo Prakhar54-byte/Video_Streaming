@@ -351,14 +351,32 @@ export default function LoginForm() {
     setLoading(true);
     try {
       // Replace with your actual login endpoint
-      const res = await axios.post("http://localhost:8000/api/v1/users/login", formData, {
+      const res = await axios.post("http://localhost:8000/api/v1/users/login", 
+        
+         {
         headers: { "Content-Type": "application/json" },
-      });
-      if (res.status === 200) {
-        router.push("/dashboard"); // Redirect on success
+      
+    withCredentials: true ,// Include credentials for CORS
+    body: JSON.stringify({email: formData.email, password: formData.password }),
+      })
+
+      if(res.ok){
+        throw new Error("Login failed");
       }
+
+      const data = await res.json();
+      const token = data.token;
+
+      localStorage.setItem("token", token); // Store the token in local storage
+      // Redirect to the dashboard or home page
+      window.location.href = "/dashboard"; // Change to your dashboard route
+
+      
     } catch (err) {
-      setError("Invalid email or password.");
+      console.error("Login error:", err.response?.data || err.message);
+      setError(
+        err.response?.data?.message || "Invalid email or password."
+      );
     } finally {
       setLoading(false);
     }
