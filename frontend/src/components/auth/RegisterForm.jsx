@@ -1,19 +1,23 @@
 "use client"
 
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Mail, Lock, User, AlertCircle } from 'lucide-react'
+import axios from "axios"
 
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Label } from "@/components/ui/Label"
-import { Checkbox } from "@/components/ui/Checkbox"
+import { CheckBox } from "@/components/ui/CheckBox"
 import { Alert, AlertDescription } from "@/components/ui/Alert"
-import { useAuth } from "@/hooks/useAuth"
+// import { useAuth } from "@/hooks/useAuth"
+import { useAuth } from "@/hooks/userAuth"
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState({
+    name: "",
     username: "",
     email: "",
     password: "",
@@ -36,7 +40,7 @@ export default function RegisterForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-
+    // router.push("/login")
     // Simple validation
     if (!formData.username) {
       setAlertMessage("Please enter a username")
@@ -55,9 +59,15 @@ export default function RegisterForm() {
       return
     }
 
-    try {
-      await register(formData.username, formData.email, formData.password)
-      router.push("/dashboard")
+    try { 
+      const { name, username, email, password } = formData;
+  await axios.post("http://localhost:8000/api/v1/users/register", {
+    name,
+    username,
+    email,
+    password,
+  });
+  router.push("/login");
     } catch (error) {
       setAlertMessage(error.message || "Registration failed. Please try again.")
     }

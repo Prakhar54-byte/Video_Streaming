@@ -1,11 +1,14 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@components/ui/Button";
 import { Card, CardContent } from "@components/ui/Card";
 import { Checkbox } from "@components/ui/CheckBox";
 import { Input } from "@components/ui/Input";
+import axios from "axios";
 
-export default function LoginForm  ()  {
+
+export default function LoginForm() {
   // Decorative elements data for the left side
   const decorativeElements = [
     {
@@ -28,7 +31,7 @@ export default function LoginForm  ()  {
     },
     {
       id: 4,
-      src: "/login//vector-17.svg",
+      src: "/login/vector-17.svg",
       alt: "Vector",
       className: "absolute w-[18px] h-[21px] top-[755px] left-[148px]",
     },
@@ -332,81 +335,56 @@ export default function LoginForm  ()  {
     },
   ];
 
+  const router = useRouter();
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      // Replace with your actual login endpoint
+      const res = await axios.post("http://localhost:8000/api/v1/users/login", formData, {
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.status === 200) {
+        router.push("/dashboard"); // Redirect on success
+      }
+    } catch (err) {
+      setError("Invalid email or password.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Google login handler (placeholder)
+  const handleGoogleLogin = () => {
+    // Implement your OAuth flow here
+    window.location.href = "/api/auth/google";
+  };
+
   return (
-    <main className="flex h-screen w-full overflow-hidden">
+    <main className="flex h-screen w-full overflow-hidden bg-gradient-to-br from-[#ffe5c8] via-[#fff5ee] to-[#f8e1f4]">
       {/* Left side - Illustration */}
-      <section className="relative w-[62.5%] h-full">
-        <div className="absolute w-[803px] h-[903px] top-[50px] left-[50px] bg-[#ffe5c8] rounded-lg">
-          {/* Main illustration */}
-          <img
-            className="absolute w-[430px] h-[499px] top-[150px] left-[240px]"
-            alt="Skeleton illustration"
-            src="/rectangle.png"
-          />
-
-          {/* Decorative elements */}
-          {decorativeElements.map((element) => (
-            <img
-              key={element.id}
-              className={element.className}
-              alt={element.alt}
-              src={element.src}
-            />
+      <section className="relative w-[60%] h-full hidden md:block">
+        <div className="absolute w-[90%] h-[95%] top-6 left-6 bg-[#ffe5c8] rounded-2xl shadow-xl overflow-hidden">
+          <img className="absolute w-[430px] h-[499px] top-[150px] left-[240px]" alt="Illustration" src="/rectangle.png" />
+          {decorativeElements.map((el) => (
+            <img key={el.id} className={el.className} alt={el.alt} src={el.src} />
           ))}
-
-          {/* Illustration decoration area */}
           <div className="absolute w-[394px] h-[428px] top-24 left-[301px]">
-            {smallDecorations.map((decoration) => (
-              <img
-                key={decoration.id}
-                className={decoration.className}
-                alt={decoration.alt}
-                src={decoration.src}
-              />
+            {smallDecorations.map((d) => (
+              <img key={d.id} className={d.className} alt={d.alt} src={d.src} />
             ))}
           </div>
-
-          {/* Additional illustration elements */}
-          <img
-            className="absolute w-[362px] h-[472px] top-[317px] left-[271px]"
-            alt="Group"
-            src="/group-4.png"
-          />
-
-          <div className="absolute w-[215px] h-[245px] top-0 left-0 bg-[url(/rectangle-1.png)] bg-[100%_100%]">
-            <div className="relative w-[204px] h-40 top-[55px] left-[11px]">
-              <img
-                className="absolute w-[196px] h-[141px] top-[19px] left-0"
-                alt="Vector"
-                src="/vector-21.svg"
-              />
-              <img
-                className="absolute w-[195px] h-[140px] top-0 left-[9px]"
-                alt="Vector"
-                src="/vector-24.svg"
-              />
-            </div>
-          </div>
-
-          <img
-            className="absolute w-[142px] h-[89px] top-[401px] left-[573px]"
-            alt="Group"
-            src="/group-1.png"
-          />
-
-          <img
-            className="absolute w-[131px] h-[82px] top-[385px] left-56"
-            alt="Group"
-            src="/group-2.png"
-          />
-
-          <img
-            className="absolute w-[35px] h-[29px] top-[163px] left-[325px]"
-            alt="Group"
-            src="/group.png"
-          />
-
-          {/* Bottom text */}
+          {/* Add more illustration elements as desired */}
           <div className="absolute w-[479px] text-center bottom-16 left-1/2 -translate-x-1/2 font-['Nunito_Sans',Helvetica] font-semibold text-[#72104b] text-[25px]">
             Start for free and get attractive offers from the community
           </div>
@@ -414,94 +392,90 @@ export default function LoginForm  ()  {
       </section>
 
       {/* Right side - Login form */}
-      <section className="relative w-[37.5%] h-full bg-white flex items-center justify-center">
-        <Card className="w-[420px] border-none shadow-none">
-          <CardContent className="p-0">
-            <div className="flex flex-col gap-9">
-              {/* Header */}
+      <section className="w-full md:w-[40%] h-full flex items-center justify-center bg-white relative z-10">
+        <Card className="w-full max-w-[420px] border-none shadow-2xl rounded-xl">
+          <CardContent className="p-8 flex flex-col gap-8">
+            {/* Header */}
+            <div className="flex flex-col gap-2">
+              <h1 className="font-['Nunito_Sans',Helvetica] font-bold text-[#72104b] text-3xl md:text-4xl mb-1">Welcome Back!</h1>
+              <p className="font-['Nunito_Sans',Helvetica] text-[#515151] text-base">Login to your account to continue</p>
+            </div>
+
+            {/* Google login button */}
+            <Button
+              variant="outline"
+              className="w-full h-12 border-[#e7e7e7] rounded-[5px] font-['Nunito_Sans',Helvetica] font-bold text-gray-700 text-sm flex items-center justify-center gap-2 hover:bg-gray-100"
+              onClick={handleGoogleLogin}
+              type="button"
+            >
+              <img className="w-[25px] h-[25px]" alt="Google logo" src="/image-2.png" />
+              Continue with Google
+            </Button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-2">
+              <span className="flex-grow h-px bg-[#dddddd]" />
+              <span className="text-[#a1a1a1] font-['Nunito_Sans',Helvetica] font-semibold text-xs">or sign in with email</span>
+              <span className="flex-grow h-px bg-[#dddddd]" />
+            </div>
+
+            {/* Login Form */}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <h1 className="font-['Nunito_Sans',Helvetica] font-bold text-[#515151] text-4xl">
-                  Login to your Account
-                </h1>
-                <p className="font-['Nunito_Sans',Helvetica] font-normal text-[#515151] text-base">
-                  See what is going on with your business
-                </p>
-              </div>
-
-              {/* Google login button */}
-              <Button
-                variant="outline"
-                className="w-full h-12 border-[#e7e7e7] rounded-[5px] font-['Nunito_Sans',Helvetica] font-bold text-gray-3 text-sm"
-              >
-                <img
-                  className="w-[25px] h-[25px] mr-2"
-                  alt="Google logo"
-                  src="/image-2.png"
-                />
-                Continue with Google
-              </Button>
-
-              {/* Divider */}
-              <div className="flex items-center justify-center">
-                <span className="text-[#dddddd]">-------------</span>
-                <span className="text-[#a1a1a1] mx-2 font-['Nunito_Sans',Helvetica] font-semibold text-xs">
-                  or Sign in with Email
-                </span>
-                <span className="text-[#dddddd]">-------------</span>
-              </div>
-
-              {/* Email input */}
-              <div className="flex flex-col gap-1">
-                <label className="font-['Nunito_Sans',Helvetica] font-semibold text-gray-3 text-sm">
-                  Email
-                </label>
+                <label htmlFor="email" className="font-['Nunito_Sans',Helvetica] font-semibold text-gray-700 text-sm">Email</label>
                 <Input
+                  id="email"
+                  name="email"
+                  type="email"
                   placeholder="mail@abc.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
                   className="h-12 rounded-[5px] border-[#ded2d9] font-['Nunito_Sans',Helvetica] text-sm"
+                  autoComplete="email"
                 />
               </div>
-              {/* Password input */}
-              <div className="flex flex-col gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="font-['Nunito_Sans',Helvetica] font-semibold text-gray-3 text-sm">
-                    Password
-                  </label>
-                  <Input
-                    type="password"
-                    defaultValue="password"
-                    className="h-12 rounded-[5px] border-[#ded2d9] font-['Nunito_Sans',Helvetica] text-[10px]"
-                  />
-                </div>
-
-                {/* Remember me and forgot password */}
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="remember"
-                      className="w-3 h-3 rounded-sm bg-[#7f265b] border-[#7f265b]"
-                      defaultChecked
-                    />
-                    <label
-                      htmlFor="remember"
-                      className="font-['Nunito_Sans',Helvetica] font-normal text-[#a1a1a1] text-xs"
-                    >
-                      Remember Me
-                    </label>
-                  </div>
-                  <button className="font-['Nunito_Sans',Helvetica] font-semibold text-[#7f265b] text-xs">
-                    Forgot Password?
-                  </button>
-                </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="password" className="font-['Nunito_Sans',Helvetica] font-semibold text-gray-700 text-sm">Password</label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Your password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className="h-12 rounded-[5px] border-[#ded2d9] font-['Nunito_Sans',Helvetica] text-sm"
+                  autoComplete="current-password"
+                />
               </div>
-
-              {/* Login button */}
-              <Button className="w-full h-12 bg-[#7f265b] hover:bg-[#6a1f4d] rounded-md font-['Nunito_Sans',Helvetica] font-extrabold text-white text-lg">
-                Login
+              <div className="flex justify-between items-center mt-1">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="remember" className="w-4 h-4 rounded-sm bg-[#7f265b] border-[#7f265b]" defaultChecked />
+                  <label htmlFor="remember" className="font-['Nunito_Sans',Helvetica] text-[#a1a1a1] text-xs">Remember Me</label>
+                </div>
+                <button type="button" className="font-['Nunito_Sans',Helvetica] font-semibold text-[#7f265b] text-xs hover:underline">
+                  Forgot Password?
+                </button>
+              </div>
+              {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 bg-[#7f265b] hover:bg-[#6a1f4d] rounded-md font-['Nunito_Sans',Helvetica] font-extrabold text-white text-lg mt-2"
+              >
+                {loading ? "Logging in..." : "Login"}
               </Button>
+            </form>
+
+            {/* Sign up link */}
+            <div className="text-center text-sm text-[#515151] mt-2">
+              Don&apos;t have an account?{" "}
+              <a href="/register" className="text-[#7f265b] font-semibold hover:underline">Sign up</a>
             </div>
           </CardContent>
         </Card>
       </section>
     </main>
   );
-};
+}

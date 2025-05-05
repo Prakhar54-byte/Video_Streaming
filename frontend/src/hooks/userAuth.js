@@ -3,6 +3,7 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/useToast";
+import { se } from "date-fns/locale";
 
 const AuthContext = createContext();
 
@@ -17,9 +18,38 @@ export function AuthProvider({ children }) {
     const checkAuth = async () => {
       try {
         // In a real app, you would verify the token with your backend
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+        const token = localStorage.getItem("token")||sessionStorage.getItem("token");
+
+        if(!token ){
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+
+          // const res = await fetch()
+
+          const res = await fetch("http://localhost:8000/api/v1/users/verify-token", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if(!res.ok){
+            throw new Error("Token verification failed");
+          }
+
+          const data = await res.json();
+          setUser(data.user);
+          
+        } catch (error) {
+          console.error("Token verification error:", error);
+          localStorage.removeItem("token");
+          sessionStorage.removeItem("token");
+          setUser(null);
+          
         }
       } catch (error) {
         console.error("Authentication error:", error);

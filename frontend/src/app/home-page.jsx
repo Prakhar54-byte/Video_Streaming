@@ -43,6 +43,8 @@ import {
 import { Badge } from "../components/ui/Badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/Tooltip"
 import { useToast } from "../hooks/useToast"
+// import { log } from "console"
+// import { log } from "console"
 
 export default function HomePage() {
   const router = useRouter()
@@ -333,43 +335,56 @@ export default function HomePage() {
   }
 
   // Video Card Component with enhanced hover effects
-  const VideoCard = ({ video }) => (
-    <div className="group overflow-hidden rounded-lg border bg-card shadow-sm transition-all duration-300 hover:translate-y-[-4px] hover:shadow-md">
-      <div className="aspect-video relative bg-muted overflow-hidden">
-        <Image
-          src={video.thumbnail || `/frontend/src/public/images/c5db6fddca613053353a5acb9276c5c8.jpg+${video.id}`}
-          alt={video.title}
-          fill
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
-        />
-        <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1 rounded">
-          {formatDuration(video.duration || 0)}
-        </div>
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <Button variant="secondary" size="sm" className="rounded-full">
-            <Play className="h-5 w-5 mr-1" /> Watch Now
-          </Button>
-        </div>
-      </div>
-      <div className="p-4">
-        <div className="flex gap-3">
-          <Avatar className="h-10 w-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
-            <AvatarImage src={video.owner?.avatar} alt={video.owner?.username} />
-            <AvatarFallback>{video.owner?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors duration-300">
-              {video.title}
-            </h3>
-            <p className="text-sm text-muted-foreground">{video.owner?.username}</p>
-            <p className="text-xs text-muted-foreground">
-              {formatViews(video.views)} views • {formatTimeAgo(video.createdAt)}
-            </p>
+  const VideoCard = ({video,imageCount})=>{
+    console.log(video)  ;
+    
+    return (
+      <>
+      {Array.from({ length: imageCount }).map((_, i) => (
+        <div
+          key={i}
+          className="group overflow-hidden rounded-lg border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+        >
+          <div className="aspect-video relative bg-muted overflow-hidden">
+            <Image
+              src={`/images/thumb${i + 1}.jpg`}
+              alt={`Thumbnail ${i + 1}`}
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1 rounded">
+              {formatDuration(video.duration || 0)}
+            </div>
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+              <Button variant="secondary" size="sm" className="rounded-full">
+                <Play className="h-5 w-5 mr-1" /> Watch Now
+              </Button>
+            </div>
+          </div>
+          <div className="p-4">
+            <div className="flex gap-3">
+              <Avatar className="h-10 w-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
+                <AvatarImage src={video.owner?.avatar} alt={video.owner?.username} />
+                <AvatarFallback>{video.owner?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
+              <div>
+                <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors duration-300">
+                  {video.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">{video.owner?.username}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatViews(video.views)} views • {formatTimeAgo(video.createdAt)}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  )
+      ))}
+    </>
+    );
+    
+  }
+
 
   // Tweet/Message Card Component with enhanced interactions
   const TweetCard = ({ tweet }) => (
