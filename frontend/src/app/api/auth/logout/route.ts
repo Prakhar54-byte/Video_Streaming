@@ -1,22 +1,34 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from "next/server";
+import API from "@/app/api";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const token = body.token; // You must pass the token from client if not using cookies
 
-    const res = await fetch("http://localhost:8000/api/v1/users/logout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
+    const response = await API.post(
+      "/api/v1/users/logout", 
+      {}, // No body typically needed for logout
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return NextResponse.json(response.data, {
+      status: response.status,
     });
 
-    const data = await res.json();
-
-    return NextResponse.json(data, { status: res.status });
   } catch (error) {
-    console.error("Login error:", error);
-    return NextResponse.json({ message: "Failed to login" }, { status: 500 });
+    console.error("Logout error:", error?.response?.data || error.message);
+    return NextResponse.json(
+      {
+        message: error?.response?.data || error.message,
+      },
+      {
+        status: error?.response?.status || 500,
+      }
+    );
   }
 }

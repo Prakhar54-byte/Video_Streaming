@@ -1,22 +1,24 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from "next/server";
+import API from "@app/api"
 
-export async function POST(request: Request) {
+
+export async function POST(request:Request){
+
   try {
     const body = await request.json();
 
-    const res = await fetch("http://localhost:8000/api/v1/users/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+    const response = await API.post("api/v1/uses/login", body, )
 
-    const data = await res.json();
-
-    return NextResponse.json(data, { status: res.status });
+    const data = response.data;
+    
   } catch (error) {
-    console.error("Login error:", error);
-    return NextResponse.json({ message: "Failed to login" }, { status: 500 });
+    console.error("Login error:", error?.response?.data || error.message);
+    return NextResponse.json(
+      {
+        message:error?.response?.data || error.message,
+      },{
+        status:  error?.response?.status || 500,
+      }
+    )
   }
 }
