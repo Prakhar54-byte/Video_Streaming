@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, User, AlertCircle } from "lucide-react";
+import Image from "next/image";
+import { Mail, Lock, User, AlertCircle, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,17 +17,40 @@ export default function RegisterForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
+    fullName: "",
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
+    avatar: null,
+    coverImage: null,
     agreeToTerms: false,
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const { id, files } = e.target;
+    if (files && files[0]) {
+      setFormData((prev) => ({ ...prev, [id]: files[0] }));
+      
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (id === "avatar") {
+          setAvatarPreview(reader.result);
+        } else {
+          setCoverPreview(reader.result);
+        }
+      };
+      reader.readAsDataURL(files[0]);
+    }
   };
 
   const handleCheckboxChange = (checked) => {
@@ -36,28 +60,10 @@ export default function RegisterForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.username) {
+    if (!formData.fullName || !formData.username || !formData.email || !formData.password) {
       toast({
         title: "Error",
-        description: "Please enter a username",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.email) {
-      toast({
-        title: "Error",
-        description: "Please enter your email address",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.password) {
-      toast({
-        title: "Error",
-        description: "Please enter a password",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
@@ -67,6 +73,15 @@ export default function RegisterForm() {
       toast({
         title: "Error",
         description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.avatar) {
+      toast({
+        title: "Error",
+        description: "Please upload an avatar image",
         variant: "destructive",
       });
       return;
@@ -84,14 +99,19 @@ export default function RegisterForm() {
     setIsLoading(true);
 
     try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("fullName", formData.fullName);
+      formDataToSend.append("username", formData.username);
+      formDataToSend.append("email", formData.email);
+      formDataToSend.append("password", formData.password);
+      formDataToSend.append("avatar", formData.avatar);
+      if (formData.coverImage) {
+        formDataToSend.append("coverImage", formData.coverImage);
+      }
+
       const response = await fetch("/api/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }),
+        body: formDataToSend,
       });
 
       const data = await response.json();
@@ -100,8 +120,7 @@ export default function RegisterForm() {
         throw new Error(data.message || "Registration failed");
       }
 
-      // Store the token
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("token", data.accessToken);
 
       toast({
         title: "Success",
@@ -130,6 +149,21 @@ export default function RegisterForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="fullName">Full Name</Label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                id="fullName"
+                placeholder="John Doe"
+                value={formData.fullName}
+                onChange={handleChange}
+                className="pl-10"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="username">Username</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -139,6 +173,7 @@ export default function RegisterForm() {
                 value={formData.username}
                 onChange={handleChange}
                 className="pl-10"
+                required
               />
             </div>
           </div>
@@ -154,6 +189,7 @@ export default function RegisterForm() {
                 value={formData.email}
                 onChange={handleChange}
                 className="pl-10"
+                required
               />
             </div>
           </div>
@@ -169,6 +205,7 @@ export default function RegisterForm() {
                 value={formData.password}
                 onChange={handleChange}
                 className="pl-10"
+                required
               />
             </div>
           </div>
@@ -184,7 +221,57 @@ export default function RegisterForm() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 className="pl-10"
+                required
               />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="avatar">Avatar Image (Required)</Label>
+            <div className="relative">
+              <Input
+                id="avatar"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="pl-10"
+                required
+              />
+              {avatarPreview && (
+                <div className="mt-2">
+                  <Image
+                    src={avatarPreview}
+                    alt="Avatar preview"
+                    width={100}
+                    height={100}
+                    className="rounded-full"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="coverImage">Cover Image (Optional)</Label>
+            <div className="relative">
+              <Input
+                id="coverImage"
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="pl-10"
+              />
+              {coverPreview && (
+                <div className="mt-2">
+                  <Image
+                    src={coverPreview}
+                    alt="Cover preview"
+                    width={200}
+                    height={100}
+                    className="rounded"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

@@ -17,6 +17,7 @@ export default function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
+    username: "",
     email: "",
     password: "",
     rememberMe: false,
@@ -41,6 +42,7 @@ export default function LoginForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          username: formData.username,
           email: formData.email,
           password: formData.password,
         }),
@@ -52,11 +54,10 @@ export default function LoginForm() {
         throw new Error(data.message || "Login failed");
       }
 
-      // Store the token
       if (formData.rememberMe) {
-        localStorage.setItem("token", data.token);
+        localStorage.setItem("token", data.accessToken);
       } else {
-        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("token", data.accessToken);
       }
 
       toast({
@@ -78,7 +79,6 @@ export default function LoginForm() {
 
   return (
     <div className="flex w-full max-w-6xl mx-auto rounded-xl overflow-hidden shadow-lg">
-      {/* Left side - Illustration */}
       <div className="hidden md:block w-1/2 bg-primary/10 relative p-8">
         <div className="relative h-full w-full">
           <div className="absolute inset-0 flex flex-col justify-center items-center">
@@ -100,7 +100,6 @@ export default function LoginForm() {
         </div>
       </div>
 
-      {/* Right side - Login Form */}
       <div className="w-full md:w-1/2 bg-white p-8 md:p-12">
         <div className="max-w-md mx-auto space-y-6">
           <div className="space-y-2 text-center md:text-left">
@@ -123,6 +122,20 @@ export default function LoginForm() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="username"
+                  placeholder="johndoe"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
