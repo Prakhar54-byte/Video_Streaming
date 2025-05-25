@@ -4,6 +4,7 @@ import { useState, useEffect, createContext, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/useToast";
 import { se } from "date-fns/locale";
+import { login } from "@/app/api/auth/login/route";
 
 const AuthContext = createContext();
 
@@ -64,7 +65,7 @@ export function AuthProvider({ children }) {
   const login = async (email, password, rememberMe = false) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/v1/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
