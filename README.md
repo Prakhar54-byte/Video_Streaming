@@ -76,7 +76,8 @@ See the Future Roadmap section for planned features.
 - Mongoose pagination (100 videos/page)
 - Background workers for video processing
 
-## 🔄 How It's Different
+
+
 
 | Feature          | Typical Platforms       | Our Implementation       |
 |------------------|-------------------------|--------------------------|
