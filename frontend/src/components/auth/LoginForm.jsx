@@ -65,7 +65,7 @@ export default function LoginForm() {
         description: "Logged in successfully",
       });
 
-      router.push("/dashboard");
+      router.push("/");
     } catch (error) {
       toast({
         title: "Error",

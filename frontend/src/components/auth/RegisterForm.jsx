@@ -110,7 +110,7 @@ export default function RegisterForm() {
         formDataToSend.append("coverImage", formData.coverImage);
       }
 
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch("http://localhost:8000/api/v1/users/register", {
         method: "POST",
         body: formDataToSend,
       });
