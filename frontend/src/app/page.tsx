@@ -25,13 +25,20 @@ import {
   Video,
   Settings,
   Check,
+  Play,
+  Clock,
+  Eye,
+  ThumbsUp,
+  Upload,
+  MoreVertical,
 } from "lucide-react"
-import { Button } from "../components/ui/Button"
-import { Input } from "../components/ui/Input"
-import { Avatar,AvatarFallback,AvatarImage } from "../components/ui/Avatar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/Tab"
-import { Card, CardContent } from "../components/ui/Card"
-import { Textarea } from "../components/ui/TextArea"
+
+import { Button } from "@/components/ui/Button"
+import { Input } from "@/components/ui/Input"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tab"
+import { Card, CardContent } from "@/components/ui/Card"
+import { Textarea } from "@/components/ui/TextArea"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,22 +46,62 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "../components/ui/Dropdown-menu"
-import { Badge } from "../components/ui/Badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/ui/Tooltip"
-import { useToast } from "../hooks/useToast"
-import { title } from "process"
-// import { log } from "console"
-// import { log } from "console"
+} from "@/components/ui/Dropdown-menu"
+import { Badge } from "@/components/ui/Badge"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip"
+import { useToast } from "@/hooks/useToast"
+
+interface Video {
+  _id: string
+  title: string
+  description: string
+  thumbnail?: string
+  duration: number
+  views: number
+  owner: {
+    _id: string
+    username: string
+    fullName: string
+    avatar: string
+  }
+  createdAt: string
+  isPublished: boolean
+}
+
+interface Tweet {
+  _id: string
+  content: string
+  owner: {
+    _id: string
+    username: string
+    fullName: string
+    avatar: string
+  }
+  createdAt: string
+  likes: number
+  liked?: boolean
+}
+
+interface User {
+  _id: string
+  username: string
+  fullName: string
+  email: string
+  avatar: string
+  coverImage?: string
+}
 
 export default function HomePage() {
   const router = useRouter()
   const { toast } = useToast()
-  const searchInputRef = useRef(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  
+  // State management
+  const [user, setUser] = useState<User | null>(null)
   const [sidebarVisible, setSidebarVisible] = useState(true)
-  const [videos, setVideos] = useState([])
-  const [filteredVideos, setFilteredVideos] = useState([])
-  const [tweets, setTweets] = useState([])
+  const [videos, setVideos] = useState<Video[]>([])
+  const [filteredVideos, setFilteredVideos] = useState<Video[]>([])
+  const [tweets, setTweets] = useState<Tweet[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("videos")
   const [tweetContent, setTweetContent] = useState("")
@@ -68,22 +115,93 @@ export default function HomePage() {
   ])
   const [showNotifications, setShowNotifications] = useState(false)
   const [sortOption, setSortOption] = useState("recent")
+  const [subscriptions, setSubscriptions] = useState([])
 
-  // Fetch videos and tweets on component mount
+  // Check authentication and fetch initial data
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+        if (!token) {
+          router.push("/auth/login")
+          return
+        }
+
+        // Verify token and get user data
+        const userResponse = await fetch("http://localhost:8000/api/v1/users/current-user", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        })
+
+        if (!userResponse.ok) {
+          localStorage.removeItem("token")
+          sessionStorage.removeItem("token")
+          router.push("/auth/login")
+          return
+        }
+
+        const userData = await userResponse.json()
+        setUser(userData.data)
+      } catch (error) {
+        console.error("Auth check failed:", error)
+        router.push("/auth/login")
+      }
+    }
+
+    checkAuth()
+  }, [router])
+
+  // Fetch videos and tweets
   useEffect(() => {
     const fetchData = async () => {
+      if (!user) return
+      
       setIsLoading(true)
       try {
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+        
         // Fetch videos
-        const videosResponse = await fetch("/api/videos?limit=25")
-        const videosData = await videosResponse.json()
-        setVideos(videosData.videos || [])
-        setFilteredVideos(videosData.videos || [])
+        const videosResponse = await fetch("http://localhost:8000/api/v1/videos?page=1&limit=25&sortBy=createdAt&sortType=-1", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        })
+        
+        if (videosResponse.ok) {
+          const videosData = await videosResponse.json()
+          setVideos(videosData.data.videos || [])
+          setFilteredVideos(videosData.data.videos || [])
+        }
 
-        // Fetch tweets/messages
-        const tweetsResponse = await fetch("/api/tweets")
-        const tweetsData = await tweetsResponse.json()
-        setTweets(tweetsData.tweets || [])
+        // Fetch tweets
+        const tweetsResponse = await fetch("http://localhost:8000/api/v1/tweets", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        })
+        
+        if (tweetsResponse.ok) {
+          const tweetsData = await tweetsResponse.json()
+          setTweets(tweetsData.data || [])
+        }
+
+        // Fetch subscriptions
+        const subscriptionsResponse = await fetch("http://localhost:8000/api/v1/subscriptions/c/subscribed", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        })
+        
+        if (subscriptionsResponse.ok) {
+          const subscriptionsData = await subscriptionsResponse.json()
+          setSubscriptions(subscriptionsData.data || [])
+        }
+
       } catch (error) {
         console.error("Error fetching data:", error)
         toast({
@@ -97,35 +215,36 @@ export default function HomePage() {
     }
 
     fetchData()
-  }, [toast])
+  }, [user, toast])
 
-  // Toggle sidebar visibility with smooth transition
+  // Toggle sidebar visibility
   const toggleSidebar = () => {
-    // Add a class to the body to trigger transitions
     document.body.classList.add("layout-transitioning")
     setSidebarVisible(!sidebarVisible)
-
-    // Remove the class after transition completes
     setTimeout(() => {
       document.body.classList.remove("layout-transitioning")
     }, 300)
   }
 
+  // Handle logout
   const handleLogout = async () => {
-    // Ask for confirmation before logging out
     const isConfirmed = window.confirm("Are you sure you want to logout?")
     if (!isConfirmed) return
 
     try {
-      setIsLoading(true)
-      const response = await fetch("/api/auth/logout", {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+      
+      await fetch("http://localhost:8000/api/v1/users/logout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
       })
 
-      if (!response.ok) throw new Error("An error occurred while logging out")
-
+      localStorage.removeItem("token")
+      sessionStorage.removeItem("token")
+      
       toast({
         title: "Success",
         description: "You have been logged out successfully",
@@ -133,57 +252,45 @@ export default function HomePage() {
 
       router.push("/auth/login")
     } catch (error) {
-      console.log("Error logging out", error)
+      console.error("Error logging out", error)
       toast({
         title: "Error",
         description: "Failed to log out. Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  // Handle create button click
+  // Handle create/upload button click
   const handleCreateClick = async () => {
     try {
-      setIsLoading(true)
-      const responseCreate = await fetch("/api/channel/check", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+      
+      // Check if user has a channel
+      const channelResponse = await fetch("http://localhost:8000/api/v1/users/current-user", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
       })
 
-      const data = await responseCreate.json()
-
-      if (responseCreate.ok) {
-        if (data.hasChannel) {
-          router.push("/channel/dashboard")
-        } else {
-          router.push("/channel/create")
-        }
+      if (channelResponse.ok) {
+        router.push("/channelDashboard/dashboard")
       } else {
-        console.log("Error checking channel", data.message)
-        toast({
-          title: "Error",
-          description: "Error checking channel: " + data.message,
-          variant: "destructive",
-        })
+        router.push("/channelDashboard/create")
       }
     } catch (error) {
-      console.log("Error checking channel", error)
+      console.error("Error checking channel", error)
       toast({
         title: "Error",
         description: "Error checking channel. Please try again.",
         variant: "destructive",
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  // Handle tweet/message submission
-  const handleTweetSubmit = async (e) => {
+  // Handle tweet submission
+  const handleTweetSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!tweetContent.trim()) {
@@ -198,15 +305,20 @@ export default function HomePage() {
     setIsSubmittingTweet(true)
 
     try {
-      const response = await fetch("/api/tweets", {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+      
+      const response = await fetch("http://localhost:8000/api/v1/tweets", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: tweetContent }),
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ content: tweetContent })
       })
 
       if (response.ok) {
         const data = await response.json()
-        setTweets([data.tweet, ...tweets])
+        setTweets([data.data, ...tweets])
         setTweetContent("")
         toast({
           title: "Success",
@@ -233,7 +345,7 @@ export default function HomePage() {
   }
 
   // Handle search functionality
-  const handleSearch = async (e) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!searchQuery.trim()) {
@@ -244,32 +356,30 @@ export default function HomePage() {
     setIsSearching(true)
 
     try {
-      const response = await fetch(`api/videos/search?q=${encodeURIComponent(searchQuery)}`,{
-        method:"GET",
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+      
+      const response = await fetch(`http://localhost:8000/api/v1/videos?query=${encodeURIComponent(searchQuery)}&page=1&limit=25`, {
         headers: {
-        'Content-Type': 'application/json',
-        // Add Authorization header if needed:
-        // 'Authorization': `Bearer ${yourJWTtoken}`,
-      },
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
       })
-      if(!response.ok){
-        throw new Error('Failed to fetch search results')
-      }
 
-      const data = await response.json();
-
-      setFilteredVideos(data)
-
-      if(data.length ===0){
-        toast({
-          title:"No result",
-          description:`No video found for "${searchQuery}"`
-        })
-      }else{
-        toast({
-          title:"Search results",
-          description:`Found ${data.length} videos for "${searchQuery}"`
-        })
+      if (response.ok) {
+        const data = await response.json()
+        setFilteredVideos(data.data.videos || [])
+        
+        if (data.data.videos.length === 0) {
+          toast({
+            title: "No results",
+            description: `No videos found for "${searchQuery}"`,
+          })
+        } else {
+          toast({
+            title: "Search results",
+            description: `Found ${data.data.videos.length} videos for "${searchQuery}"`,
+          })
+        }
       }
     } catch (error) {
       console.error("Error searching:", error)
@@ -284,36 +394,52 @@ export default function HomePage() {
   }
 
   // Handle like functionality for tweets
-  const handleLikeTweet = (tweetId) => {
-    setTweets((prevTweets) =>
-      prevTweets.map((tweet) =>
-        tweet._id === tweetId
-          ? { ...tweet, likes: tweet.liked ? tweet.likes - 1 : tweet.likes + 1, liked: !tweet.liked }
-          : tweet,
-      ),
-    )
+  const handleLikeTweet = async (tweetId: string) => {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token")
+      
+      const response = await fetch(`http://localhost:8000/api/v1/likes/toggle/t/${tweetId}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      })
 
-    toast({
-      title: "Success",
-      description: "Like updated",
-    })
+      if (response.ok) {
+        setTweets(prevTweets =>
+          prevTweets.map(tweet =>
+            tweet._id === tweetId
+              ? { ...tweet, likes: tweet.liked ? tweet.likes - 1 : tweet.likes + 1, liked: !tweet.liked }
+              : tweet
+          )
+        )
+
+        toast({
+          title: "Success",
+          description: "Like updated",
+        })
+      }
+    } catch (error) {
+      console.error("Error liking tweet:", error)
+    }
   }
 
   // Handle sorting videos
-  const handleSortVideos = (option) => {
+  const handleSortVideos = (option: string) => {
     setSortOption(option)
 
     const sorted = [...filteredVideos]
 
     switch (option) {
       case "recent":
-        sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         break
       case "popular":
         sorted.sort((a, b) => b.views - a.views)
         break
       case "oldest":
-        sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+        sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
         break
       default:
         break
@@ -322,79 +448,83 @@ export default function HomePage() {
     setFilteredVideos(sorted)
   }
 
-  // Handle notification click
-  const handleNotificationClick = (id) => {
-    setNotifications((prevNotifications) =>
-      prevNotifications.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification,
-      ),
-    )
-    setShowNotifications(false)
+  // Helper functions
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`
   }
 
-  // Handle mark all notifications as read
-  const handleMarkAllNotificationsAsRead = () => {
-    setNotifications((prevNotifications) => prevNotifications.map((notification) => ({ ...notification, read: true })))
-    toast({
-      title: "Success",
-      description: "All notifications marked as read",
-    })
+  const formatViews = (views: number) => {
+    if (views >= 1000000) {
+      return `${(views / 1000000).toFixed(1)}M`
+    } else if (views >= 1000) {
+      return `${(views / 1000).toFixed(1)}K`
+    }
+    return views?.toString() || "0"
   }
 
-  // Video Card Component with enhanced hover effects
-  const VideoCard = ({video,imageCount})=>{
-    console.log(video)  ;
-    
-    return (
-      <>
-      {Array.from({ length: imageCount }).map((_, i) => (
-        <div
-          key={i}
-          className="group overflow-hidden rounded-lg border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-        >
-          <div className="aspect-video relative bg-muted overflow-hidden">
-            <Image
-              src={`/images/thumb${i + 1}.jpg`}
-              alt={`Thumbnail ${i + 1}`}
-              fill
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1 rounded">
-              {formatDuration(video.duration || 0)}
-            </div>
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-              <Button variant="secondary" size="sm" className="rounded-full">
-                <Play className="h-5 w-5 mr-1" /> Watch Now
-              </Button>
-            </div>
-          </div>
-          <div className="p-4">
-            <div className="flex gap-3">
-              <Avatar className="h-10 w-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
-                <AvatarImage src={video.owner?.avatar} alt={video.owner?.username} />
-                <AvatarFallback>{video.owner?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors duration-300">
-                  {video.title}
-                </h3>
-                <p className="text-sm text-muted-foreground">{video.owner?.username}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatViews(video.views)} views • {formatTimeAgo(video.createdAt)}
-                </p>
-              </div>
-            </div>
+  const formatTimeAgo = (dateString: string) => {
+    if (!dateString) return "Unknown time"
+
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+    if (diffInSeconds < 60) {
+      return `${diffInSeconds}s ago`
+    } else if (diffInSeconds < 3600) {
+      return `${Math.floor(diffInSeconds / 60)}m ago`
+    } else if (diffInSeconds < 86400) {
+      return `${Math.floor(diffInSeconds / 3600)}h ago`
+    } else if (diffInSeconds < 604800) {
+      return `${Math.floor(diffInSeconds / 86400)}d ago`
+    } else {
+      return date.toLocaleDateString()
+    }
+  }
+
+  // Video Card Component
+  const VideoCard = ({ video }: { video: Video }) => (
+    <div className="group overflow-hidden rounded-lg border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+      <div className="aspect-video relative bg-muted overflow-hidden">
+        <Image
+          src={video.thumbnail || "/placeholder.svg?height=200&width=350"}
+          alt={video.title}
+          fill
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+        <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1 rounded">
+          {formatDuration(video.duration || 0)}
+        </div>
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+          <Button variant="secondary" size="sm" className="rounded-full">
+            <Play className="h-5 w-5 mr-1" /> Watch Now
+          </Button>
+        </div>
+      </div>
+      <div className="p-4">
+        <div className="flex gap-3">
+          <Avatar className="h-10 w-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
+            <AvatarImage src={video.owner?.avatar} alt={video.owner?.username} />
+            <AvatarFallback>{video.owner?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors duration-300">
+              {video.title}
+            </h3>
+            <p className="text-sm text-muted-foreground">{video.owner?.username}</p>
+            <p className="text-xs text-muted-foreground">
+              {formatViews(video.views)} views • {formatTimeAgo(video.createdAt)}
+            </p>
           </div>
         </div>
-      ))}
-    </>
-    );
-    
-  }
+      </div>
+    </div>
+  )
 
-
-  // Tweet/Message Card Component with enhanced interactions
-  const TweetCard = ({ tweet }) => (
+  // Tweet Card Component
+  const TweetCard = ({ tweet }: { tweet: Tweet }) => (
     <Card className="mb-4 group hover:border-primary/50 transition-colors duration-300">
       <CardContent className="pt-6">
         <div className="flex gap-3">
@@ -453,19 +583,6 @@ export default function HomePage() {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-muted-foreground hover:text-primary text-sm flex items-center gap-1 transition-colors duration-200">
-                      <Bookmark className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Save this message</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
             </div>
           </div>
         </div>
@@ -473,50 +590,18 @@ export default function HomePage() {
     </Card>
   )
 
-  // Helper functions
-  const formatDuration = (seconds) => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`
-  }
-
-  const formatViews = (views) => {
-    if (views >= 1000000) {
-      return `${(views / 1000000).toFixed(1)}M`
-    } else if (views >= 1000) {
-      return `${(views / 1000).toFixed(1)}K`
-    }
-    return views?.toString() || "0"
-  }
-
-  const formatTimeAgo = (dateString) => {
-    if (!dateString) return "Unknown time"
-
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInSeconds = Math.floor((now - date) / 1000)
-
-    if (diffInSeconds < 60) {
-      return `${diffInSeconds}s ago`
-    } else if (diffInSeconds < 3600) {
-      return `${Math.floor(diffInSeconds / 60)}m ago`
-    } else if (diffInSeconds < 86400) {
-      return `${Math.floor(diffInSeconds / 3600)}h ago`
-    } else if (diffInSeconds < 604800) {
-      return `${Math.floor(diffInSeconds / 86400)}d ago`
-    } else {
-      return date.toLocaleDateString()
-    }
-  }
-
-  // Custom Play icon for video cards
-  const Play = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M8 5.14v14l11-7-11-7z" />
-    </svg>
-  )
-
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-medium">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -538,7 +623,7 @@ export default function HomePage() {
               className="flex items-center gap-2 font-semibold hover:text-primary transition-colors duration-200"
             >
               <Home className="h-5 w-5" />
-              <span className="hidden md:inline-block">Home</span>
+              <span className="hidden md:inline-block">VideoStream</span>
             </Link>
           </div>
 
@@ -606,7 +691,7 @@ export default function HomePage() {
                         <div
                           key={notification.id}
                           className={`p-3 border-b hover:bg-muted cursor-pointer transition-colors duration-200 ${notification.read ? "" : "bg-primary/5"}`}
-                          onClick={() => handleNotificationClick(notification.id)}
+                          onClick={() => setShowNotifications(false)}
                         >
                           <p className="text-sm">{notification.content}</p>
                           <p className="text-xs text-muted-foreground mt-1">
@@ -620,29 +705,9 @@ export default function HomePage() {
                       </div>
                     )}
                   </div>
-                  <div className="p-2 border-t text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full hover:bg-primary/10 transition-colors duration-200"
-                      onClick={handleMarkAllNotificationsAsRead}
-                    >
-                      Mark all as read
-                    </Button>
-                  </div>
                 </div>
               )}
             </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="rounded-full hover:bg-primary/10 transition-colors duration-200"
-              onClick={() => router.push("/messages")}
-            >
-              <MessageSquare className="h-5 w-5" />
-              <span className="sr-only">Messages</span>
-            </Button>
 
             <Button
               variant="default"
@@ -656,8 +721,8 @@ export default function HomePage() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200">
-                  <AvatarImage src="/frontend/src/public/images/c5db6fddca613053353a5acb9276c5c8.jpg" alt="User" />
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarImage src={user.avatar} alt={user.username} />
+                  <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -667,7 +732,7 @@ export default function HomePage() {
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/channel/dashboard")}>
+                <DropdownMenuItem onClick={() => router.push("/channelDashboard/dashboard")}>
                   <Video className="mr-2 h-4 w-4" />
                   <span>My Channel</span>
                 </DropdownMenuItem>
@@ -705,19 +770,19 @@ export default function HomePage() {
                 </Link>
 
                 <Link
-                  href="/explore"
+                  href="/videos"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
                 >
-                  <Hash className="h-5 w-5" />
-                  <span className="font-medium">Explore</span>
+                  <Video className="h-5 w-5" />
+                  <span className="font-medium">Videos</span>
                 </Link>
 
                 <Link
-                  href="/trending"
+                  href="/tweets"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
                 >
-                  <TrendingUp className="h-5 w-5" />
-                  <span className="font-medium">Trending</span>
+                  <MessageSquare className="h-5 w-5" />
+                  <span className="font-medium">Tweets</span>
                 </Link>
 
                 <Link
@@ -729,32 +794,27 @@ export default function HomePage() {
                 </Link>
 
                 <Link
-                  href="/notifications"
+                  href="/likes"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
                 >
-                  <Bell className="h-5 w-5" />
-                  <span className="font-medium">Notifications</span>
-                  {unreadNotificationsCount > 0 && (
-                    <Badge variant="destructive" className="ml-auto">
-                      {unreadNotificationsCount}
-                    </Badge>
-                  )}
+                  <ThumbsUp className="h-5 w-5" />
+                  <span className="font-medium">Liked Videos</span>
                 </Link>
 
                 <Link
-                  href="/messages"
+                  href="/comments"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
                 >
                   <MessageSquare className="h-5 w-5" />
-                  <span className="font-medium">Messages</span>
+                  <span className="font-medium">Comments</span>
                 </Link>
 
                 <Link
-                  href="/profile"
+                  href="/subscriptions"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
                 >
-                  <User className="h-5 w-5" />
-                  <span className="font-medium">Profile</span>
+                  <Users className="h-5 w-5" />
+                  <span className="font-medium">Subscriptions</span>
                 </Link>
 
                 <button
@@ -766,43 +826,35 @@ export default function HomePage() {
                 </button>
               </div>
 
-              <div className="pt-4">
-                <div className="flex items-center justify-between mb-2 px-3">
-                  <h3 className="text-lg font-semibold">Subscriptions</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 hover:bg-primary/10 transition-colors duration-200"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span className="sr-only">Add subscription</span>
-                  </Button>
+              {subscriptions.length > 0 && (
+                <div className="pt-4">
+                  <div className="flex items-center justify-between mb-2 px-3">
+                    <h3 className="text-lg font-semibold">Subscriptions</h3>
+                  </div>
+                  {subscriptions.slice(0, 5).map((subscription: any, i) => (
+                    <Link
+                      key={subscription._id || i}
+                      href={`/channel/${subscription.channel?._id}`}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
+                    >
+                      <Avatar className="h-6 w-6 transition-transform duration-200 hover:scale-110">
+                        <AvatarImage src={subscription.channel?.avatar} alt={subscription.channel?.name} />
+                        <AvatarFallback>{subscription.channel?.name?.[0] || 'C'}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">{subscription.channel?.name || `Channel ${i + 1}`}</span>
+                    </Link>
+                  ))}
+                  {subscriptions.length > 5 && (
+                    <Button
+                      variant="ghost"
+                      className="w-full mt-2 text-primary hover:bg-primary/10 transition-colors duration-200"
+                      onClick={() => router.push("/subscriptions")}
+                    >
+                      Show more
+                    </Button>
+                  )}
                 </div>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Link
-                    key={i}
-                    href="/channel/view"
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
-                  >
-                    <Avatar className="h-6 w-6 transition-transform duration-200 hover:scale-110">
-                      <AvatarFallback>{String.fromCharCode(65 + i)}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">Channel {i + 1}</span>
-                    {i === 0 && (
-                      <Badge variant="secondary" className="ml-auto text-xs">
-                        Live
-                      </Badge>
-                    )}
-                  </Link>
-                ))}
-                <Button
-                  variant="ghost"
-                  className="w-full mt-2 text-primary hover:bg-primary/10 transition-colors duration-200"
-                  onClick={() => router.push("/subscriptions")}
-                >
-                  Show more
-                </Button>
-              </div>
+              )}
             </nav>
           </aside>
         )}
@@ -946,8 +998,8 @@ export default function HomePage() {
                     <form onSubmit={handleTweetSubmit}>
                       <div className="flex gap-3">
                         <Avatar className="h-10 w-10 flex-shrink-0">
-                          <AvatarImage src="/frontend/src/public/images/c5db6fddca613053353a5acb9276c5c8.jpg" alt="User" />
-                          <AvatarFallback>U</AvatarFallback>
+                          <AvatarImage src={user.avatar} alt={user.username} />
+                          <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 space-y-3">
                           <Textarea
@@ -1024,40 +1076,6 @@ export default function HomePage() {
           </Tabs>
         </main>
       </div>
-
-      {/* Add this style tag to the document head or include in your global CSS */}
-      <style jsx global>{`
-        .aspect-video {
-          position: relative;
-          width: 100%;
-          padding-top: 56.25%; /* 16:9 Aspect Ratio */
-        }
-        
-        .aspect-video > * {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-        
-        /* Add smooth transitions for all size changes */
-        .overflow-hidden {
-          transition: all 0.3s ease-in-out;
-        }
-        
-        /* Add smooth transitions for layout changes */
-        .layout-transitioning * {
-          transition: width 0.3s ease, height 0.3s ease, margin 0.3s ease, padding 0.3s ease;
-        }
-        
-        /* Ensure images maintain aspect ratio during transitions */
-        img {
-          transition: transform 0.3s ease;
-        }
-      `}</style>
     </div>
   )
 }
-

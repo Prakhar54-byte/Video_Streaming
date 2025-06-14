@@ -17,6 +17,7 @@ export default function ForgotPasswordForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setAlertMessage("")
     
     if (!email) {
       setAlertMessage("Please enter your email address")
@@ -26,10 +27,24 @@ export default function ForgotPasswordForm() {
     setIsSubmitting(true)
     
     try {
-      // In a real app, you would call your API here
-      await new Promise(resolve => setTimeout(resolve, 1500)) // Simulate API call
+      const response = await fetch("http://localhost:8000/api/v1/users/change-password",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({email})
+
+      })
+      const data = await response.json()
+
       
-      setIsSuccess(true)
+      if(!response.ok){
+        let errorText = "Failed to send reset link. Plaes try again";
+        try{
+          const data = await response.json()
+          if(data?.error) errorText = data.error
+        }catch{}
+        throw new Error(errorText)
+        
+      }
     } catch (error) {
       setAlertMessage("Failed to send reset link. Please try again.")
     } finally {
@@ -72,6 +87,7 @@ export default function ForgotPasswordForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
+                    disabled={isSubmitting}
                   />
                 </div>
               </div>

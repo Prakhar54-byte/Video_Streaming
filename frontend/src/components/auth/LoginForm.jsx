@@ -4,48 +4,92 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Mail, Lock, User, AlertCircle } from "lucide-react";
+import { Mail, Lock, User } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Checkbox } from "@/components/ui/CheckBox";
-import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { useToast } from "@/hooks/useToast";
 
 export default function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
     rememberMe: false,
   });
+
+  const [errors, setErrors] = useState({
+    username: "",
+    email: "",
+    password: "",
+  });
+
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
+    setErrors((prev) => ({ ...prev, [id]: "" })); // Clear error as user types
   };
 
   const handleCheckboxChange = (checked) => {
     setFormData((prev) => ({ ...prev, rememberMe: checked }));
   };
 
+  const validate = () => {
+    const newErrors = {
+      username: "",
+      email: "",
+      password: "",
+    };
+
+    let isValid = true;
+
+    if (!formData.username.trim()) {
+      newErrors.username = "Username is required";
+      isValid = false;
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Enter a valid email";
+      isValid = false;
+    }
+
+    if (!formData.password.trim()) {
+      newErrors.password = "Password is required";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validate()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields correctly.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", { // FRONTEND ENDPOINT
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
@@ -54,11 +98,8 @@ export default function LoginForm() {
         throw new Error(data.message || "Login failed");
       }
 
-      if (formData.rememberMe) {
-        localStorage.setItem("token", data.accessToken);
-      } else {
-        sessionStorage.setItem("token", data.accessToken);
-      }
+      const storage = formData.rememberMe ? localStorage : sessionStorage;
+      storage.setItem("token", data.accessToken);
 
       toast({
         title: "Success",
@@ -107,17 +148,9 @@ export default function LoginForm() {
             <p className="text-muted-foreground">See what is going on with your business</p>
           </div>
 
-       
-
-          <div className="relative flex items-center justify-center">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t"></span>
-            </div>
-           
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+            {/* Username */}
+            <div className="space-y-1">
               <Label htmlFor="username">Username</Label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -126,12 +159,14 @@ export default function LoginForm() {
                   placeholder="johndoe"
                   value={formData.username}
                   onChange={handleChange}
-                  className="pl-10"
+                  className={`pl-10 ${errors.username ? "border-red-500" : ""}`}
                 />
               </div>
+              {errors.username && <p className="text-sm text-red-500">{errors.username}</p>}
             </div>
 
-            <div className="space-y-2">
+            {/* Email */}
+            <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -141,12 +176,14 @@ export default function LoginForm() {
                   placeholder="mail@example.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className="pl-10"
+                  className={`pl-10 ${errors.email ? "border-red-500" : ""}`}
                 />
               </div>
+              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
             </div>
 
-            <div className="space-y-2">
+            {/* Password */}
+            <div className="space-y-1">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -156,11 +193,13 @@ export default function LoginForm() {
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={handleChange}
-                  className="pl-10"
+                  className={`pl-10 ${errors.password ? "border-red-500" : ""}`}
                 />
               </div>
+              {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
             </div>
 
+            {/* Remember Me + Forgot Password */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -180,11 +219,13 @@ export default function LoginForm() {
               </Link>
             </div>
 
+            {/* Submit Button */}
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
 
+          {/* Register Prompt */}
           <div className="text-center text-sm">
             Don&apos;t have an account?{" "}
             <Link href="/auth/register" className="font-medium text-primary hover:underline">
