@@ -31,9 +31,10 @@
     "next-themes": "^0.4.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-dropdown-menu": "^0.0.2",
-    "react-notification-alert": "^0.0.13",
-    "reactstrap": "^9.2.3",
+    "react-dropzone": "^14.2.3",
+    "react-intersection-observer": "^9.8.1",
+    "react-player": "^2.14.1",
+    "react-virtualized": "^9.22.5",
     "tailwind-merge": "^3.0.2",
     "video.js": "^8.22.0"
   },
