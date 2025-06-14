@@ -1,58 +1,100 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
+
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080/api/v1"
 
 export async function GET(request: Request) {
   try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
+    
+    // Get tweets from the backend
+    const url = userId 
+      ? `${BACKEND_URL}/tweets/user/${userId}` 
+      : `${BACKEND_URL}/tweets`
+    
+    const response = await fetch(url, {
+      headers: {
+        "Authorization": `Bearer ${session.user.accessToken}`,
+        "Content-Type": "application/json"
+      }
+    })
 
-    // Generate random tweets/messages
-    const tweets = Array.from({ length: 10 }, (_, i) => ({
-      _id: `tweet_${i + 1}`,
-      content: `This is message ${i + 1} from the user. #videosharing #content`,
-      owner: {
-        _id: userId || `user_${Math.floor(Math.random() * 10) + 1}`,
-        username: `user${Math.floor(Math.random() * 10) + 1}`,
-        fullName: `User ${Math.floor(Math.random() * 10) + 1}`,
-        avatar: `/placeholder.svg?height=40&width=40&text=U${Math.floor(Math.random() * 10) + 1}`,
-      },
-      likes: Math.floor(Math.random() * 100),
-      createdAt: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
-    }))
+    if (!response.ok) {
+      const errorData = await response.json()
+      return NextResponse.json(
+        { message: errorData.message || "Failed to fetch tweets" },
+        { status: response.status }
+      )
+    }
 
-    return NextResponse.json({ tweets })
+    const data = await response.json()
+    return NextResponse.json(data)
   } catch (error) {
     console.error("Error fetching tweets:", error)
-    return NextResponse.json({ message: "Failed to fetch tweets" }, { status: 500 })
+    return NextResponse.json(
+      { message: "Failed to fetch tweets" }, 
+      { status: 500 }
+    )
   }
 }
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session || !session.user) {
+      return NextResponse.json(
+        { message: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
     const body = await request.json()
     const { content } = body
 
     if (!content || content.trim() === "") {
-      return NextResponse.json({ message: "Content is required" }, { status: 400 })
+      return NextResponse.json(
+        { message: "Content is required" },
+        { status: 400 }
+      )
     }
 
-    // Simulate creating a tweet/message
-    const tweet = {
-      _id: `tweet_${Math.random().toString(36).substring(2, 10)}`,
-      content,
-      owner: {
-        _id: "user_demo",
-        username: "demo_user",
-        fullName: "Demo User",
-        avatar: "/placeholder.svg?height=40&width=40&text=U",
+    // Send the tweet to the backend API
+    const response = await fetch(`${BACKEND_URL}/tweets`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${session.user.accessToken}`,
+        "Content-Type": "application/json"
       },
-      likes: 0,
-      createdAt: new Date().toISOString(),
+      body: JSON.stringify({ content })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      return NextResponse.json(
+        { message: errorData.message || "Failed to create tweet" },
+        { status: response.status }
+      )
     }
 
-    return NextResponse.json({ tweet })
+    const data = await response.json()
+    return NextResponse.json(data)
   } catch (error) {
     console.error("Error creating tweet:", error)
-    return NextResponse.json({ message: "Failed to create tweet" }, { status: 500 })
+    return NextResponse.json(
+      { message: "Failed to create tweet" }, 
+      { status: 500 }
+    )
   }
 }
-

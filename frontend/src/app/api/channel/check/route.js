@@ -1,4 +1,8 @@
+// import { arEG } from "date-fns/locale";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth"; // Adjust the path as necessary
+import prisma from "@/lib/prisma"
 
 export async function GET() {
   try {
@@ -6,7 +10,25 @@ export async function GET() {
     // This is a mock implementation for demonstration purposes
 
     // Simulate a random response (50% chance of having a channel)
-    const hasChannel = Math.random() > 0.5;
+
+    const session =  await getServerSession(authOptions)
+
+    if(!session || !session.user ){
+      return NextResponse.json(
+        {
+          hasChannel: false,
+          message: "User not authenticated",
+        },
+        { status: 401 }
+      )
+    }
+
+    const userChannel = await prisma.channel.findUnique({
+      where: {
+        userId: session.user.id, // Assuming the session contains user ID
+      },
+    })
+    const hasChannel = Boolean(userChannel)
 
     return NextResponse.json({
       hasChannel,

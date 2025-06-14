@@ -84,7 +84,7 @@ export default function LoginForm() {
           <div className="absolute inset-0 flex flex-col justify-center items-center">
             <div className="w-4/5 h-4/5 relative">
               <Image
-                src="/login/rectangle.png"
+                src="/login/stock-vector-dragon-sun-mascot-logo.jpeg"
                 width={430}
                 height={500}
                 alt="Login illustration"
@@ -107,18 +107,13 @@ export default function LoginForm() {
             <p className="text-muted-foreground">See what is going on with your business</p>
           </div>
 
-          <Button variant="outline" className="w-full flex items-center gap-2 h-12">
-            <Image src="/login/image-2.png" alt="Google logo" width={25} height={25} />
-            <span className="font-medium">Continue with Google</span>
-          </Button>
+       
 
           <div className="relative flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t"></span>
             </div>
-            <span className="relative bg-white px-3 text-sm text-muted-foreground">
-              or Sign in with Email
-            </span>
+           
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

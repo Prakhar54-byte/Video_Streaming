@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+// TODO : this folder also
 
 export async function GET(request: Request) {
   try {
