@@ -1,11 +1,10 @@
-// import { NextResponse } from "next/response";
 import { NextResponse } from "next/server";
 
-export async function POST(request) {
+export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const response = await fetch("http://localhost:8000/api/v1/users/login", { // BACKEND ENDPOINT
+    const response = await fetch("http://localhost:8000/api/v1/users/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

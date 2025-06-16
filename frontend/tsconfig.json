@@ -54,7 +54,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-, "src/app/api/auth/login/route.js", "src/app/api/auth/resigster/route.js"  ],
+, "src/app/api/auth/login/route.ts", "src/app/api/auth/resigster/route.js"  ],
   "exclude": [
     "node_modules"
   ]

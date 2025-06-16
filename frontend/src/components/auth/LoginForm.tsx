@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { Mail, Lock, User } from "lucide-react";
 
@@ -31,13 +30,13 @@ export default function LoginForm() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
     setErrors((prev) => ({ ...prev, [id]: "" })); // Clear error as user types
   };
 
-  const handleCheckboxChange = (checked) => {
+  const handleCheckboxChange = (checked: boolean) => {
     setFormData((prev) => ({ ...prev, rememberMe: checked }));
   };
 
@@ -72,7 +71,7 @@ export default function LoginForm() {
     return isValid;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) {
       toast({
@@ -86,10 +85,15 @@ export default function LoginForm() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("http://localhost:8000/api/v1/users/login", {
         method: "POST",
+        credentials: "include", // Include cookies for session management
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }),
       });
 
       const data = await response.json();
@@ -98,8 +102,7 @@ export default function LoginForm() {
         throw new Error(data.message || "Login failed");
       }
 
-      const storage = formData.rememberMe ? localStorage : sessionStorage;
-      storage.setItem("token", data.accessToken);
+      
 
       toast({
         title: "Success",
@@ -107,7 +110,7 @@ export default function LoginForm() {
       });
 
       router.push("/");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to login",
@@ -119,28 +122,24 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="flex w-full max-w-6xl mx-auto rounded-xl overflow-hidden shadow-lg">
-      <div className="hidden md:block w-1/2 bg-primary/10 relative p-8">
-        <div className="relative h-full w-full">
-          <div className="absolute inset-0 flex flex-col justify-center items-center">
-            <div className="w-4/5 h-4/5 relative">
-              <Image
-                src="/login/stock-vector-dragon-sun-mascot-logo.jpeg"
-                width={430}
-                height={500}
-                alt="Login illustration"
-                className="object-contain"
-              />
-              <div className="absolute bottom-10 left-0 right-0 text-center bg-white/90 py-4 px-6 rounded-lg shadow-md">
-                <p className="text-primary font-semibold">
-                  Start for free and get attractive offers from the community
-                </p>
-              </div>
+    <div className="flex w-full max-w-6xl mx-auto rounded-xl overflow-hidden shadow-lg bg-white">
+      {/* Left Illustration */}
+      <div className="hidden md:block w-1/2 bg-gradient-to-br from-blue-50 to-indigo-100 relative p-8">
+        <div className="relative h-full w-full flex flex-col justify-center items-center">
+          <div className="w-80 h-80 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-8">
+            <div className="w-60 h-60 bg-white rounded-full flex items-center justify-center">
+              <User className="w-32 h-32 text-blue-500" />
             </div>
+          </div>
+          <div className="text-center bg-white/90 py-4 px-6 rounded-lg shadow-md">
+            <p className="text-primary font-semibold">
+              Start for free and get attractive offers from the community
+            </p>
           </div>
         </div>
       </div>
 
+      {/* Right Login Section */}
       <div className="w-full md:w-1/2 bg-white p-8 md:p-12">
         <div className="max-w-md mx-auto space-y-6">
           <div className="space-y-2 text-center md:text-left">
@@ -212,7 +211,7 @@ export default function LoginForm() {
                 </Label>
               </div>
               <Link
-                href="/auth/forgot-password"
+                href="/auth/change-password"
                 className="text-sm font-medium text-primary hover:underline"
               >
                 Forgot Password?
@@ -221,8 +220,13 @@ export default function LoginForm() {
 
             {/* Submit Button */}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"}
+              {isLoading ? "Logging in..." : "Login"} 
             </Button>
+
+            {/* console.log("LoginForm rendered"); */}
+            
+
+            
           </form>
 
           {/* Register Prompt */}

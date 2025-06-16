@@ -31,6 +31,7 @@ import {
   ThumbsUp,
   Upload,
   MoreVertical,
+  Users,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/Button"
@@ -98,6 +99,7 @@ export default function HomePage() {
   
   // State management
   const [user, setUser] = useState<User | null>(null)
+  const[userLoaded , setUserLoaded] = useState(false)
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const [videos, setVideos] = useState<Video[]>([])
   const [filteredVideos, setFilteredVideos] = useState<Video[]>([])
@@ -117,27 +119,29 @@ export default function HomePage() {
   const [sortOption, setSortOption] = useState("recent")
   const [subscriptions, setSubscriptions] = useState([])
 
+  console.log("This is home page");
+  
+  const calledRef = useRef(false)
+  
+
   // Check authentication and fetch initial data
   useEffect(() => {
     const checkAuth = async () => {
+      // let called = false
+      if(calledRef.current) return;
+      calledRef.current = true
       try {
-        const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-        if (!token) {
-          router.push("/auth/login")
-          return
-        }
-
+      
         // Verify token and get user data
-        const userResponse = await fetch("http://localhost:8000/api/v1/users/current-user", {
+        const userResponse = await  fetch("http://localhost:8000/api/v1/users/current-user", {
+          method: "GET",
+          credentials: "include",
           headers: {
-            "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"
           }
         })
 
         if (!userResponse.ok) {
-          localStorage.removeItem("token")
-          sessionStorage.removeItem("token")
           router.push("/auth/login")
           return
         }
@@ -147,11 +151,14 @@ export default function HomePage() {
       } catch (error) {
         console.error("Auth check failed:", error)
         router.push("/auth/login")
+      }finally{
+        setUserLoaded(true)
       }
     }
+console.log("Checking authentication...");
 
     checkAuth()
-  }, [router])
+  }, [])
 
   // Fetch videos and tweets
   useEffect(() => {
@@ -214,8 +221,14 @@ export default function HomePage() {
       }
     }
 
-    fetchData()
-  }, [user, toast])
+    if(userLoaded && user){
+      fetchData()
+    }
+
+    console.log("Fetching data for user:", user?.username);
+    
+
+  }, [user, toast,userLoaded])
 
   // Toggle sidebar visibility
   const toggleSidebar = () => {
@@ -592,6 +605,9 @@ export default function HomePage() {
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length
 
+  console.log("This is User:", user);
+  
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -623,7 +639,7 @@ export default function HomePage() {
               className="flex items-center gap-2 font-semibold hover:text-primary transition-colors duration-200"
             >
               <Home className="h-5 w-5" />
-              <span className="hidden md:inline-block">VideoStream</span>
+              <span className="hidden md:inline-block">Spark</span>
             </Link>
           </div>
 
@@ -976,7 +992,7 @@ export default function HomePage() {
                     <Search className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-lg font-medium mb-2">No videos found</h3>
-                  <p className="text-muted-foreground mb-4">We couldn't find any videos matching your search.</p>
+                  <p className="text-muted-foreground mb-4">We couldn&apos;t find any videos matching your search.</p>
                   <Button
                     variant="outline"
                     onClick={() => {
