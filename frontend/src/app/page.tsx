@@ -118,37 +118,54 @@ export default function HomePage() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [sortOption, setSortOption] = useState("recent")
   const [subscriptions, setSubscriptions] = useState([])
+  const hasCheckedAuth = useRef(false)
 
   console.log("This is home page");
   
-  const calledRef = useRef(false)
+  // const calledRef = useRef(false)
   
 
   // Check authentication and fetch initial data
+
+  const requewstController = useRef<AbortController | null>(null)
   useEffect(() => {
     const checkAuth = async () => {
       // let called = false
-      if(calledRef.current) return;
-      calledRef.current = true
+      requewstController.current = new AbortController()
+
+      if( hasCheckedAuth.current) return
+      hasCheckedAuth.current = true
       try {
-      
+
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      const signal = requewstController.current?.signal
+      // Simulate loading delay
         // Verify token and get user data
         const userResponse = await  fetch("http://localhost:8000/api/v1/users/current-user", {
           method: "GET",
           credentials: "include",
           headers: {
             "Content-Type": "application/json"
-          }
+          },
+          signal: signal
         })
 
         if (!userResponse.ok) {
           router.push("/auth/login")
           return
         }
+        console.log("Auth check response:", userResponse.status);
+        
 
         const userData = await userResponse.json()
         setUser(userData.data)
+        
+
       } catch (error) {
+        if(error.name === 'AbortError') {
+          console.log("Request was aborted");
+          return
+        }
         console.error("Auth check failed:", error)
         router.push("/auth/login")
       }finally{
@@ -158,6 +175,15 @@ export default function HomePage() {
 console.log("Checking authentication...");
 
     checkAuth()
+
+    return ()=>{
+      hasCheckedAuth.current = false
+      if(requewstController.current) {
+        requewstController.current.abort()
+        requewstController.current = null
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Fetch videos and tweets
@@ -605,7 +631,7 @@ console.log("Checking authentication...");
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length
 
-  console.log("This is User:", user);
+  // console.log("This is User:", user);
   
 
   if (!user) {

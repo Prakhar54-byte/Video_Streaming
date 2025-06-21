@@ -1,49 +1,42 @@
-import { NextResponse } from "next/server"
-// TODO : check  whole channel folder 
+import { NextResponse } from "next/server";
+
 export async function POST(request: Request) {
   try {
-    // 1. Get the user from the session
-    // 2. Parse the form data
-    // 3. Upload the image to storage
-    // 4. Create the channel in the database
-    const authHeader = request.headers.get("Authorization")
-    if (!authHeader) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 })
-    }
+    const body = await request.json();
+    const { name, description } = body;
+    // Create FormData for backend
+    
 
-    const formData = await request.formData()
-    const name  = formData.get("name")?.toString().trim()
-    const description = formData.get("description")?.toString().trim()
-    const avatar = formData.get("avatar") as File | null 
-    const email = formData.get("email")?.toString().trim()
-
-    const backendFormData = new FormData()
-    backendFormData.append("name", name || "")
-    backendFormData.append("description", description || "")
-    backendFormData.append("email", email || "")
-    if (avatar) {
-      backendFormData.append("avatar", avatar)
-    }
-
-    const res = await fetch("http://localhost:8000/api/v1/subscriptions",{
+    const response = await fetch("http://localhost:8000/api/v1/channels/create", {
       method: "POST",
       headers: {
-        "Authorization": authHeader,
+        "Cookie": request.headers.get("cookie") || "",
+        "Content-Type": "application/json",
       },
-      body: backendFormData,
-    })
+      body: JSON.stringify({
+        name  ,
+        description
+      })
+    });
 
-    if(!res.ok) {
-      const errorData = await res.json()
-      return NextResponse.json({ message: errorData.message || "Failed to create channel" }, { status: res.status })
-    }
-    const data = await res.json()
-    return NextResponse.json({ message: "Channel created successfully", channel: data }, { status: 201 })
-    // This is a mock implementation for demonstration purposes
+    console.log("response in create channel:", response);
     
+
+    if (!response.ok) {
+      const error = await response.json();
+      return NextResponse.json(
+        { message: error.message || "Channel creation failed" },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    console.error("Error creating channel:", error)
-    return NextResponse.json({ message: "Failed to create channel" }, { status: 500 })
+    console.error("Channel creation error:", error);
+    return NextResponse.json(
+      { message: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
-

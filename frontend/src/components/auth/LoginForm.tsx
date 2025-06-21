@@ -73,6 +73,7 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(isLoading) return; // Prevent multiple submissions
     if (!validate()) {
       toast({
         title: "Validation Error",
@@ -104,10 +105,7 @@ export default function LoginForm() {
 
       
 
-      toast({
-        title: "Success",
-        description: "Logged in successfully",
-      });
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
 
       router.push("/");
     } catch (error: any) {

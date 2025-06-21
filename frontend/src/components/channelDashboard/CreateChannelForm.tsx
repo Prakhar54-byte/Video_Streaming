@@ -19,7 +19,6 @@ export default function CreateChannelForm() {
   const [channelData, setChannelData] = useState({
     name: "",
     description: "",
-    email: "",
     avatar: null as File | null,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -84,47 +83,36 @@ export default function CreateChannelForm() {
       return;
     }
 
-    if (!channelData.email.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter an email address",
-        variant: "destructive"
-      });
-      return;
-    }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(channelData.email)) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid email address",
-        variant: "destructive"
-      });
-      return;
-    }
+ 
 
     setIsSubmitting(true);
 
-  try{
+    try {
+      // Get token from storage
+     
+      
 
       const formData = new FormData();
       formData.append("name", channelData.name);
       formData.append("description", channelData.description);
-      formData.append("email", channelData.email);
       if (channelData.avatar) {
         formData.append("avatar", channelData.avatar);
       }
-
-      const response = await fetch(`http://localhost:8000/api/v1/subscriptions/c/${channelId}`, {
+for (let pair of formData.entries()) {
+  console.log(`${pair[0]}:`, pair[1]);
+}
+      
+      const response = await fetch("http://localhost:8000/api/v1/channels/create", {
         method: "POST",
-        credentials: "include",
+          credentials: "include",
         body: formData,
       });
 
-    
-
       const data = await response.json();
+
+      console.log("Response from channel creation:", data);
+      
 
       if (response.ok) {
         toast({
@@ -146,7 +134,6 @@ export default function CreateChannelForm() {
         description: "Network error. Please try again.",
         variant: "destructive"
       });
-      // router.push("/auth/login")
     } finally {
       setIsSubmitting(false);
     }
@@ -227,21 +214,7 @@ export default function CreateChannelForm() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                      Email Address *
-                    </Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={channelData.email}
-                      onChange={handleInputChange}
-                      placeholder="channel@example.com"
-                      required
-                      className="h-12 border-gray-300 focus:border-primary focus:ring-primary"
-                    />
-                  </div>
+                  
 
                   <div className="space-y-2">
                     <Label htmlFor="description" className="text-sm font-medium text-gray-700">
