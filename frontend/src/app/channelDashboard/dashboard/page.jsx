@@ -13,8 +13,8 @@ import { Input } from "@/components/ui/Input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card"
 import { Label } from "@/components/ui/Label"
-import { Textarea } from "@/components/ui/Textarea"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tabs"
+import { Textarea } from "@/components/ui/TextArea"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/Tab"
 
 export default function ChannelDashboard() {
   const router = useRouter()
