@@ -102,10 +102,10 @@ export default function ChannelDashboard() {
   useEffect(() => {
     const fetchChannelData = async () => {
       try {
-       
+      
 
         // Fetch current user data to get channel info
-        const userResponse = await fetch("http://localhost:8000/api/v1/users/current-user", {
+        const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/current-user`, {
           headers: {
             "Content-Type": "application/json"
           },
@@ -126,21 +126,51 @@ export default function ChannelDashboard() {
             videosCount: 12,
             createdAt: userData.data.createdAt
           });
+          const channelId = userData.data._id;
+
+
+          // Fetch channel details
+          const channelResponse = await fetch(`${process.env.NEXTAUTH_SECRET}/channels/${channelId}`, {
+            headers: {
+              "Content-Type": "application/json"
+            },
+            credentials: "include",
+          }
+          )
+
+          if(channelResponse.ok) {
+            const channelData = await channelResponse.json();
+            setChannel(prev => ({
+              ...prev,
+              coverImage: channelData.data.coverImage || "/default-cover.jpg",  
+            }));
+            if(!channelData.data || channelData.data.length === 0) {
+              toast({
+                title: "No Channel Found",
+                description: "You need to create a channel first.",
+                variant: "destructive",
+              });
+              router.push("/channelDashboard/create");
+            }
+          } else {
+            console.error("Failed to fetch channel details");
+          }
+
+          
+          // Fetch user's videos
+          const videosResponse = await fetch(`http://localhost:8000/api/v1/videos?channelId=${channelId}page=1&limit=10&sortBy=createdAt&sortType=-1`, {
+            headers: {
+              "Content-Type": "application/json"
+            },
+            credentials: "include",
+          });
+          
+          if (videosResponse.ok) {
+            const videosData = await videosResponse.json();
+            setVideos(videosData.data.videos || []);
+          }
+          
         }
-
-        // Fetch user's videos
-        const videosResponse = await fetch("http://localhost:8000/api/v1/videos?page=1&limit=10&sortBy=createdAt&sortType=-1", {
-          headers: {
-            "Content-Type": "application/json"
-          },
-          credentials: "include",
-        });
-
-        if (videosResponse.ok) {
-          const videosData = await videosResponse.json();
-          setVideos(videosData.data.videos || []);
-        }
-
         // Calculate stats from videos
         const totalViews = videos.reduce((sum, video) => sum + video.views, 0);
         const totalLikes = videos.reduce((sum, video) => sum + video.likes, 0);
@@ -148,10 +178,10 @@ export default function ChannelDashboard() {
 
         setStats({
           totalVideos: videos.length,
-          totalViews: totalViews || 15420,
-          totalSubscribers: 1250,
-          totalLikes: totalLikes || 890,
-          totalComments: totalComments || 234,
+          totalViews: totalViews ,
+          totalSubscribers: channel?.subscribersCount || 0,
+          totalLikes: totalLikes ,
+          totalComments: totalComments ,
           watchTime: 45600, // in minutes
           revenue: 1250.50,
           growth: {
