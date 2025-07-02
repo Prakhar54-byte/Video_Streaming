@@ -32,6 +32,21 @@ import {
   Upload,
   MoreVertical,
   Users,
+  Repeat,
+  Edit,
+  Trash2,
+  Send,
+  Zap,
+  Star,
+  Globe,
+  Lock,
+  Calendar,
+  MapPin,
+  Link as LinkIcon,
+  Verified,
+  Flame,
+  Award,
+  Crown,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/Button"
@@ -67,6 +82,9 @@ interface Video {
   }
   createdAt: string
   isPublished: boolean
+  likes?: number
+  category?: string
+  tags?: string[]
 }
 
 interface Tweet {
@@ -79,8 +97,12 @@ interface Tweet {
     avatar: string
   }
   createdAt: string
-  likes: number
+  updatedAt: string
+  likes?: number
   liked?: boolean
+  retweets?: number
+  retweeted?: boolean
+  replies?: number
 }
 
 interface User {
@@ -90,6 +112,14 @@ interface User {
   email: string
   avatar: string
   coverImage?: string
+  subscribersCount?: number
+  isVerified?: boolean
+}
+
+interface TrendingTopic {
+  tag: string
+  count: number
+  category: string
 }
 
 export default function HomePage() {
@@ -99,7 +129,7 @@ export default function HomePage() {
   
   // State management
   const [user, setUser] = useState<User | null>(null)
-  const[userLoaded , setUserLoaded] = useState(false)
+  const [userLoaded, setUserLoaded] = useState(false)
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const [videos, setVideos] = useState<Video[]>([])
   const [filteredVideos, setFilteredVideos] = useState<Video[]>([])
@@ -111,16 +141,30 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
   const [notifications, setNotifications] = useState([
-    { id: 1, content: "Your video reached 1,000 views!", read: false },
-    { id: 2, content: "Channel XYZ subscribed to you", read: false },
-    { id: 3, content: "New comment on your video", read: true },
+    { id: 1, content: "Your video reached 1,000 views!", read: false, type: "milestone" },
+    { id: 2, content: "Channel XYZ subscribed to you", read: false, type: "subscription" },
+    { id: 3, content: "New comment on your video", read: true, type: "comment" },
+    { id: 4, content: "Your video is trending!", read: false, type: "trending" },
   ])
   const [showNotifications, setShowNotifications] = useState(false)
   const [sortOption, setSortOption] = useState("recent")
   const [subscriptions, setSubscriptions] = useState([])
+  const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([
+    { tag: "WebDevelopment", count: 12500, category: "Technology" },
+    { tag: "NextJS", count: 8900, category: "Programming" },
+    { tag: "VideoStreaming", count: 6700, category: "Technology" },
+    { tag: "ReactJS", count: 15200, category: "Programming" },
+    { tag: "AI", count: 23400, category: "Technology" },
+  ])
+  const [editingTweet, setEditingTweet] = useState<string | null>(null)
+  const [editContent, setEditContent] = useState("")
+  const [videoCategories] = useState([
+    "All", "Technology", "Gaming", "Music", "Education", "Entertainment", 
+    "Sports", "News", "Comedy", "Travel", "Cooking", "Fashion"
+  ])
+  const [selectedCategory, setSelectedCategory] = useState("All")
 
   console.log("This is home page");
-  
 
   // Check authentication and fetch initial data
   useEffect(() => {
@@ -141,7 +185,7 @@ export default function HomePage() {
       } catch (error) {
         console.error("Auth check failed:", error)
         router.push("/auth/login")
-      }finally{
+      } finally {
         setUserLoaded(true)
       }
     }
@@ -167,7 +211,7 @@ export default function HomePage() {
           setFilteredVideos(videosData.data.videos || [])
         }
 
-        // Fetch tweets
+        // Fetch tweets using the correct backend route
         const tweetsResponse = await fetch("http://localhost:8000/api/v1/tweets", {
           credentials: "include"
         })
@@ -199,14 +243,13 @@ export default function HomePage() {
       }
     }
 
-    if(userLoaded && user){
+    if (userLoaded && user) {
       fetchData()
     }
 
     console.log("Fetching data for user:", user?.username);
-    
 
-  }, [user, toast,userLoaded])
+  }, [user, toast, userLoaded])
 
   // Toggle sidebar visibility
   const toggleSidebar = () => {
@@ -248,13 +291,13 @@ export default function HomePage() {
   const handleCreateClick = async () => {
     try {
       // Check if user has a channel
-      const channelResponse = await fetch("/api/channel/dashboard", {
+      const channelResponse = await fetch("http://localhost:8000/api/v1/channels/user/me", {
         credentials: "include"
       })
 
       if (channelResponse.ok) {
         const data = await channelResponse.json()
-        if (data.primaryChannel) {
+        if (data.data && data.data.length > 0) {
           router.push("/channelDashboard/dashboard")
         } else {
           router.push("/channelDashboard/create")
@@ -325,6 +368,83 @@ export default function HomePage() {
     }
   }
 
+  // Handle tweet update
+  const handleTweetUpdate = async (tweetId: string, newContent: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/v1/tweets/${tweetId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ content: newContent }),
+        credentials: "include"
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setTweets(prevTweets =>
+          prevTweets.map(tweet =>
+            tweet._id === tweetId ? { ...tweet, content: newContent, updatedAt: new Date().toISOString() } : tweet
+          )
+        )
+        setEditingTweet(null)
+        setEditContent("")
+        toast({
+          title: "Success",
+          description: "Message updated successfully",
+        })
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Error",
+          description: "Error updating message: " + error.message,
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error updating tweet:", error)
+      toast({
+        title: "Error",
+        description: "Error updating message. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Handle tweet deletion
+  const handleTweetDelete = async (tweetId: string) => {
+    if (!window.confirm("Are you sure you want to delete this message?")) return
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/v1/tweets/${tweetId}`, {
+        method: "DELETE",
+        credentials: "include"
+      })
+
+      if (response.ok) {
+        setTweets(prevTweets => prevTweets.filter(tweet => tweet._id !== tweetId))
+        toast({
+          title: "Success",
+          description: "Message deleted successfully",
+        })
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Error",
+          description: "Error deleting message: " + error.message,
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error deleting tweet:", error)
+      toast({
+        title: "Error",
+        description: "Error deleting message. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   // Handle search functionality
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -381,7 +501,7 @@ export default function HomePage() {
         setTweets(prevTweets =>
           prevTweets.map(tweet =>
             tweet._id === tweetId
-              ? { ...tweet, likes: tweet.liked ? tweet.likes - 1 : tweet.likes + 1, liked: !tweet.liked }
+              ? { ...tweet, likes: tweet.liked ? (tweet.likes || 0) - 1 : (tweet.likes || 0) + 1, liked: !tweet.liked }
               : tweet
           )
         )
@@ -393,6 +513,16 @@ export default function HomePage() {
       }
     } catch (error) {
       console.error("Error liking tweet:", error)
+    }
+  }
+
+  // Handle video category filter
+  const handleCategoryFilter = (category: string) => {
+    setSelectedCategory(category)
+    if (category === "All") {
+      setFilteredVideos(videos)
+    } else {
+      setFilteredVideos(videos.filter(video => video.category === category))
     }
   }
 
@@ -408,6 +538,9 @@ export default function HomePage() {
         break
       case "popular":
         sorted.sort((a, b) => b.views - a.views)
+        break
+      case "trending":
+        sorted.sort((a, b) => (b.likes || 0) - (a.likes || 0))
         break
       case "oldest":
         sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
@@ -455,9 +588,9 @@ export default function HomePage() {
     }
   }
 
-  // Video Card Component
+  // Enhanced Video Card Component
   const VideoCard = ({ video }: { video: Video }) => (
-    <div className="group overflow-hidden rounded-lg border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+    <div className="group overflow-hidden rounded-lg border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <div className="aspect-video relative bg-muted overflow-hidden">
         <Image
           src={video.thumbnail || "/placeholder.svg?height=200&width=350"}
@@ -465,11 +598,18 @@ export default function HomePage() {
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1 rounded">
+        <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded-md">
           {formatDuration(video.duration || 0)}
         </div>
+        <div className="absolute top-2 left-2">
+          {video.category && (
+            <Badge variant="secondary" className="text-xs bg-black/60 text-white">
+              {video.category}
+            </Badge>
+          )}
+        </div>
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <Button variant="secondary" size="sm" className="rounded-full">
+          <Button variant="secondary" size="sm" className="rounded-full shadow-lg">
             <Play className="h-5 w-5 mr-1" /> Watch Now
           </Button>
         </div>
@@ -480,23 +620,38 @@ export default function HomePage() {
             <AvatarImage src={video.owner?.avatar} alt={video.owner?.username} />
             <AvatarFallback>{video.owner?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
           </Avatar>
-          <div>
+          <div className="flex-1">
             <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors duration-300">
               {video.title}
             </h3>
-            <p className="text-sm text-muted-foreground">{video.owner?.username}</p>
-            <p className="text-xs text-muted-foreground">
-              {formatViews(video.views)} views • {formatTimeAgo(video.createdAt)}
-            </p>
+            <div className="flex items-center gap-1 mt-1">
+              <p className="text-sm text-muted-foreground">{video.owner?.username}</p>
+              {video.owner?.isVerified && (
+                <Verified className="h-3 w-3 text-blue-500" />
+              )}
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+              <span className="flex items-center gap-1">
+                <Eye className="h-3 w-3" />
+                {formatViews(video.views)}
+              </span>
+              {video.likes && (
+                <span className="flex items-center gap-1">
+                  <Heart className="h-3 w-3" />
+                  {formatViews(video.likes)}
+                </span>
+              )}
+              <span>{formatTimeAgo(video.createdAt)}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   )
 
-  // Tweet Card Component
+  // Enhanced Tweet Card Component
   const TweetCard = ({ tweet }: { tweet: Tweet }) => (
-    <Card className="mb-4 group hover:border-primary/50 transition-colors duration-300">
+    <Card className="mb-4 group hover:border-primary/50 transition-all duration-300 hover:shadow-md">
       <CardContent className="pt-6">
         <div className="flex gap-3">
           <Avatar className="h-10 w-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
@@ -504,24 +659,101 @@ export default function HomePage() {
             <AvatarFallback>{tweet.owner?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <p className="font-semibold group-hover:text-primary transition-colors duration-300">
-                {tweet.owner?.fullName}
-              </p>
-              <p className="text-sm text-muted-foreground">@{tweet.owner?.username}</p>
-              <p className="text-xs text-muted-foreground">• {formatTimeAgo(tweet.createdAt)}</p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <p className="font-semibold group-hover:text-primary transition-colors duration-300">
+                  {tweet.owner?.fullName}
+                </p>
+                <p className="text-sm text-muted-foreground">@{tweet.owner?.username}</p>
+                <p className="text-xs text-muted-foreground">• {formatTimeAgo(tweet.createdAt)}</p>
+                {tweet.updatedAt !== tweet.createdAt && (
+                  <Badge variant="outline" className="text-xs">
+                    edited
+                  </Badge>
+                )}
+              </div>
+              {tweet.owner?._id === user?._id && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => {
+                      setEditingTweet(tweet._id)
+                      setEditContent(tweet.content)
+                    }}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleTweetDelete(tweet._id)}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
-            <p className="mt-1">{tweet.content}</p>
-            <div className="flex gap-4 mt-3">
+            
+            {editingTweet === tweet._id ? (
+              <div className="mt-2 space-y-2">
+                <Textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="resize-none"
+                  rows={3}
+                />
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    onClick={() => handleTweetUpdate(tweet._id, editContent)}
+                    disabled={!editContent.trim()}
+                  >
+                    Save
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={() => {
+                      setEditingTweet(null)
+                      setEditContent("")
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-2 whitespace-pre-wrap">{tweet.content}</p>
+            )}
+            
+            <div className="flex gap-6 mt-4">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button className="text-muted-foreground hover:text-primary text-sm flex items-center gap-1 transition-colors duration-200">
-                      <MessageSquare className="h-4 w-4" /> {Math.floor(Math.random() * 10)}
+                    <button className="text-muted-foreground hover:text-blue-500 text-sm flex items-center gap-1 transition-colors duration-200">
+                      <MessageSquare className="h-4 w-4" /> {tweet.replies || 0}
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Reply to message</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="text-muted-foreground hover:text-green-500 text-sm flex items-center gap-1 transition-colors duration-200">
+                      <Repeat className="h-4 w-4" /> {tweet.retweets || 0}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Retweet</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -564,7 +796,6 @@ export default function HomePage() {
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length
 
   console.log("This is User:", user);
-  
 
   if (!user) {
     return (
@@ -579,8 +810,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-background">
+      {/* Enhanced Header */}
+      <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2 md:gap-4">
             <Button
@@ -596,8 +827,13 @@ export default function HomePage() {
               href="/"
               className="flex items-center gap-2 font-semibold hover:text-primary transition-colors duration-200"
             >
-              <Home className="h-5 w-5" />
-              <span className="hidden md:inline-block">Spark</span>
+              <div className="relative">
+                <Home className="h-6 w-6" />
+                <Zap className="h-3 w-3 absolute -top-1 -right-1 text-yellow-500" />
+              </div>
+              <span className="hidden md:inline-block bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent font-bold">
+                Spark
+              </span>
             </Link>
           </div>
 
@@ -605,7 +841,7 @@ export default function HomePage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               ref={searchInputRef}
-              placeholder="Search videos"
+              placeholder="Search videos, creators, topics..."
               className="w-full rounded-full bg-muted pl-10 pr-16 md:w-60 lg:w-80 focus-visible:ring-primary"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -646,7 +882,7 @@ export default function HomePage() {
                 {unreadNotificationsCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse"
                   >
                     {unreadNotificationsCount}
                   </Badge>
@@ -667,10 +903,18 @@ export default function HomePage() {
                           className={`p-3 border-b hover:bg-muted cursor-pointer transition-colors duration-200 ${notification.read ? "" : "bg-primary/5"}`}
                           onClick={() => setShowNotifications(false)}
                         >
-                          <p className="text-sm">{notification.content}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatTimeAgo(new Date(Date.now() - Math.random() * 86400000 * 3).toISOString())}
-                          </p>
+                          <div className="flex items-start gap-2">
+                            {notification.type === "milestone" && <Award className="h-4 w-4 text-yellow-500 mt-1" />}
+                            {notification.type === "subscription" && <Users className="h-4 w-4 text-blue-500 mt-1" />}
+                            {notification.type === "comment" && <MessageSquare className="h-4 w-4 text-green-500 mt-1" />}
+                            {notification.type === "trending" && <Flame className="h-4 w-4 text-red-500 mt-1" />}
+                            <div>
+                              <p className="text-sm">{notification.content}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatTimeAgo(new Date(Date.now() - Math.random() * 86400000 * 3).toISOString())}
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       ))
                     ) : (
@@ -685,7 +929,7 @@ export default function HomePage() {
 
             <Button
               variant="default"
-              className="rounded-full gap-2 hover:bg-primary/90 transition-colors duration-200"
+              className="rounded-full gap-2 hover:bg-primary/90 transition-colors duration-200 bg-gradient-to-r from-primary to-purple-600"
               onClick={handleCreateClick}
             >
               <Plus className="h-4 w-4" />
@@ -694,10 +938,15 @@ export default function HomePage() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200">
-                  <AvatarImage src={user.avatar} alt={user.username} />
-                  <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
-                </Avatar>
+                <div className="relative">
+                  <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200">
+                    <AvatarImage src={user.avatar} alt={user.username} />
+                    <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  {user.isVerified && (
+                    <Crown className="h-4 w-4 absolute -top-1 -right-1 text-yellow-500" />
+                  )}
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
@@ -728,12 +977,12 @@ export default function HomePage() {
       {/* Main Content */}
       <div
         className="container grid gap-6 px-4 py-6 transition-all duration-300 ease-in-out"
-        style={{ gridTemplateColumns: sidebarVisible ? "minmax(240px, 1fr) 3fr" : "1fr" }}
+        style={{ gridTemplateColumns: sidebarVisible ? "minmax(280px, 1fr) 3fr" : "1fr" }}
       >
-        {/* Sidebar */}
+        {/* Enhanced Sidebar */}
         {sidebarVisible && (
           <aside className="hidden md:block">
-            <nav className="sticky top-20 space-y-2">
+            <nav className="sticky top-20 space-y-4">
               <div className="space-y-1">
                 <Link
                   href="/"
@@ -756,7 +1005,7 @@ export default function HomePage() {
                   className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
                 >
                   <MessageSquare className="h-5 w-5" />
-                  <span className="font-medium">Tweets</span>
+                  <span className="font-medium">Messages</span>
                 </Link>
 
                 <Link
@@ -776,14 +1025,6 @@ export default function HomePage() {
                 </Link>
 
                 <Link
-                  href="/comments"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
-                >
-                  <MessageSquare className="h-5 w-5" />
-                  <span className="font-medium">Comments</span>
-                </Link>
-
-                <Link
                   href="/subscriptions"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
                 >
@@ -800,9 +1041,40 @@ export default function HomePage() {
                 </button>
               </div>
 
+              {/* Trending Topics */}
+              <div className="pt-4">
+                <h3 className="text-lg font-semibold mb-3 px-3 flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Trending
+                </h3>
+                <div className="space-y-2">
+                  {trendingTopics.slice(0, 5).map((topic, i) => (
+                    <div
+                      key={topic.tag}
+                      className="px-3 py-2 hover:bg-muted rounded-lg cursor-pointer transition-colors duration-200"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-sm">#{topic.tag}</p>
+                          <p className="text-xs text-muted-foreground">{topic.category}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-medium">{formatViews(topic.count)}</p>
+                          <div className="flex items-center gap-1">
+                            <Flame className="h-3 w-3 text-red-500" />
+                            <span className="text-xs text-muted-foreground">#{i + 1}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subscriptions */}
               {subscriptions.length > 0 && (
                 <div className="pt-4">
-                  <div className="flex items-center justify-between mb-2 px-3">
+                  <div className="flex items-center justify-between mb-3 px-3">
                     <h3 className="text-lg font-semibold">Subscriptions</h3>
                   </div>
                   {subscriptions.slice(0, 5).map((subscription: any, i) => (
@@ -838,90 +1110,114 @@ export default function HomePage() {
           <Tabs defaultValue="videos" value={activeTab} onValueChange={setActiveTab} className="mb-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="videos" className="transition-all duration-200">
+                <Video className="h-4 w-4 mr-2" />
                 Videos
               </TabsTrigger>
               <TabsTrigger value="tweets" className="transition-all duration-200">
+                <MessageSquare className="h-4 w-4 mr-2" />
                 Messages
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="videos">
-              {/* Video filters and sorting */}
-              <div className="flex flex-wrap items-center justify-between mb-4 gap-2">
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1 hover:bg-muted transition-colors duration-200"
-                      >
-                        <Filter className="h-4 w-4" />
-                        <span>Filter</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuLabel>Filter Videos</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>All Videos</DropdownMenuItem>
-                      <DropdownMenuItem>Watched</DropdownMenuItem>
-                      <DropdownMenuItem>Unwatched</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Short Videos ({"<"} 5 min)</DropdownMenuItem>
-                      <DropdownMenuItem>Medium Videos (5-20 min)</DropdownMenuItem>
-                      <DropdownMenuItem>Long Videos ({">"} 20 min)</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1 hover:bg-muted transition-colors duration-200"
-                      >
-                        <span>Sort: {sortOption.charAt(0).toUpperCase() + sortOption.slice(1)}</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuLabel>Sort Videos</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleSortVideos("recent")}>
-                        Most Recent
-                        {sortOption === "recent" && <Check className="h-4 w-4 ml-auto" />}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleSortVideos("popular")}>
-                        Most Popular
-                        {sortOption === "popular" && <Check className="h-4 w-4 ml-auto" />}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleSortVideos("oldest")}>
-                        Oldest First
-                        {sortOption === "oldest" && <Check className="h-4 w-4 ml-auto" />}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+              {/* Enhanced Video filters and sorting */}
+              <div className="space-y-4 mb-6">
+                {/* Category Filter */}
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {videoCategories.map((category) => (
+                    <Button
+                      key={category}
+                      variant={selectedCategory === category ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleCategoryFilter(category)}
+                      className="whitespace-nowrap"
+                    >
+                      {category}
+                    </Button>
+                  ))}
                 </div>
 
-                {searchQuery && (
-                  <div className="text-sm text-muted-foreground">
-                    Showing results for: <span className="font-medium">{searchQuery}</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="ml-2 h-7 px-2 hover:bg-primary/10 transition-colors duration-200"
-                      onClick={() => {
-                        setSearchQuery("")
-                        setFilteredVideos(videos)
-                      }}
-                    >
-                      Clear
-                    </Button>
+                {/* Sort and Filter Options */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1 hover:bg-muted transition-colors duration-200"
+                        >
+                          <Filter className="h-4 w-4" />
+                          <span>Filter</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuLabel>Filter Videos</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>All Videos</DropdownMenuItem>
+                        <DropdownMenuItem>Watched</DropdownMenuItem>
+                        <DropdownMenuItem>Unwatched</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>Short Videos ({"<"} 5 min)</DropdownMenuItem>
+                        <DropdownMenuItem>Medium Videos (5-20 min)</DropdownMenuItem>
+                        <DropdownMenuItem>Long Videos ({">"} 20 min)</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1 hover:bg-muted transition-colors duration-200"
+                        >
+                          <span>Sort: {sortOption.charAt(0).toUpperCase() + sortOption.slice(1)}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuLabel>Sort Videos</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleSortVideos("recent")}>
+                          Most Recent
+                          {sortOption === "recent" && <Check className="h-4 w-4 ml-auto" />}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSortVideos("popular")}>
+                          Most Popular
+                          {sortOption === "popular" && <Check className="h-4 w-4 ml-auto" />}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSortVideos("trending")}>
+                          Trending
+                          {sortOption === "trending" && <Check className="h-4 w-4 ml-auto" />}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSortVideos("oldest")}>
+                          Oldest First
+                          {sortOption === "oldest" && <Check className="h-4 w-4 ml-auto" />}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                )}
+
+                  {searchQuery && (
+                    <div className="text-sm text-muted-foreground">
+                      Showing results for: <span className="font-medium">{searchQuery}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ml-2 h-7 px-2 hover:bg-primary/10 transition-colors duration-200"
+                        onClick={() => {
+                          setSearchQuery("")
+                          setFilteredVideos(videos)
+                        }}
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {isLoading ? (
-                <div className="grid gap-4 transition-all duration-300 ease-in-out grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-6 transition-all duration-300 ease-in-out grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {Array.from({ length: 16 }).map((_, i) => (
                     <div key={i} className="overflow-hidden rounded-lg border bg-card shadow-sm animate-pulse">
                       <div className="aspect-video bg-muted"></div>
@@ -939,7 +1235,7 @@ export default function HomePage() {
                   ))}
                 </div>
               ) : filteredVideos.length > 0 ? (
-                <div className="grid gap-4 transition-all duration-300 ease-in-out grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-6 transition-all duration-300 ease-in-out grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {filteredVideos.map((video) => (
                     <VideoCard key={video._id} video={video} />
                   ))}
@@ -950,15 +1246,16 @@ export default function HomePage() {
                     <Search className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-lg font-medium mb-2">No videos found</h3>
-                  <p className="text-muted-foreground mb-4">We couldn&apos;t find any videos matching your search.</p>
+                  <p className="text-muted-foreground mb-4">We couldn't find any videos matching your search.</p>
                   <Button
                     variant="outline"
                     onClick={() => {
                       setSearchQuery("")
                       setFilteredVideos(videos)
+                      setSelectedCategory("All")
                     }}
                   >
-                    Clear search
+                    Clear filters
                   </Button>
                 </div>
               )}
@@ -966,28 +1263,39 @@ export default function HomePage() {
 
             <TabsContent value="tweets">
               <div className="max-w-2xl mx-auto">
-                {/* Tweet/Message input form */}
-                <Card className="mb-6 hover:border-primary/50 transition-colors duration-300">
+                {/* Enhanced Tweet/Message input form */}
+                <Card className="mb-6 hover:border-primary/50 transition-colors duration-300 shadow-lg">
                   <CardContent className="pt-6">
                     <form onSubmit={handleTweetSubmit}>
                       <div className="flex gap-3">
-                        <Avatar className="h-10 w-10 flex-shrink-0">
+                        <Avatar className="h-12 w-12 flex-shrink-0">
                           <AvatarImage src={user.avatar} alt={user.username} />
                           <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 space-y-3">
                           <Textarea
-                            placeholder="What's happening?"
+                            placeholder="What's happening? Share your thoughts..."
                             value={tweetContent}
                             onChange={(e) => setTweetContent(e.target.value)}
-                            className="resize-none focus-visible:ring-primary"
+                            className="resize-none focus-visible:ring-primary border-0 text-lg placeholder:text-muted-foreground"
                             rows={3}
+                            maxLength={280}
                           />
-                          <div className="flex justify-end">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {tweetContent.length}/280
+                              </span>
+                              {tweetContent.length > 250 && (
+                                <Badge variant="outline" className="text-xs">
+                                  {280 - tweetContent.length} left
+                                </Badge>
+                              )}
+                            </div>
                             <Button
                               type="submit"
                               disabled={isSubmittingTweet || !tweetContent.trim()}
-                              className="hover:bg-primary/90 transition-colors duration-200"
+                              className="hover:bg-primary/90 transition-colors duration-200 rounded-full"
                             >
                               {isSubmittingTweet ? (
                                 <>
@@ -995,7 +1303,10 @@ export default function HomePage() {
                                   Posting...
                                 </>
                               ) : (
-                                "Post"
+                                <>
+                                  <Send className="mr-2 h-4 w-4" />
+                                  Post
+                                </>
                               )}
                             </Button>
                           </div>
