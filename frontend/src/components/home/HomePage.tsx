@@ -54,17 +54,10 @@ import { Input } from "@/components/ui/Input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tab"
 import { Card, CardContent } from "@/components/ui/Card"
-import { Textarea } from "@/components/ui/TextArea"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/Dropdown-menu"
 import { Badge } from "@/components/ui/Badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Textarea } from "@/components/ui/TextArea"
 import { useToast } from "@/hooks/useToast.js"
 
 interface Video {
@@ -75,6 +68,7 @@ interface Video {
   duration: number
   views: number
   owner: {
+    isVerified: any
     _id: string
     username: string
     fullName: string
@@ -1246,7 +1240,7 @@ export default function HomePage() {
                     <Search className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-lg font-medium mb-2">No videos found</h3>
-                  <p className="text-muted-foreground mb-4">We couldn't find any videos matching your search.</p>
+                  <p className="text-muted-foreground mb-4">We  find any videos matching your search.</p>
                   <Button
                     variant="outline"
                     onClick={() => {
