@@ -57,7 +57,7 @@ import { Card, CardContent } from "@/components/ui/Card"
 import { Badge } from "@/components/ui/Badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Textarea } from "@/components/ui/TextArea"
+import { TextArea } from "@/components/ui/TextArea"
 import { useToast } from "@/hooks/useToast.js"
 
 interface Video {
@@ -695,7 +695,7 @@ export default function HomePage() {
             
             {editingTweet === tweet._id ? (
               <div className="mt-2 space-y-2">
-                <Textarea
+                <TextArea
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   className="resize-none"
@@ -1003,7 +1003,7 @@ export default function HomePage() {
                 </Link>
 
                 <Link
-                  href="/playlists"
+                  href="/playlist/{playlistId}"
                   className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
                 >
                   <List className="h-5 w-5" />
@@ -1267,7 +1267,7 @@ export default function HomePage() {
                           <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 space-y-3">
-                          <Textarea
+                          <TextArea
                             placeholder="What's happening? Share your thoughts..."
                             value={tweetContent}
                             onChange={(e) => setTweetContent(e.target.value)}

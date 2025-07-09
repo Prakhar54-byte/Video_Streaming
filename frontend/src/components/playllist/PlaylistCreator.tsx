@@ -6,7 +6,7 @@ import type React from "react";
 import { useState } from "react";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
-import { Textarea } from "../ui/TextArea";
+import { TextArea } from "../ui/TextArea";
 import { Label } from "../ui/Label";
 import { Dialog, DialogDescription, DialogContent, DialogHeader, DialogTitle ,DialogTrigger} from "../ui/Dialog";
 import { useAuth } from "@/hooks/userAuth";
@@ -172,7 +172,7 @@ export function PlaylistCreator({
 
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea
+            <TextArea
               id="description"
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
