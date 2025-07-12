@@ -986,13 +986,6 @@ export default function HomePage() {
                   <span className="font-medium">Home</span>
                 </Link>
 
-                <Link
-                  href="/videos"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
-                >
-                  <Video className="h-5 w-5" />
-                  <span className="font-medium">Videos</span>
-                </Link>
 
                 <Link
                   href="/tweets"

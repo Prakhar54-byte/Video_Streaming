@@ -4,6 +4,9 @@ const nextConfig = {
     images: {
       domains: ['localhost', 'your-backend-domain.com','fs'],
     },
+    experimental: {
+      serverActions: false,
+    }
 }
 
 export default nextConfig
