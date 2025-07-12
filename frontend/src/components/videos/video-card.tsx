@@ -1,41 +1,44 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import Image from "next/image"
-import { Card, CardContent } from "@/components/ui/Card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar"
-import { Button } from "@/components/ui/Button"
-import { Play, Clock, Eye, ThumbsUp, MoreVertical } from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/Avatar";
+import { Button } from "@/components/ui/Button";
+import { Play, Clock, Eye, ThumbsUp, MoreVertical } from "lucide-react";
 
 export function VideoCard({ video, layout = "grid" }) {
-  const [isHovered, setIsHovered] = useState(false)
+  const [isHovered, setIsHovered] = useState(false);
 
   const formatDuration = (seconds) => {
-    if (!seconds) return "0:00"
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, "0")}`
-  }
+    if (!seconds) return "0:00";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   const formatViews = (views) => {
-    if (!views) return "0 views"
-    if (views < 1000) return `${views} views`
-    if (views < 1000000) return `${(views / 1000).toFixed(1)}K views`
-    return `${(views / 1000000).toFixed(1)}M views`
-  }
+    if (!views) return "0 views";
+    if (views < 1000) return `${views} views`;
+    if (views < 1000000) return `${(views / 1000).toFixed(1)}K views`;
+    return `${(views / 1000000).toFixed(1)}M views`;
+  };
 
   const formatTimeAgo = (dateString) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`
-    return date.toLocaleDateString()
-  }
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+    if (diffInSeconds < 3600)
+      return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800)
+      return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    return date.toLocaleDateString();
+  };
 
   if (layout === "list") {
     return (
@@ -51,7 +54,8 @@ export function VideoCard({ video, layout = "grid" }) {
                 >
                   <Image
                     src={
-                      video.thumbnail || `/placeholder.svg?height=112&width=192&text=${video.title?.slice(0, 2) || "V"}`
+                      video.thumbnail ||
+                      `/placeholder.svg?height=112&width=192&text=${video.title?.slice(0, 2) || "V"}`
                     }
                     alt={video.title}
                     fill
@@ -91,7 +95,10 @@ export function VideoCard({ video, layout = "grid" }) {
               <div className="flex items-center space-x-2 mt-2">
                 <Link href={`/channel/${video.owner?._id}`}>
                   <Avatar className="h-6 w-6 cursor-pointer">
-                    <AvatarImage src={video.owner?.avatar || "/placeholder.svg"} alt={video.owner?.username} />
+                    <AvatarImage
+                      src={video.owner?.avatar || "/placeholder.svg"}
+                      alt={video.owner?.username}
+                    />
                     <AvatarFallback className="text-xs">
                       {video.owner?.username?.[0]?.toUpperCase() || "U"}
                     </AvatarFallback>
@@ -104,12 +111,14 @@ export function VideoCard({ video, layout = "grid" }) {
                 </Link>
               </div>
 
-              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{video.description}</p>
+              <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                {video.description}
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -123,7 +132,10 @@ export function VideoCard({ video, layout = "grid" }) {
               onMouseLeave={() => setIsHovered(false)}
             >
               <Image
-                src={video.thumbnail || `/placeholder.svg?height=180&width=320&text=${video.title?.slice(0, 2) || "V"}`}
+                src={
+                  video.thumbnail ||
+                  `/placeholder.svg?height=180&width=320&text=${video.title?.slice(0, 2) || "V"}`
+                }
                 alt={video.title}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-200"
@@ -144,8 +156,13 @@ export function VideoCard({ video, layout = "grid" }) {
           <div className="flex space-x-3">
             <Link href={`/channel/${video.owner?._id}`}>
               <Avatar className="h-9 w-9 cursor-pointer">
-                <AvatarImage src={video.owner?.avatar || "/placeholder.svg"} alt={video.owner?.username} />
-                <AvatarFallback>{video.owner?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+                <AvatarImage
+                  src={video.owner?.avatar || "/placeholder.svg"}
+                  alt={video.owner?.username}
+                />
+                <AvatarFallback>
+                  {video.owner?.username?.[0]?.toUpperCase() || "U"}
+                </AvatarFallback>
               </Avatar>
             </Link>
 
@@ -157,7 +174,9 @@ export function VideoCard({ video, layout = "grid" }) {
               </Link>
 
               <Link href={`/channel/${video.owner?._id}`}>
-                <p className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">{video.owner?.username}</p>
+                <p className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer">
+                  {video.owner?.username}
+                </p>
               </Link>
 
               <div className="flex items-center space-x-1 text-sm text-gray-600 mt-1">
@@ -179,5 +198,5 @@ export function VideoCard({ video, layout = "grid" }) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

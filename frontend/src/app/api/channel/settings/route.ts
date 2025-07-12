@@ -15,19 +15,22 @@ export async function PATCH(request: Request) {
       if (name) updateData.append("name", name);
       if (description) updateData.append("description", description);
 
-      const updateResponse = await fetch(`http://localhost:8000/api/v1/channels/${channelId}`, {
-        method: "PATCH",
-        headers: {
-          "Cookie": request.headers.get("cookie") || "",
+      const updateResponse = await fetch(
+        `http://localhost:8000/api/v1/channels/${channelId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Cookie: request.headers.get("cookie") || "",
+          },
+          body: updateData,
         },
-        body: updateData,
-      });
+      );
 
       if (!updateResponse.ok) {
         const error = await updateResponse.json();
         return NextResponse.json(
           { message: error.message || "Channel update failed" },
-          { status: updateResponse.status }
+          { status: updateResponse.status },
         );
       }
     }
@@ -37,19 +40,22 @@ export async function PATCH(request: Request) {
       const avatarFormData = new FormData();
       avatarFormData.append("avatar", avatar);
 
-      const avatarResponse = await fetch(`http://localhost:8000/api/v1/channels/${channelId}/avatar`, {
-        method: "POST",
-        headers: {
-          "Cookie": request.headers.get("cookie") || "",
+      const avatarResponse = await fetch(
+        `http://localhost:8000/api/v1/channels/${channelId}/avatar`,
+        {
+          method: "POST",
+          headers: {
+            Cookie: request.headers.get("cookie") || "",
+          },
+          body: avatarFormData,
         },
-        body: avatarFormData,
-      });
+      );
 
       if (!avatarResponse.ok) {
         const error = await avatarResponse.json();
         return NextResponse.json(
           { message: error.message || "Avatar update failed" },
-          { status: avatarResponse.status }
+          { status: avatarResponse.status },
         );
       }
     }
@@ -59,30 +65,32 @@ export async function PATCH(request: Request) {
       const bannerFormData = new FormData();
       bannerFormData.append("banner", banner);
 
-      const bannerResponse = await fetch(`http://localhost:8000/api/v1/channels/${channelId}/banner`, {
-        method: "POST",
-        headers: {
-          "Cookie": request.headers.get("cookie") || "",
+      const bannerResponse = await fetch(
+        `http://localhost:8000/api/v1/channels/${channelId}/banner`,
+        {
+          method: "POST",
+          headers: {
+            Cookie: request.headers.get("cookie") || "",
+          },
+          body: bannerFormData,
         },
-        body: bannerFormData,
-      });
+      );
 
       if (!bannerResponse.ok) {
         const error = await bannerResponse.json();
         return NextResponse.json(
           { message: error.message || "Banner update failed" },
-          { status: bannerResponse.status }
+          { status: bannerResponse.status },
         );
       }
     }
 
     return NextResponse.json({ message: "Channel updated successfully" });
-
   } catch (error) {
     console.error("Channel settings update error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -91,30 +99,32 @@ export async function DELETE(request: Request) {
   try {
     const { channelId } = await request.json();
 
-    const response = await fetch(`http://localhost:8000/api/v1/channels/${channelId}`, {
-      method: "DELETE",
-      headers: {
-        "Cookie": request.headers.get("cookie") || "",
-        "Content-Type": "application/json"
-      }
-    });
+    const response = await fetch(
+      `http://localhost:8000/api/v1/channels/${channelId}`,
+      {
+        method: "DELETE",
+        headers: {
+          Cookie: request.headers.get("cookie") || "",
+          "Content-Type": "application/json",
+        },
+      },
+    );
 
     if (!response.ok) {
       const error = await response.json();
       return NextResponse.json(
         { message: error.message || "Channel deletion failed" },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     const data = await response.json();
     return NextResponse.json(data);
-
   } catch (error) {
     console.error("Channel deletion error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

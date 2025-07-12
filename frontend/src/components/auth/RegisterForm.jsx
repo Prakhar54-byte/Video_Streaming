@@ -40,7 +40,7 @@ export default function RegisterForm() {
     const { id, files } = e.target;
     if (files && files[0]) {
       setFormData((prev) => ({ ...prev, [id]: files[0] }));
-      
+
       // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -61,7 +61,12 @@ export default function RegisterForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.fullName || !formData.username || !formData.email || !formData.password) {
+    if (
+      !formData.fullName ||
+      !formData.username ||
+      !formData.email ||
+      !formData.password
+    ) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -110,10 +115,13 @@ export default function RegisterForm() {
         formDataToSend.append("coverImage", formData.coverImage);
       }
 
-      const response = await fetch("http://localhost:8000/api/v1/users/register", {
-        method: "POST",
-        body: formDataToSend,
-      });
+      const response = await fetch(
+        "http://localhost:8000/api/v1/users/register",
+        {
+          method: "POST",
+          body: formDataToSend,
+        },
+      );
 
       const data = await response.json();
 
@@ -144,8 +152,12 @@ export default function RegisterForm() {
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg">
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold tracking-tight">Create an Account</h1>
-          <p className="text-muted-foreground">Enter your information to get started</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Create an Account
+          </h1>
+          <p className="text-muted-foreground">
+            Enter your information to get started
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

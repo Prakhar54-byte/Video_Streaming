@@ -7,11 +7,11 @@ export async function POST(request) {
 
     // Get the authorization header from the request
     const authHeader = request.headers.get("authorization");
-    
+
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
         { message: "Authorization token is required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -21,49 +21,51 @@ export async function POST(request) {
     if (!oldPassword || !newPassword) {
       return NextResponse.json(
         { message: "Old password and new password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Make request to backend API
-    const response = await fetch("http://localhost:8000/api/v1/users/change-password", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+    const response = await fetch(
+      "http://localhost:8000/api/v1/users/change-password",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          oldPassword,
+          newPassword,
+        }),
       },
-      body: JSON.stringify({
-        oldPassword,
-        newPassword,
-      }),
-    });
+    );
 
     const data = await response.json();
 
     if (!response.ok) {
       return NextResponse.json(
-        { 
+        {
           message: data.message || "Failed to change password",
-          error: data.error || "Password change failed"
+          error: data.error || "Password change failed",
         },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
     return NextResponse.json({
       success: true,
       message: data.message || "Password changed successfully",
-      data: data.data || {}
+      data: data.data || {},
     });
-
   } catch (error) {
     console.error("Change password API error:", error);
     return NextResponse.json(
-      { 
+      {
         message: "Internal server error",
-        error: error.message 
+        error: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

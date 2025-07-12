@@ -15,16 +15,19 @@ export async function POST(request) {
       formData.append("coverImage", body.coverImage);
     }
 
-    const response = await fetch("http://localhost:8000/api/v1/users/register", {
-      method: "POST",
-      body: formData,
-    });
+    const response = await fetch(
+      "http://localhost:8000/api/v1/users/register",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
 
     if (!response.ok) {
       const error = await response.json();
       return NextResponse.json(
         { message: error.message || "Registration failed" },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -34,7 +37,7 @@ export async function POST(request) {
     console.error("Registration error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -7,7 +7,13 @@ import { ArrowLeft, Upload, User } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/Card";
 import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/TextArea";
 import { useToast } from "@/hooks/useToast";
@@ -24,7 +30,9 @@ export default function CreateChannelForm() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setChannelData((prev) => ({
       ...prev,
@@ -37,11 +45,11 @@ export default function CreateChannelForm() {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         toast({
           title: "Error",
           description: "Please select a valid image file",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
@@ -51,7 +59,7 @@ export default function CreateChannelForm() {
         toast({
           title: "Error",
           description: "Image size should be less than 5MB",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
@@ -78,20 +86,15 @@ export default function CreateChannelForm() {
       toast({
         title: "Error",
         description: "Please enter a channel name",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
-
-
- 
 
     setIsSubmitting(true);
 
     try {
       // Get token from storage
-     
-      
 
       const formData = new FormData();
       formData.append("name", channelData.name);
@@ -99,20 +102,22 @@ export default function CreateChannelForm() {
       if (channelData.avatar) {
         formData.append("avatar", channelData.avatar);
       }
-for (let pair of formData.entries()) {
-  console.log(`${pair[0]}:`, pair[1]);
-}
-      
-      const response = await fetch("http://localhost:8000/api/v1/channels/create", {
-        method: "POST",
+      for (let pair of formData.entries()) {
+        console.log(`${pair[0]}:`, pair[1]);
+      }
+
+      const response = await fetch(
+        "http://localhost:8000/api/v1/channels/create",
+        {
+          method: "POST",
           credentials: "include",
-        body: formData,
-      });
+          body: formData,
+        },
+      );
 
       const data = await response.json();
 
       console.log("Response from channel creation:", data);
-      
 
       if (response.ok) {
         toast({
@@ -124,7 +129,7 @@ for (let pair of formData.entries()) {
         toast({
           title: "Error",
           description: data.message || "Failed to create channel",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -132,7 +137,7 @@ for (let pair of formData.entries()) {
       toast({
         title: "Error",
         description: "Network error. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -144,10 +149,10 @@ for (let pair of formData.entries()) {
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-10 border-b bg-background">
           <div className="container flex h-16 items-center px-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="mr-2 hover:bg-primary/10 transition-colors duration-200" 
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-2 hover:bg-primary/10 transition-colors duration-200"
               onClick={() => router.push("/")}
             >
               <ArrowLeft className="h-5 w-5" />
@@ -159,9 +164,12 @@ for (let pair of formData.entries()) {
         <main className="container py-8 px-4 max-w-3xl mx-auto">
           <Card className="shadow-lg border-0 bg-white">
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold text-gray-900">Channel Information</CardTitle>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                Channel Information
+              </CardTitle>
               <CardDescription className="text-gray-600">
-                Set up your channel to start uploading videos and building your audience.
+                Set up your channel to start uploading videos and building your
+                audience.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -171,10 +179,18 @@ for (let pair of formData.entries()) {
                   <div className="relative">
                     <Avatar className="h-32 w-32 border-4 border-gray-200 shadow-lg">
                       {imagePreview ? (
-                        <AvatarImage src={imagePreview} alt="Channel preview" className="object-cover" />
+                        <AvatarImage
+                          src={imagePreview}
+                          alt="Channel preview"
+                          className="object-cover"
+                        />
                       ) : (
                         <AvatarFallback className="text-3xl bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                          {channelData.name ? channelData.name[0].toUpperCase() : <User className="h-12 w-12" />}
+                          {channelData.name ? (
+                            channelData.name[0].toUpperCase()
+                          ) : (
+                            <User className="h-12 w-12" />
+                          )}
                         </AvatarFallback>
                       )}
                     </Avatar>
@@ -183,7 +199,10 @@ for (let pair of formData.entries()) {
                     </div>
                   </div>
                   <div className="flex flex-col items-center">
-                    <Label htmlFor="avatar" className="text-center mb-2 font-medium">
+                    <Label
+                      htmlFor="avatar"
+                      className="text-center mb-2 font-medium"
+                    >
                       Channel Avatar
                     </Label>
                     <Input
@@ -193,14 +212,19 @@ for (let pair of formData.entries()) {
                       onChange={handleImageUpload}
                       className="w-full max-w-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Max size: 5MB. Formats: JPG, PNG, GIF</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Max size: 5MB. Formats: JPG, PNG, GIF
+                    </p>
                   </div>
                 </div>
 
                 {/* Form Fields */}
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+                    <Label
+                      htmlFor="name"
+                      className="text-sm font-medium text-gray-700"
+                    >
                       Channel Name *
                     </Label>
                     <Input
@@ -214,10 +238,11 @@ for (let pair of formData.entries()) {
                     />
                   </div>
 
-                  
-
                   <div className="space-y-2">
-                    <Label htmlFor="description" className="text-sm font-medium text-gray-700">
+                    <Label
+                      htmlFor="description"
+                      className="text-sm font-medium text-gray-700"
+                    >
                       Channel Description
                     </Label>
                     <Textarea
@@ -237,16 +262,16 @@ for (let pair of formData.entries()) {
 
                 {/* Action Buttons */}
                 <div className="flex justify-end gap-4 pt-6 border-t">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     onClick={() => router.push("/")}
                     className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50"
                   >
                     Cancel
                   </Button>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     disabled={isSubmitting}
                     className="px-8 py-2 bg-primary hover:bg-primary/90 text-white font-medium"
                   >
