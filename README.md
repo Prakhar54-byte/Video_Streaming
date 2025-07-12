@@ -3,6 +3,7 @@
 A full-stack video streaming platform built with MERN stack (MongoDB, Express, React, Node.js) with adaptive bitrate streaming capabilities.
 
 ## 🌟 Key Features
+
 - ✅ User authentication (JWT)
 - ✅ Basic video upload
 - 🔜 **Adaptive Bitrate Streaming** (HLS protocol) [Planned]
@@ -33,6 +34,7 @@ Video_Streaming/
 ```
 
 ## 🚀 Quick Start
+
 ```bash
 # Clone repository
 git clone https://github.com/yourusername/Video_Streaming.git
@@ -113,3 +115,4 @@ See the Future Roadmap section for planned features.
 - [ ] AI-powered content recommendations
 - [ ] Multi-language subtitles
 - [ ] Live streaming capabilities
+```

@@ -2,21 +2,21 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  ArrowLeft, 
-  Save, 
-  Upload, 
-  User, 
-  Mail, 
-  Lock, 
-  Bell, 
-  Shield, 
+import {
+  ArrowLeft,
+  Save,
+  Upload,
+  User,
+  Mail,
+  Lock,
+  Bell,
+  Shield,
   Palette,
   Globe,
   Eye,
   EyeOff,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -28,7 +28,7 @@ import { Switch } from "@/components/ui/Switch";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tab";
 import { Separator } from "@/components/ui/Sparator";
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -38,8 +38,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/Alert-dialog"
-import { useToast } from "@/hooks/useToast.js"
+} from "@/components/ui/Alert-dialog";
+import { useToast } from "@/hooks/useToast.js";
 import Image from "next/image";
 
 interface ChannelSettings {
@@ -72,7 +72,7 @@ export default function ChannelSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
-  
+
   const [settings, setSettings] = useState<ChannelSettings>({
     name: "",
     description: "",
@@ -93,33 +93,32 @@ export default function ChannelSettings() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-      
-
-        const response = await fetch("http://localhost:8000/api/v1/users/current-user", {
-          headers: {
-        
-            "Content-Type": "application/json"
+        const response = await fetch(
+          "http://localhost:8000/api/v1/users/current-user",
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            method: "GET",
           },
-          credentials: "include",
-          method: "GET",
-        });
+        );
 
         if (response.ok) {
           const userData = await response.json();
           setUser(userData.data);
-          
+
           // Initialize settings with user data
-          setSettings(prev => ({
+          setSettings((prev) => ({
             ...prev,
             name: userData.data.fullName || userData.data.username,
             description: "Welcome to my channel!",
             email: userData.data.email,
           }));
-          
+
           setAvatarPreview(userData.data.avatar);
           setCoverPreview(userData.data.coverImage);
-          console.log("Cover",setCoverPreview);
-          
+          console.log("Cover", setCoverPreview);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -137,19 +136,24 @@ export default function ChannelSettings() {
   }, [router, toast]);
 
   // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   // Handle switch changes
-  const handleSwitchChange = (name: keyof ChannelSettings, checked: boolean) => {
-    setSettings(prev => ({
+  const handleSwitchChange = (
+    name: keyof ChannelSettings,
+    checked: boolean,
+  ) => {
+    setSettings((prev) => ({
       ...prev,
-      [name]: checked
+      [name]: checked,
     }));
   };
 
@@ -157,11 +161,11 @@ export default function ChannelSettings() {
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         toast({
           title: "Error",
           description: "Please select a valid image file",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
@@ -170,13 +174,13 @@ export default function ChannelSettings() {
         toast({
           title: "Error",
           description: "Image size should be less than 5MB",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
 
-      setSettings(prev => ({ ...prev, avatar: file }));
-      
+      setSettings((prev) => ({ ...prev, avatar: file }));
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -189,11 +193,11 @@ export default function ChannelSettings() {
   const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         toast({
           title: "Error",
           description: "Please select a valid image file",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
@@ -202,13 +206,13 @@ export default function ChannelSettings() {
         toast({
           title: "Error",
           description: "Cover image size should be less than 10MB",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
 
-      setSettings(prev => ({ ...prev, coverImage: file }));
-      
+      setSettings((prev) => ({ ...prev, coverImage: file }));
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setCoverPreview(reader.result as string);
@@ -223,7 +227,7 @@ export default function ChannelSettings() {
       toast({
         title: "Error",
         description: "Channel name is required",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -231,17 +235,19 @@ export default function ChannelSettings() {
     setIsSaving(true);
 
     try {
-      const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
-      
+      const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
+
       // Update user profile
       const formData = new FormData();
       formData.append("fullName", settings.name);
       formData.append("email", settings.email);
-      
+
       if (settings.avatar) {
         formData.append("avatar", settings.avatar);
       }
-      
+
       if (settings.coverImage) {
         formData.append("coverImage", settings.coverImage);
       }
@@ -249,7 +255,7 @@ export default function ChannelSettings() {
       const response = await fetch("/api/channel/settings", {
         method: "PATCH",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: formData,
       });
@@ -264,7 +270,7 @@ export default function ChannelSettings() {
         toast({
           title: "Error",
           description: data.message || "Failed to save settings",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -272,7 +278,7 @@ export default function ChannelSettings() {
       toast({
         title: "Error",
         description: "Network error. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsSaving(false);
@@ -282,14 +288,16 @@ export default function ChannelSettings() {
   // Handle account deletion
   const handleDeleteAccount = async () => {
     try {
-      const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
-      
+      const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
+
       const response = await fetch("/api/channel/delete", {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (response.ok) {
@@ -297,7 +305,7 @@ export default function ChannelSettings() {
           title: "Account Deleted",
           description: "Your account has been permanently deleted",
         });
-        
+
         // Clear tokens and redirect
         localStorage.clear();
         sessionStorage.clear();
@@ -307,7 +315,7 @@ export default function ChannelSettings() {
         toast({
           title: "Error",
           description: data.message || "Failed to delete account",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -315,7 +323,7 @@ export default function ChannelSettings() {
       toast({
         title: "Error",
         description: "Network error. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -335,10 +343,10 @@ export default function ChannelSettings() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center px-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="mr-2 hover:bg-primary/10 transition-colors duration-200" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mr-2 hover:bg-primary/10 transition-colors duration-200"
             onClick={() => router.push("/channelDashboard/dashboard")}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -363,7 +371,11 @@ export default function ChannelSettings() {
       </header>
 
       <main className="container py-8 px-4 max-w-4xl mx-auto">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="privacy">Privacy</TabsTrigger>
@@ -387,8 +399,8 @@ export default function ChannelSettings() {
                   <div className="relative">
                     <div className="w-full h-32 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-lg overflow-hidden">
                       {coverPreview && (
-                        <Image 
-                          src={coverPreview} 
+                        <Image
+                          src={coverPreview}
                           alt="Cover preview"
                           className="w-full h-full object-cover"
                         />
@@ -399,7 +411,9 @@ export default function ChannelSettings() {
                       variant="secondary"
                       size="sm"
                       className="absolute bottom-2 right-2"
-                      onClick={() => document.getElementById('cover-upload')?.click()}
+                      onClick={() =>
+                        document.getElementById("cover-upload")?.click()
+                      }
                     >
                       <Upload className="h-4 w-4 mr-2" />
                       Change Cover
@@ -422,16 +436,25 @@ export default function ChannelSettings() {
                   <Label>Channel Avatar</Label>
                   <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={avatarPreview || ""} alt="Avatar preview" />
+                      <AvatarImage
+                        src={avatarPreview || ""}
+                        alt="Avatar preview"
+                      />
                       <AvatarFallback className="text-2xl">
-                        {settings.name ? settings.name[0].toUpperCase() : <User className="h-8 w-8" />}
+                        {settings.name ? (
+                          settings.name[0].toUpperCase()
+                        ) : (
+                          <User className="h-8 w-8" />
+                        )}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => document.getElementById('avatar-upload')?.click()}
+                        onClick={() =>
+                          document.getElementById("avatar-upload")?.click()
+                        }
                       >
                         <Upload className="h-4 w-4 mr-2" />
                         Change Avatar
@@ -529,7 +552,9 @@ export default function ChannelSettings() {
                   </div>
                   <Switch
                     checked={settings.isPublic}
-                    onCheckedChange={(checked) => handleSwitchChange('isPublic', checked)}
+                    onCheckedChange={(checked) =>
+                      handleSwitchChange("isPublic", checked)
+                    }
                   />
                 </div>
 
@@ -544,7 +569,9 @@ export default function ChannelSettings() {
                   </div>
                   <Switch
                     checked={settings.allowComments}
-                    onCheckedChange={(checked) => handleSwitchChange('allowComments', checked)}
+                    onCheckedChange={(checked) =>
+                      handleSwitchChange("allowComments", checked)
+                    }
                   />
                 </div>
 
@@ -559,7 +586,9 @@ export default function ChannelSettings() {
                   </div>
                   <Switch
                     checked={settings.allowSubscriptions}
-                    onCheckedChange={(checked) => handleSwitchChange('allowSubscriptions', checked)}
+                    onCheckedChange={(checked) =>
+                      handleSwitchChange("allowSubscriptions", checked)
+                    }
                   />
                 </div>
 
@@ -574,7 +603,9 @@ export default function ChannelSettings() {
                   </div>
                   <Switch
                     checked={settings.analyticsSharing}
-                    onCheckedChange={(checked) => handleSwitchChange('analyticsSharing', checked)}
+                    onCheckedChange={(checked) =>
+                      handleSwitchChange("analyticsSharing", checked)
+                    }
                   />
                 </div>
               </CardContent>
@@ -602,7 +633,9 @@ export default function ChannelSettings() {
                   </div>
                   <Switch
                     checked={settings.emailNotifications}
-                    onCheckedChange={(checked) => handleSwitchChange('emailNotifications', checked)}
+                    onCheckedChange={(checked) =>
+                      handleSwitchChange("emailNotifications", checked)
+                    }
                   />
                 </div>
 
@@ -620,7 +653,9 @@ export default function ChannelSettings() {
                   </div>
                   <Switch
                     checked={settings.pushNotifications}
-                    onCheckedChange={(checked) => handleSwitchChange('pushNotifications', checked)}
+                    onCheckedChange={(checked) =>
+                      handleSwitchChange("pushNotifications", checked)
+                    }
                   />
                 </div>
               </CardContent>
@@ -652,9 +687,10 @@ export default function ChannelSettings() {
                 <div className="space-y-4">
                   <h4 className="font-medium text-red-600">Danger Zone</h4>
                   <p className="text-sm text-muted-foreground">
-                    Once you delete your account, there is no going back. Please be certain.
+                    Once you delete your account, there is no going back. Please
+                    be certain.
                   </p>
-                  
+
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive">
@@ -669,8 +705,9 @@ export default function ChannelSettings() {
                           Are you absolutely sure?
                         </AlertDialogTitle>
                         <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete your
-                          account, channel, and remove all your videos and data from our servers.
+                          This action cannot be undone. This will permanently
+                          delete your account, channel, and remove all your
+                          videos and data from our servers.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>

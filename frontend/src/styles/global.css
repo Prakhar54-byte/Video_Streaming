@@ -88,7 +88,9 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
 }
 
@@ -115,7 +117,11 @@
 
 /* Add smooth transitions for layout changes */
 .layout-transitioning * {
-  transition: width 0.3s ease, height 0.3s ease, margin 0.3s ease, padding 0.3s ease;
+  transition:
+    width 0.3s ease,
+    height 0.3s ease,
+    margin 0.3s ease,
+    padding 0.3s ease;
 }
 
 /* Ensure images maintain aspect ratio during transitions */

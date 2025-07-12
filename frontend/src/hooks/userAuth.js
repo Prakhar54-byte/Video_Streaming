@@ -15,7 +15,9 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const refreshToken = localStorage.getItem("refreshToken") || sessionStorage.getItem("refreshToken");
+        const refreshToken =
+          localStorage.getItem("refreshToken") ||
+          sessionStorage.getItem("refreshToken");
 
         if (!refreshToken) {
           setIsLoading(false);
@@ -23,14 +25,17 @@ export function AuthProvider({ children }) {
         }
 
         try {
-          const res = await fetch("http://localhost:8000/api/v1/users/refresh-token", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
+          const res = await fetch(
+            "http://localhost:8000/api/v1/users/refresh-token",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+              body: JSON.stringify({ refreshToken }),
             },
-            credentials: "include",
-            body: JSON.stringify({ refreshToken }),
-          });
+          );
 
           if (!res.ok) {
             throw new Error("Token verification failed");
@@ -45,10 +50,9 @@ export function AuthProvider({ children }) {
           if (data.data.refreshToken) {
             localStorage.setItem("refreshToken", data.data.refreshToken);
           }
-          
+
           setUser(data.user || data.data.user);
           console.log("Token verification successful"); // Move here after success
-          
         } catch (error) {
           console.error("Token verification error:", error);
           // Clean up all token variations
@@ -90,7 +94,10 @@ export function AuthProvider({ children }) {
 
       // Consistent token naming
       if (rememberMe) {
-        localStorage.setItem("user", JSON.stringify(data.user || data.data.user));
+        localStorage.setItem(
+          "user",
+          JSON.stringify(data.user || data.data.user),
+        );
         if (data.data?.accessToken) {
           localStorage.setItem("accessToken", data.data.accessToken);
         }
@@ -98,7 +105,10 @@ export function AuthProvider({ children }) {
           localStorage.setItem("refreshToken", data.data.refreshToken);
         }
       } else {
-        sessionStorage.setItem("user", JSON.stringify(data.user || data.data.user));
+        sessionStorage.setItem(
+          "user",
+          JSON.stringify(data.user || data.data.user),
+        );
         if (data.data?.accessToken) {
           sessionStorage.setItem("accessToken", data.data.accessToken);
         }
@@ -127,12 +137,15 @@ export function AuthProvider({ children }) {
   const register = async (username, email, password) => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/api/v1/users/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ username, email, password }),
-      });
+      const response = await fetch(
+        "http://localhost:8000/api/v1/users/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username, email, password }),
+        },
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -223,7 +236,6 @@ export function AuthProvider({ children }) {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;

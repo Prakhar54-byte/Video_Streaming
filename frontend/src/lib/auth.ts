@@ -11,13 +11,13 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
-        
+
         try {
           const response = await fetch(`${BACKEND_URL}/auth/login`, {
             method: "POST",
@@ -27,13 +27,13 @@ export const authOptions: NextAuthOptions = {
               password: credentials.password,
             }),
           });
-          
+
           const data = await response.json();
-          
+
           if (!response.ok) {
             throw new Error(data.message || "Invalid credentials");
           }
-          
+
           return {
             id: data.user._id,
             name: data.user.fullName || data.user.username,
@@ -56,9 +56,9 @@ export const authOptions: NextAuthOptions = {
         params: {
           prompt: "consent",
           access_type: "offline",
-          response_type: "code"
-        }
-      }
+          response_type: "code",
+        },
+      },
     }),
     GitHubProvider({
       clientId: process.env.GITHUB_ID as string,
@@ -79,24 +79,27 @@ export const authOptions: NextAuthOptions = {
         } else {
           // OAuth sign-in - make a call to your backend to create/get user
           try {
-            const response = await fetch(`${BACKEND_URL}/auth/${account.provider}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                accessToken: account.access_token,
-                idToken: account.id_token,
-                email: user.email,
-                name: user.name,
-                image: user.image,
-              }),
-            });
-            
+            const response = await fetch(
+              `${BACKEND_URL}/auth/${account.provider}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  accessToken: account.access_token,
+                  idToken: account.id_token,
+                  email: user.email,
+                  name: user.name,
+                  image: user.image,
+                }),
+              },
+            );
+
             const data = await response.json();
-            
+
             if (!response.ok) {
               throw new Error(data.message);
             }
-            
+
             return {
               ...token,
               accessToken: data.accessToken,
@@ -127,15 +130,15 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/login',
-    error: '/login',
+    signIn: "/login",
+    error: "/login",
   },
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
     maxAge: 24 * 60 * 60, // 24 hours
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === 'development',
+  debug: process.env.NODE_ENV === "development",
 };
 
 // Helper function to check if token is expired (simplified)

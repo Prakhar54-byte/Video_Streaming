@@ -1,40 +1,50 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { VideoCard } from "./video-card"
-import { Button } from "@/components/ui/Button"
-import { Input } from "@/components/ui/Input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select"
-import { Grid, List, Search, Filter } from "lucide-react"
+import { useState } from "react";
+import { VideoCard } from "./video-card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/Select";
+import { Grid, List, Search, Filter } from "lucide-react";
 
 export function VideoGrid({ videos = [] }) {
-  const [viewMode, setViewMode] = useState("grid")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [sortBy, setSortBy] = useState("newest")
-  const [filterBy, setFilterBy] = useState("all")
+  const [viewMode, setViewMode] = useState("grid");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
+  const [filterBy, setFilterBy] = useState("all");
 
   const filteredAndSortedVideos = videos
     .filter((video) => {
       const matchesSearch =
         video.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        video.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesFilter = filterBy === "all" || video.category === filterBy
-      return matchesSearch && matchesFilter
+        video.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesFilter = filterBy === "all" || video.category === filterBy;
+      return matchesSearch && matchesFilter;
     })
     .sort((a, b) => {
       switch (sortBy) {
         case "newest":
-          return new Date(b.createdAt).getDate() - new Date(a.createdAt).getDate()
+          return (
+            new Date(b.createdAt).getDate() - new Date(a.createdAt).getDate()
+          );
         case "oldest":
-          return new Date(a.createdAt).getDate() - new Date(b.createdAt).getDate()
+          return (
+            new Date(a.createdAt).getDate() - new Date(b.createdAt).getDate()
+          );
         case "views":
-          return (b.views || 0) - (a.views || 0)
+          return (b.views || 0) - (a.views || 0);
         case "likes":
-          return (b.likes || 0) - (a.likes || 0)
+          return (b.likes || 0) - (a.likes || 0);
         default:
-          return 0
+          return 0;
       }
-    })
+    });
 
   return (
     <div className="space-y-6">
@@ -102,13 +112,16 @@ export function VideoGrid({ videos = [] }) {
 
       {/* Results count */}
       <div className="text-sm text-gray-600">
-        {filteredAndSortedVideos.length} video{filteredAndSortedVideos.length !== 1 ? "s" : ""} found
+        {filteredAndSortedVideos.length} video
+        {filteredAndSortedVideos.length !== 1 ? "s" : ""} found
       </div>
 
       {/* Video Grid/List */}
       <div
         className={
-          viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" : "space-y-4"
+          viewMode === "grid"
+            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            : "space-y-4"
         }
       >
         {filteredAndSortedVideos.map((video) => (
@@ -121,10 +134,14 @@ export function VideoGrid({ videos = [] }) {
           <div className="text-gray-400 mb-4">
             <Search className="h-12 w-12 mx-auto" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No videos found</h3>
-          <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No videos found
+          </h3>
+          <p className="text-gray-600">
+            Try adjusting your search or filter criteria
+          </p>
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       const error = await response.json();
       return NextResponse.json(
         { message: error.message || "Login failed" },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     console.error("Login error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,109 +1,121 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { Card,CardContent } from "../ui/Card"
-import { Button } from "../ui/Button"
-import { Badge } from "../ui/Badge"
-import { Avatar,AvatarFallback,AvatarImage   } from "../ui/Avatar"
-import { DropdownMenu,DropdownMenuContent,DropdownMenuItem,DropdownMenuTrigger } from "../ui/dropdown-menu"
-import { useAuth} from "@/hooks/userAuth"
-import { useToast } from "@/hooks/useToast"
-import { Play,MoreVertical,Edit,Trash2,Share2,Lock,Unlock,Clock,Eye } from "lucide-react" 
+import { useState } from "react";
+import Link from "next/link";
+import { Card, CardContent } from "../ui/Card";
+import { Button } from "../ui/Button";
+import { Badge } from "../ui/Badge";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/Avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { useAuth } from "@/hooks/userAuth";
+import { useToast } from "@/hooks/useToast";
+import {
+  Play,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Share2,
+  Lock,
+  Unlock,
+  Clock,
+  Eye,
+} from "lucide-react";
 
-
-
-interface PlaylistCardProps{
-    playlist:{
-        id:string,
-        title:string,
-        description:string,
-        thumbnail:string,
-        isPrivate:boolean,
-        videoCount:number,
-        createdAt:string,
-        totlalDuration:number,
-        owner:{
-            id:string,
-            username:string,
-            avatar:string
-            channelName:string
-        }
-    }
-    showOwner?:boolean
-    onDelete?: (playlistId: string) => void
-    onEdit?: (playlistId: string) => void
-    layout?: "grid" | "list"
+interface PlaylistCardProps {
+  playlist: {
+    id: string;
+    title: string;
+    description: string;
+    thumbnail: string;
+    isPrivate: boolean;
+    videoCount: number;
+    createdAt: string;
+    totlalDuration: number;
+    owner: {
+      id: string;
+      username: string;
+      avatar: string;
+      channelName: string;
+    };
+  };
+  showOwner?: boolean;
+  onDelete?: (playlistId: string) => void;
+  onEdit?: (playlistId: string) => void;
+  layout?: "grid" | "list";
 }
 
+export function PlaylistCard({
+  playlist,
+  showOwner = true,
+  onDelete,
+  onEdit,
+  layout = "grid",
+}: PlaylistCardProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
+  const isOwner = user?.id === playlist.owner.id;
 
-export function PlaylistCard({playlist,
-    showOwner = true,
-    onDelete,
-    onEdit,
-    layout = "grid"}: PlaylistCardProps) {
-    const { user } = useAuth()
-    const { toast } = useToast()
-    const [loading,setLoading] = useState(false)
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!isOwner) return;
+    try {
+      setLoading(true);
 
-    const isOwner = user?.id === playlist.owner.id
+      const res = await fetch(`/api/playlists/${playlist.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${user?.accessToken}`,
+        },
+      });
 
-    const handleDelete = async(e:React.MouseEvent)=>{
-        e.stopPropagation()
-        e.preventDefault()
-        if(!isOwner)return
-        try {
-            setLoading(true)
+      onDelete?.(playlist.id);
 
-            const res = await fetch(`/api/playlists/${playlist.id}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${user?.accessToken}`}
-            })
-
-            onDelete?.(playlist.id)
-
-            toast({
-                title: "Success",
-                description: "Playlist deleted successfully",
-                variant: "success"
-            })
-        } catch (error) {
-            console.error("Error deleting playlist:", error)
-            toast({
-                title: "Error",
-                description: "Failed to delete playlist",
-                variant: "destructive"
-            })
-            
-        }finally {
-            setLoading(false)
-        }
+      toast({
+        title: "Success",
+        description: "Playlist deleted successfully",
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Error deleting playlist:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete playlist",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
+  };
 
-
-     const handleEdit = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    onEdit?.(playlist.id)
-  }
+  const handleEdit = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit?.(playlist.id);
+  };
 
   const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
-  }
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
-    })
-  }
+    });
+  };
 
   if (layout === "list") {
     return (
@@ -131,15 +143,23 @@ export function PlaylistCard({playlist,
               </div>
 
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-sm line-clamp-2 mb-1">{playlist.title}</h3>
+                <h3 className="font-semibold text-sm line-clamp-2 mb-1">
+                  {playlist.title}
+                </h3>
 
                 {showOwner && (
                   <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-4 w-4">
-                      <AvatarImage src={playlist.owner.avatar || "/placeholder.svg"} />
-                      <AvatarFallback>{playlist.owner.username[0]}</AvatarFallback>
+                      <AvatarImage
+                        src={playlist.owner.avatar || "/placeholder.svg"}
+                      />
+                      <AvatarFallback>
+                        {playlist.owner.username[0]}
+                      </AvatarFallback>
                     </Avatar>
-                    <span className="text-xs text-muted-foreground">{playlist.owner.channelName}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {playlist.owner.channelName}
+                    </span>
                   </div>
                 )}
 
@@ -156,7 +176,10 @@ export function PlaylistCard({playlist,
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge variant={!playlist.isPrivate ? "default" : "secondary"} className="text-xs">
+                    <Badge
+                      variant={!playlist.isPrivate ? "default" : "secondary"}
+                      className="text-xs"
+                    >
                       {!playlist.isPrivate ? (
                         <>
                           <Unlock className="h-2 w-2 mr-1" />
@@ -169,7 +192,9 @@ export function PlaylistCard({playlist,
                         </>
                       )}
                     </Badge>
-                    <span className="text-xs text-muted-foreground">{formatDate(playlist.createdAt)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(playlist.createdAt)}
+                    </span>
                   </div>
 
                   <DropdownMenu>
@@ -178,15 +203,18 @@ export function PlaylistCard({playlist,
                         <MoreVertical className="h-3 w-3" />
                       </Button>
                     </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                   
+                    <DropdownMenuContent>
                       {isOwner && (
                         <>
                           <DropdownMenuItem onClick={handleEdit}>
                             <Edit className="h-3 w-3 mr-2" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={handleDelete} className="text-destructive" disabled={loading}>
+                          <DropdownMenuItem
+                            onClick={handleDelete}
+                            className="text-destructive"
+                            disabled={loading}
+                          >
                             <Trash2 className="h-3 w-3 mr-2" />
                             Delete
                           </DropdownMenuItem>
@@ -200,7 +228,7 @@ export function PlaylistCard({playlist,
           </CardContent>
         </Card>
       </Link>
-    )
+    );
   }
 
   return (
@@ -232,14 +260,17 @@ export function PlaylistCard({playlist,
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                
                   {isOwner && (
                     <>
                       <DropdownMenuItem onClick={handleEdit}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleDelete} className="text-destructive" disabled={loading}>
+                      <DropdownMenuItem
+                        onClick={handleDelete}
+                        className="text-destructive"
+                        disabled={loading}
+                      >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
                       </DropdownMenuItem>
@@ -251,15 +282,21 @@ export function PlaylistCard({playlist,
           </div>
 
           <div className="p-4">
-            <h3 className="font-semibold text-sm line-clamp-2 mb-2">{playlist.title}</h3>
+            <h3 className="font-semibold text-sm line-clamp-2 mb-2">
+              {playlist.title}
+            </h3>
 
             {showOwner && (
               <div className="flex items-center gap-2 mb-2">
                 <Avatar className="h-5 w-5">
-                  <AvatarImage src={playlist.owner.avatar || "/placeholder.svg"} />
+                  <AvatarImage
+                    src={playlist.owner.avatar || "/placeholder.svg"}
+                  />
                   <AvatarFallback>{playlist.owner.username[0]}</AvatarFallback>
                 </Avatar>
-                <span className="text-sm text-muted-foreground">{playlist.owner.channelName}</span>
+                <span className="text-sm text-muted-foreground">
+                  {playlist.owner.channelName}
+                </span>
               </div>
             )}
 
@@ -288,11 +325,13 @@ export function PlaylistCard({playlist,
                   </>
                 )}
               </Badge>
-              <span className="text-sm text-muted-foreground">{formatDate(playlist.createdAt)}</span>
+              <span className="text-sm text-muted-foreground">
+                {formatDate(playlist.createdAt)}
+              </span>
             </div>
           </div>
         </CardContent>
       </Card>
     </Link>
-  )
+  );
 }

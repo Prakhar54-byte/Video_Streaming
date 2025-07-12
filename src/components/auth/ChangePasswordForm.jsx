@@ -1,202 +1,213 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Lock, Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Lock, Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react";
 
-import { Button } from "@/components/ui/Button"
-import { Input } from "@/components/ui/Input"
-import { Label } from "@/components/ui/Label"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card"
-import { Alert, AlertDescription } from "@/components/ui/Alert"
-import { useToast } from "@/hooks/useToast"
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/Card";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { useToast } from "@/hooks/useToast";
 
 export default function ChangePasswordForm({ onSuccess, onCancel }) {
-  const router = useRouter()
-  const { toast } = useToast()
-  
+  const router = useRouter();
+  const { toast } = useToast();
+
   const [formData, setFormData] = useState({
     oldPassword: "",
     newPassword: "",
     confirmPassword: "",
-  })
-  
+  });
+
   const [showPasswords, setShowPasswords] = useState({
     oldPassword: false,
     newPassword: false,
     confirmPassword: false,
-  })
-  
-  const [isLoading, setIsLoading] = useState(false)
-  const [errors, setErrors] = useState({})
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const [passwordStrength, setPasswordStrength] = useState({
     score: 0,
     feedback: "",
-    color: "gray"
-  })
+    color: "gray",
+  });
 
   const handleChange = (e) => {
-    const { id, value } = e.target
-    setFormData((prev) => ({ ...prev, [id]: value }))
-    
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+
     // Clear error when user starts typing
     if (errors[id]) {
-      setErrors((prev) => ({ ...prev, [id]: "" }))
+      setErrors((prev) => ({ ...prev, [id]: "" }));
     }
 
     // Check password strength for new password
     if (id === "newPassword") {
-      checkPasswordStrength(value)
+      checkPasswordStrength(value);
     }
-  }
+  };
 
   const checkPasswordStrength = (password) => {
-    let score = 0
-    let feedback = ""
-    let color = "gray"
+    let score = 0;
+    let feedback = "";
+    let color = "gray";
 
     if (password.length === 0) {
-      setPasswordStrength({ score: 0, feedback: "", color: "gray" })
-      return
+      setPasswordStrength({ score: 0, feedback: "", color: "gray" });
+      return;
     }
 
     // Length check
-    if (password.length >= 8) score += 1
-    if (password.length >= 12) score += 1
+    if (password.length >= 8) score += 1;
+    if (password.length >= 12) score += 1;
 
     // Character variety checks
-    if (/[a-z]/.test(password)) score += 1
-    if (/[A-Z]/.test(password)) score += 1
-    if (/[0-9]/.test(password)) score += 1
-    if (/[^A-Za-z0-9]/.test(password)) score += 1
+    if (/[a-z]/.test(password)) score += 1;
+    if (/[A-Z]/.test(password)) score += 1;
+    if (/[0-9]/.test(password)) score += 1;
+    if (/[^A-Za-z0-9]/.test(password)) score += 1;
 
     // Set feedback based on score
     if (score < 3) {
-      feedback = "Weak password"
-      color = "red"
+      feedback = "Weak password";
+      color = "red";
     } else if (score < 5) {
-      feedback = "Medium strength"
-      color = "yellow"
+      feedback = "Medium strength";
+      color = "yellow";
     } else {
-      feedback = "Strong password"
-      color = "green"
+      feedback = "Strong password";
+      color = "green";
     }
 
-    setPasswordStrength({ score, feedback, color })
-  }
+    setPasswordStrength({ score, feedback, color });
+  };
 
   const togglePasswordVisibility = (field) => {
     setShowPasswords((prev) => ({
       ...prev,
       [field]: !prev[field],
-    }))
-  }
+    }));
+  };
 
   const validateForm = () => {
-    const newErrors = {}
+    const newErrors = {};
 
     if (!formData.oldPassword) {
-      newErrors.oldPassword = "Current password is required"
+      newErrors.oldPassword = "Current password is required";
     }
 
     if (!formData.newPassword) {
-      newErrors.newPassword = "New password is required"
+      newErrors.newPassword = "New password is required";
     } else if (formData.newPassword.length < 6) {
-      newErrors.newPassword = "New password must be at least 6 characters"
+      newErrors.newPassword = "New password must be at least 6 characters";
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your new password"
+      newErrors.confirmPassword = "Please confirm your new password";
     } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match"
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     if (formData.oldPassword === formData.newPassword) {
-      newErrors.newPassword = "New password must be different from current password"
+      newErrors.newPassword =
+        "New password must be different from current password";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-      
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
+
       if (!token) {
         toast({
           title: "Error",
           description: "You must be logged in to change your password",
           variant: "destructive",
-        })
-        router.push("/auth/login")
-        return
+        });
+        router.push("/auth/login");
+        return;
       }
 
       const response = await fetch("/api/auth/change-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           oldPassword: formData.oldPassword,
           newPassword: formData.newPassword,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 401 && data.message?.includes("Old password is incorrect")) {
-          setErrors({ oldPassword: "Current password is incorrect" })
+        if (
+          response.status === 401 &&
+          data.message?.includes("Old password is incorrect")
+        ) {
+          setErrors({ oldPassword: "Current password is incorrect" });
           toast({
             title: "Error",
             description: "Current password is incorrect",
             variant: "destructive",
-          })
+          });
         } else {
-          throw new Error(data.message || "Failed to change password")
+          throw new Error(data.message || "Failed to change password");
         }
-        return
+        return;
       }
 
       toast({
         title: "Success",
         description: "Password changed successfully",
-      })
+      });
 
       // Clear form
       setFormData({
         oldPassword: "",
         newPassword: "",
         confirmPassword: "",
-      })
+      });
 
       // Call success callback if provided
       if (onSuccess) {
-        onSuccess()
+        onSuccess();
       }
-
     } catch (error) {
-      console.error("Change password error:", error)
+      console.error("Change password error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to change password. Please try again.",
+        description:
+          error.message || "Failed to change password. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -274,32 +285,44 @@ export default function ChangePasswordForm({ onSuccess, onCancel }) {
                 )}
               </Button>
             </div>
-            
+
             {/* Password Strength Indicator */}
             {formData.newPassword && (
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className={`h-full transition-all duration-300 ${
-                        passwordStrength.color === 'red' ? 'bg-red-500' :
-                        passwordStrength.color === 'yellow' ? 'bg-yellow-500' :
-                        passwordStrength.color === 'green' ? 'bg-green-500' : 'bg-gray-300'
+                        passwordStrength.color === "red"
+                          ? "bg-red-500"
+                          : passwordStrength.color === "yellow"
+                            ? "bg-yellow-500"
+                            : passwordStrength.color === "green"
+                              ? "bg-green-500"
+                              : "bg-gray-300"
                       }`}
-                      style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
+                      style={{
+                        width: `${(passwordStrength.score / 6) * 100}%`,
+                      }}
                     />
                   </div>
-                  <span className={`text-xs font-medium ${
-                    passwordStrength.color === 'red' ? 'text-red-500' :
-                    passwordStrength.color === 'yellow' ? 'text-yellow-500' :
-                    passwordStrength.color === 'green' ? 'text-green-500' : 'text-gray-500'
-                  }`}>
+                  <span
+                    className={`text-xs font-medium ${
+                      passwordStrength.color === "red"
+                        ? "text-red-500"
+                        : passwordStrength.color === "yellow"
+                          ? "text-yellow-500"
+                          : passwordStrength.color === "green"
+                            ? "text-green-500"
+                            : "text-gray-500"
+                    }`}
+                  >
                     {passwordStrength.feedback}
                   </span>
                 </div>
               </div>
             )}
-            
+
             {errors.newPassword && (
               <Alert variant="destructive" className="py-2">
                 <AlertCircle className="h-4 w-4" />
@@ -309,7 +332,8 @@ export default function ChangePasswordForm({ onSuccess, onCancel }) {
               </Alert>
             )}
             <p className="text-xs text-muted-foreground">
-              Password should be at least 8 characters with mixed case, numbers, and symbols
+              Password should be at least 8 characters with mixed case, numbers,
+              and symbols
             </p>
           </div>
 
@@ -341,12 +365,13 @@ export default function ChangePasswordForm({ onSuccess, onCancel }) {
                 )}
               </Button>
             </div>
-            {formData.confirmPassword && formData.newPassword === formData.confirmPassword && (
-              <div className="flex items-center gap-1 text-green-600">
-                <CheckCircle className="h-4 w-4" />
-                <span className="text-xs">Passwords match</span>
-              </div>
-            )}
+            {formData.confirmPassword &&
+              formData.newPassword === formData.confirmPassword && (
+                <div className="flex items-center gap-1 text-green-600">
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="text-xs">Passwords match</span>
+                </div>
+              )}
             {errors.confirmPassword && (
               <Alert variant="destructive" className="py-2">
                 <AlertCircle className="h-4 w-4" />
@@ -359,9 +384,9 @@ export default function ChangePasswordForm({ onSuccess, onCancel }) {
 
           <div className="flex gap-3 pt-2">
             {onCancel && (
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 className="flex-1"
                 onClick={onCancel}
                 disabled={isLoading}
@@ -369,8 +394,8 @@ export default function ChangePasswordForm({ onSuccess, onCancel }) {
                 Cancel
               </Button>
             )}
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className={onCancel ? "flex-1" : "w-full"}
               disabled={isLoading}
             >
@@ -380,5 +405,5 @@ export default function ChangePasswordForm({ onSuccess, onCancel }) {
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }

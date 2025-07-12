@@ -1,61 +1,61 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Card, CardContent } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Textarea } from '@/components/ui/TextArea'
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Textarea } from "@/components/ui/TextArea";
 
 export default function TweetsPage() {
-  const [tweets, setTweets] = useState([])
-  const [newTweet, setNewTweet] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [tweets, setTweets] = useState([]);
+  const [newTweet, setNewTweet] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchTweets = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/tweets', {
-          credentials: 'include'
-        })
-        const data = await response.json()
-        setTweets(data.tweets)
+        const response = await fetch("http://localhost:8000/api/v1/tweets", {
+          credentials: "include",
+        });
+        const data = await response.json();
+        setTweets(data.tweets);
       } catch (error) {
-        console.error('Error fetching tweets:', error)
+        console.error("Error fetching tweets:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchTweets()
-  }, [])
+    fetchTweets();
+  }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8000/api/v1/tweets', {
-        method: 'POST',
+      const response = await fetch("http://localhost:8000/api/v1/tweets", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
-        body: JSON.stringify({ content: newTweet })
-      })
-      const data = await response.json()
-      setTweets([data.tweet, ...tweets])
-      setNewTweet('')
+        credentials: "include",
+        body: JSON.stringify({ content: newTweet }),
+      });
+      const data = await response.json();
+      setTweets([data.tweet, ...tweets]);
+      setNewTweet("");
     } catch (error) {
-      console.error('Error creating tweet:', error)
+      console.error("Error creating tweet:", error);
     }
-  }
+  };
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div>Loading...</div>;
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Tweets</h1>
-      
+
       <Card className="mb-6">
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit}>
@@ -85,5 +85,5 @@ export default function TweetsPage() {
         ))}
       </div>
     </div>
-  )
+  );
 }

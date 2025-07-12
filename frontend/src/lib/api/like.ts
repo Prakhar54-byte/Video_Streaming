@@ -1,6 +1,7 @@
 // API functions for likes
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 export interface LikeResponse {
   statusCode: number;
@@ -66,15 +67,20 @@ export interface LikedItemsResponse<T> {
 }
 
 // Toggle like/unlike for video
-export const toggleVideoLike = async (videoId: string): Promise<LikeResponse> => {
+export const toggleVideoLike = async (
+  videoId: string,
+): Promise<LikeResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/likes/video/${videoId}/toggle`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_BASE_URL}/likes/video/${videoId}/toggle`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -88,15 +94,20 @@ export const toggleVideoLike = async (videoId: string): Promise<LikeResponse> =>
 };
 
 // Toggle like/unlike for comment
-export const toggleCommentLike = async (commentId: string): Promise<LikeResponse> => {
+export const toggleCommentLike = async (
+  commentId: string,
+): Promise<LikeResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/likes/comment/${commentId}/toggle`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_BASE_URL}/likes/comment/${commentId}/toggle`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -110,15 +121,20 @@ export const toggleCommentLike = async (commentId: string): Promise<LikeResponse
 };
 
 // Toggle like/unlike for tweet
-export const toggleTweetLike = async (tweetId: string): Promise<LikeResponse> => {
+export const toggleTweetLike = async (
+  tweetId: string,
+): Promise<LikeResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/likes/tweet/${tweetId}/toggle`, {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_BASE_URL}/likes/tweet/${tweetId}/toggle`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -154,7 +170,9 @@ export const getLikedVideos = async (): Promise<LikedItemsResponse<Video>> => {
 };
 
 // Get all liked comments for the logged-in user
-export const getLikedComments = async (): Promise<LikedItemsResponse<Comment>> => {
+export const getLikedComments = async (): Promise<
+  LikedItemsResponse<Comment>
+> => {
   try {
     const response = await fetch(`${API_BASE_URL}/likes/comments`, {
       method: "GET",

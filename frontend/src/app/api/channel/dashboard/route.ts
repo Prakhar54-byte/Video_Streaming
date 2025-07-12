@@ -3,18 +3,21 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   try {
     // Get user's channels
-    const channelsResponse = await fetch("http://localhost:8000/api/v1/channels/user/me", {
-      headers: {
-        "Cookie": request.headers.get("cookie") || "",
-        "Content-Type": "application/json"
-      }
-    });
+    const channelsResponse = await fetch(
+      "http://localhost:8000/api/v1/channels/user/me",
+      {
+        headers: {
+          Cookie: request.headers.get("cookie") || "",
+          "Content-Type": "application/json",
+        },
+      },
+    );
 
     if (!channelsResponse.ok) {
       const error = await channelsResponse.json();
       return NextResponse.json(
         { message: error.message || "Failed to fetch channels" },
-        { status: channelsResponse.status }
+        { status: channelsResponse.status },
       );
     }
 
@@ -39,8 +42,8 @@ export async function GET(request: Request) {
             views: 0,
             subscribers: 0,
             likes: 0,
-          }
-        }
+          },
+        },
       });
     }
 
@@ -48,12 +51,15 @@ export async function GET(request: Request) {
     const primaryChannel = channels[0];
 
     // Fetch videos for the channel
-    const videosResponse = await fetch(`http://localhost:8000/api/v1/videos?channelId=${primaryChannel._id}&page=1&limit=50&sortBy=createdAt&sortType=-1`, {
-      headers: {
-        "Cookie": request.headers.get("cookie") || "",
-        "Content-Type": "application/json"
-      }
-    });
+    const videosResponse = await fetch(
+      `http://localhost:8000/api/v1/videos?channelId=${primaryChannel._id}&page=1&limit=50&sortBy=createdAt&sortType=-1`,
+      {
+        headers: {
+          Cookie: request.headers.get("cookie") || "",
+          "Content-Type": "application/json",
+        },
+      },
+    );
 
     let videos = [];
     if (videosResponse.ok) {
@@ -62,12 +68,15 @@ export async function GET(request: Request) {
     }
 
     // Fetch subscribers for the channel
-    const subscribersResponse = await fetch(`http://localhost:8000/api/v1/channels/${primaryChannel._id}/subscribers`, {
-      headers: {
-        "Cookie": request.headers.get("cookie") || "",
-        "Content-Type": "application/json"
-      }
-    });
+    const subscribersResponse = await fetch(
+      `http://localhost:8000/api/v1/channels/${primaryChannel._id}/subscribers`,
+      {
+        headers: {
+          Cookie: request.headers.get("cookie") || "",
+          "Content-Type": "application/json",
+        },
+      },
+    );
 
     let subscribersCount = 0;
     if (subscribersResponse.ok) {
@@ -76,9 +85,18 @@ export async function GET(request: Request) {
     }
 
     // Calculate analytics
-    const totalViews = videos.reduce((sum: number, video: any) => sum + (video.views || 0), 0);
-    const totalLikes = videos.reduce((sum: number, video: any) => sum + (video.likes || 0), 0);
-    const totalComments = videos.reduce((sum: number, video: any) => sum + (video.comments || 0), 0);
+    const totalViews = videos.reduce(
+      (sum: number, video: any) => sum + (video.views || 0),
+      0,
+    );
+    const totalLikes = videos.reduce(
+      (sum: number, video: any) => sum + (video.likes || 0),
+      0,
+    );
+    const totalComments = videos.reduce(
+      (sum: number, video: any) => sum + (video.comments || 0),
+      0,
+    );
 
     const analytics = {
       totalVideos: videos.length,
@@ -93,21 +111,20 @@ export async function GET(request: Request) {
         views: Math.floor(Math.random() * 20) + 5,
         subscribers: Math.floor(Math.random() * 15) + 3,
         likes: Math.floor(Math.random() * 25) + 5,
-      }
+      },
     };
 
     return NextResponse.json({
       channels,
       primaryChannel,
       videos,
-      analytics
+      analytics,
     });
-
   } catch (error) {
     console.error("Dashboard data fetch error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

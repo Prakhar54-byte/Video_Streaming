@@ -1,10 +1,17 @@
-"use client"
+"use client";
 
-import { Toast, ToastClose, ToastDescription, ToastProvider, ToastTitle, ToastViewport } from "../ui/Toast"
-import { useToast } from "../ui/use-toast"
+import {
+  Toast,
+  ToastClose,
+  ToastDescription,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+} from "../ui/Toast";
+import { useToast } from "../ui/use-toast";
 
 export default function Toaster() {
-  const { toasts } = useToast()
+  const { toasts } = useToast();
 
   return (
     <ToastProvider>
@@ -20,6 +27,5 @@ export default function Toaster() {
       ))}
       <ToastViewport />
     </ToastProvider>
-  )
+  );
 }
-

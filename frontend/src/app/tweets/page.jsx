@@ -1,52 +1,52 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card"
-import { Button } from "@/components/ui/Button"
-import { TextArea } from "@/components/ui/TextArea"
-import { Avatar } from "@/components/ui/Avatar"
-import { useAuth } from "@/hooks/userAuth"
-import { useToast } from "@/hooks/useToast"
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { TextArea } from "@/components/ui/TextArea";
+import { Avatar } from "@/components/ui/Avatar";
+import { useAuth } from "@/hooks/userAuth";
+import { useToast } from "@/hooks/useToast";
 
 export default function TweetsPage() {
-  const [tweets, setTweets] = useState([])
-  const [newTweet, setNewTweet] = useState("")
-  const [loading, setLoading] = useState(false)
-  const { user } = useAuth()
-  const { toast } = useToast()
+  const [tweets, setTweets] = useState([]);
+  const [newTweet, setNewTweet] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    fetchTweets()
-  }, [])
+    fetchTweets();
+  }, []);
 
   const fetchTweets = async () => {
     try {
       // API Call: GET /api/tweets
-      const response = await fetch("/api/tweets")
-      const data = await response.json()
+      const response = await fetch("/api/tweets");
+      const data = await response.json();
 
       if (data.success) {
-        setTweets(data.data)
+        setTweets(data.data);
       }
     } catch (error) {
-      console.error("Error fetching tweets:", error)
+      console.error("Error fetching tweets:", error);
     }
-  }
+  };
 
   const handleSubmitTweet = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!newTweet.trim()) {
       toast({
         title: "Error",
         description: "Tweet content cannot be empty",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     try {
-      setLoading(true)
+      setLoading(true);
 
       const response = await fetch("/api/tweets", {
         method: "POST",
@@ -56,31 +56,31 @@ export default function TweetsPage() {
         body: JSON.stringify({
           content: newTweet,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (data.success) {
-        setNewTweet("")
-        fetchTweets() // Refresh tweets
+        setNewTweet("");
+        fetchTweets(); // Refresh tweets
         toast({
           title: "Success",
           description: "Tweet posted successfully",
-        })
+        });
       } else {
-        throw new Error(data.message)
+        throw new Error(data.message);
       }
     } catch (error) {
-      console.error("Error posting tweet:", error)
+      console.error("Error posting tweet:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to post tweet",
         variant: "destructive",
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -103,7 +103,9 @@ export default function TweetsPage() {
                   maxLength={280}
                 />
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">{newTweet.length}/280</span>
+                  <span className="text-sm text-gray-500">
+                    {newTweet.length}/280
+                  </span>
                   <Button type="submit" disabled={loading || !newTweet.trim()}>
                     {loading ? "Posting..." : "Tweet"}
                   </Button>
@@ -126,8 +128,12 @@ export default function TweetsPage() {
                   />
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-semibold text-gray-900">{tweet.owner?.username}</h3>
-                      <span className="text-sm text-gray-500">{new Date(tweet.createdAt).toLocaleDateString()}</span>
+                      <h3 className="font-semibold text-gray-900">
+                        {tweet.owner?.username}
+                      </h3>
+                      <span className="text-sm text-gray-500">
+                        {new Date(tweet.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
                     <p className="mt-1 text-gray-800">{tweet.content}</p>
                     <div className="mt-3 flex items-center space-x-4">
@@ -146,5 +152,5 @@ export default function TweetsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
