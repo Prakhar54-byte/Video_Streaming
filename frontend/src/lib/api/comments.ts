@@ -1,6 +1,7 @@
 // API functions for comments
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 export interface Comment {
   _id: string;
@@ -31,7 +32,10 @@ export interface SingleCommentResponse {
 }
 
 // Get comments for a video
-export const getVideoComments = async (videoId: string, page: number): Promise<CommentResponse> => {
+export const getVideoComments = async (
+  videoId: string,
+  page: number,
+): Promise<CommentResponse> => {
   try {
     const response = await fetch(`${API_BASE_URL}/comments/${videoId}`, {
       method: "GET",
@@ -55,7 +59,7 @@ export const getVideoComments = async (videoId: string, page: number): Promise<C
 // Create a new comment
 export const addComment = async (
   videoId: string,
-  content: string
+  content: string,
 ): Promise<SingleCommentResponse> => {
   try {
     const response = await fetch(`${API_BASE_URL}/comments/${videoId}`, {
@@ -82,17 +86,20 @@ export const addComment = async (
 export const updateComment = async (
   videoId: string,
   commentId: string,
-  content: string
+  content: string,
 ): Promise<SingleCommentResponse> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/comments/${videoId}/${commentId}`, {
-      method: "PUT",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_BASE_URL}/comments/${videoId}/${commentId}`,
+      {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
       },
-      body: JSON.stringify({ content }),
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -108,16 +115,19 @@ export const updateComment = async (
 // Delete a comment
 export const deleteComment = async (
   videoId: string,
-  commentId: string
+  commentId: string,
 ): Promise<{ success: boolean; message: string }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/comments/${videoId}/${commentId}`, {
-      method: "DELETE",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_BASE_URL}/comments/${videoId}/${commentId}`,
+      {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

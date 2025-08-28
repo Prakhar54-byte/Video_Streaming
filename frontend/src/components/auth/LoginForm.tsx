@@ -73,7 +73,7 @@ export default function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if(isLoading) return; // Prevent multiple submissions
+    if (isLoading) return; // Prevent multiple submissions
     if (!validate()) {
       toast({
         title: "Validation Error",
@@ -103,9 +103,7 @@ export default function LoginForm() {
         throw new Error(data.message || "Login failed");
       }
 
-      
-
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate network delay
 
       router.push("/");
     } catch (error: any) {
@@ -141,8 +139,12 @@ export default function LoginForm() {
       <div className="w-full md:w-1/2 bg-white p-8 md:p-12">
         <div className="max-w-md mx-auto space-y-6">
           <div className="space-y-2 text-center md:text-left">
-            <h1 className="text-2xl font-bold tracking-tight">Login to your Account</h1>
-            <p className="text-muted-foreground">See what is going on with your business</p>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Login to your Account
+            </h1>
+            <p className="text-muted-foreground">
+              See what is going on with your business
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -159,7 +161,9 @@ export default function LoginForm() {
                   className={`pl-10 ${errors.username ? "border-red-500" : ""}`}
                 />
               </div>
-              {errors.username && <p className="text-sm text-red-500">{errors.username}</p>}
+              {errors.username && (
+                <p className="text-sm text-red-500">{errors.username}</p>
+              )}
             </div>
 
             {/* Email */}
@@ -176,7 +180,9 @@ export default function LoginForm() {
                   className={`pl-10 ${errors.email ? "border-red-500" : ""}`}
                 />
               </div>
-              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email}</p>
+              )}
             </div>
 
             {/* Password */}
@@ -193,7 +199,9 @@ export default function LoginForm() {
                   className={`pl-10 ${errors.password ? "border-red-500" : ""}`}
                 />
               </div>
-              {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+              {errors.password && (
+                <p className="text-sm text-red-500">{errors.password}</p>
+              )}
             </div>
 
             {/* Remember Me + Forgot Password */}
@@ -218,19 +226,19 @@ export default function LoginForm() {
 
             {/* Submit Button */}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Login"} 
+              {isLoading ? "Logging in..." : "Login"}
             </Button>
 
             {/* console.log("LoginForm rendered"); */}
-            
-
-            
           </form>
 
           {/* Register Prompt */}
           <div className="text-center text-sm">
             Don&apos;t have an account?{" "}
-            <Link href="/auth/register" className="font-medium text-primary hover:underline">
+            <Link
+              href="/auth/register"
+              className="font-medium text-primary hover:underline"
+            >
               Sign up
             </Link>
           </div>

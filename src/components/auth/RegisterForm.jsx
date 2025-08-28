@@ -39,7 +39,7 @@ export default function RegisterForm() {
     const { id, files } = e.target;
     if (files && files[0]) {
       setFormData((prev) => ({ ...prev, [id]: files[0] }));
-      
+
       // Create preview URL
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -60,7 +60,12 @@ export default function RegisterForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.fullName || !formData.username || !formData.email || !formData.password) {
+    if (
+      !formData.fullName ||
+      !formData.username ||
+      !formData.email ||
+      !formData.password
+    ) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -143,8 +148,12 @@ export default function RegisterForm() {
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg">
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-2xl font-bold tracking-tight">Create an Account</h1>
-          <p className="text-muted-foreground">Enter your information to get started</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Create an Account
+          </h1>
+          <p className="text-muted-foreground">
+            Enter your information to get started
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -299,7 +308,10 @@ export default function RegisterForm() {
 
         <div className="text-center text-sm">
           Already have an account?{" "}
-          <Link href="/auth/login" className="font-medium text-primary hover:underline">
+          <Link
+            href="/auth/login"
+            className="font-medium text-primary hover:underline"
+          >
             Sign in
           </Link>
         </div>

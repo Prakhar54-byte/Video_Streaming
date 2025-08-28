@@ -2,19 +2,19 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  ArrowLeft, 
-  Upload, 
-  Video, 
-  Image as ImageIcon, 
-  X, 
+import {
+  ArrowLeft,
+  Upload,
+  Video,
+  Image as ImageIcon,
+  X,
   Play,
   Eye,
   EyeOff,
   Save,
   FileVideo,
   Clock,
-  Users
+  Users,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -25,12 +25,12 @@ import { Textarea } from "@/components/ui/TextArea";
 import { Switch } from "@/components/ui/Switch";
 import { Badge } from "@/components/ui/Badge";
 import { Progress } from "@/components/ui/Progress";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/Select";
 import { useToast } from "@/hooks/useToast";
 import Image from "next/image";
@@ -50,7 +50,7 @@ export default function UploadVideoForm() {
   const { toast } = useToast();
   const videoInputRef = useRef<HTMLInputElement>(null);
   const thumbnailInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videoData, setVideoData] = useState<VideoData>({
@@ -60,7 +60,7 @@ export default function UploadVideoForm() {
     thumbnail: null,
     isPublished: true,
     category: "",
-    tags: []
+    tags: [],
   });
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -79,81 +79,87 @@ export default function UploadVideoForm() {
     "Fashion",
     "News",
     "Comedy",
-    "Documentary"
+    "Documentary",
   ];
 
   // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
-    setVideoData(prev => ({
+    setVideoData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   // Handle video file upload
- const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const file = e.target.files?.[0];
-  
-  // Only process if there's a file and it's different from the current one
-  if (file && (!videoData.videoFile || file.name !== videoData.videoFile.name || 
-      file.size !== videoData.videoFile.size || file.lastModified !== videoData.videoFile.lastModified)) {
-    
-    // Validate file type
-    if (!file.type.startsWith('video/')) {
-      toast({
-        title: "Error",
-        description: "Please select a valid video file",
-        variant: "destructive"
-      });
-      return;
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    // Only process if there's a file and it's different from the current one
+    if (
+      file &&
+      (!videoData.videoFile ||
+        file.name !== videoData.videoFile.name ||
+        file.size !== videoData.videoFile.size ||
+        file.lastModified !== videoData.videoFile.lastModified)
+    ) {
+      // Validate file type
+      if (!file.type.startsWith("video/")) {
+        toast({
+          title: "Error",
+          description: "Please select a valid video file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (500MB limit)
+      if (file.size > 500 * 1024 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Video size should be less than 500MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update state with new file
+      setVideoData((prev) => ({
+        ...prev,
+        videoFile: file,
+        title: prev.title || file.name.replace(/\.[^/.]+$/, ""),
+      }));
+
+      // Create video preview
+      const videoUrl = URL.createObjectURL(file);
+      setVideoPreview(videoUrl);
+
+      // Get video duration
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.onloadedmetadata = () => {
+        setVideoDuration(video.duration);
+        URL.revokeObjectURL(video.src);
+      };
+      video.src = videoUrl;
+
+      // Clear the input value to ensure onChange fires even if the same file is selected
+      e.target.value = "";
     }
-
-    // Validate file size (500MB limit)
-    if (file.size > 500 * 1024 * 1024 * 1024) {
-      toast({
-        title: "Error",
-        description: "Video size should be less than 500MB",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Update state with new file
-    setVideoData(prev => ({
-      ...prev,
-      videoFile: file,
-      title: prev.title || file.name.replace(/\.[^/.]+$/, "")
-    }));
-
-    // Create video preview
-    const videoUrl = URL.createObjectURL(file);
-    setVideoPreview(videoUrl);
-
-    // Get video duration
-    const video = document.createElement('video');
-    video.preload = 'metadata';
-    video.onloadedmetadata = () => {
-      setVideoDuration(video.duration);
-      URL.revokeObjectURL(video.src);
-    };
-    video.src = videoUrl;
-    
-    // Clear the input value to ensure onChange fires even if the same file is selected
-    e.target.value = '';
-  }
-};
+  };
 
   // Handle thumbnail upload
   const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         toast({
           title: "Error",
           description: "Please select a valid image file",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
@@ -163,16 +169,15 @@ export default function UploadVideoForm() {
         toast({
           title: "Error",
           description: "Thumbnail size should be less than 5MB",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
 
-      setVideoData(prev => ({
+      setVideoData((prev) => ({
         ...prev,
-        thumbnail: file
+        thumbnail: file,
       }));
-      
 
       // Create thumbnail preview
       const reader = new FileReader();
@@ -185,12 +190,15 @@ export default function UploadVideoForm() {
 
   // Handle tag addition
   const handleAddTag = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && tagInput.trim()) {
+    if (e.key === "Enter" && tagInput.trim()) {
       e.preventDefault();
-      if (!videoData.tags.includes(tagInput.trim()) && videoData.tags.length < 10) {
-        setVideoData(prev => ({
+      if (
+        !videoData.tags.includes(tagInput.trim()) &&
+        videoData.tags.length < 10
+      ) {
+        setVideoData((prev) => ({
           ...prev,
-          tags: [...prev.tags, tagInput.trim()]
+          tags: [...prev.tags, tagInput.trim()],
         }));
         setTagInput("");
       }
@@ -199,9 +207,9 @@ export default function UploadVideoForm() {
 
   // Remove tag
   const removeTag = (tagToRemove: string) => {
-    setVideoData(prev => ({
+    setVideoData((prev) => ({
       ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove)
+      tags: prev.tags.filter((tag) => tag !== tagToRemove),
     }));
   };
 
@@ -220,7 +228,7 @@ export default function UploadVideoForm() {
       toast({
         title: "Error",
         description: "Please select a video file",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -229,7 +237,7 @@ export default function UploadVideoForm() {
       toast({
         title: "Error",
         description: "Please enter a video title",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -238,7 +246,6 @@ export default function UploadVideoForm() {
     setUploadProgress(0);
 
     try {
-
       const formData = new FormData();
       formData.append("title", videoData.title);
       formData.append("description", videoData.description);
@@ -250,7 +257,7 @@ export default function UploadVideoForm() {
 
       // Simulate upload progress
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
+        setUploadProgress((prev) => {
           if (prev >= 90) {
             clearInterval(progressInterval);
             return prev;
@@ -261,7 +268,7 @@ export default function UploadVideoForm() {
 
       const response = await fetch("http://localhost:8000/api/v1/videos/", {
         method: "POST",
-        
+
         credentials: "include",
         body: formData,
       });
@@ -281,7 +288,7 @@ export default function UploadVideoForm() {
         toast({
           title: "Error",
           description: data.message || "Failed to upload video",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -289,7 +296,7 @@ export default function UploadVideoForm() {
       toast({
         title: "Error",
         description: "Network error. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setIsUploading(false);
@@ -301,10 +308,10 @@ export default function UploadVideoForm() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center px-4">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="mr-2 hover:bg-primary/10 transition-colors duration-200" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mr-2 hover:bg-primary/10 transition-colors duration-200"
             onClick={() => router.push("/channelDashboard/dashboard")}
           >
             <ArrowLeft className="h-5 w-5" />
@@ -328,12 +335,14 @@ export default function UploadVideoForm() {
                 </CardHeader>
                 <CardContent>
                   {!videoData.videoFile ? (
-                    <div 
+                    <div
                       className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
                       onClick={() => videoInputRef.current?.click()}
                     >
                       <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-semibold mb-2">Upload your video</h3>
+                      <h3 className="text-lg font-semibold mb-2">
+                        Upload your video
+                      </h3>
                       <p className="text-muted-foreground mb-4">
                         Drag and drop a video file or click to browse
                       </p>
@@ -354,10 +363,17 @@ export default function UploadVideoForm() {
                         <div className="flex items-center gap-3">
                           <Video className="h-8 w-8 text-primary" />
                           <div>
-                            <p className="font-medium">{videoData.videoFile.name}</p>
+                            <p className="font-medium">
+                              {videoData.videoFile.name}
+                            </p>
                             <p className="text-sm text-muted-foreground">
-                              {(videoData.videoFile.size / (1024 * 1024)).toFixed(2)} MB
-                              {videoDuration > 0 && ` • ${formatDuration(videoDuration)}`}
+                              {(
+                                videoData.videoFile.size /
+                                (1024 * 1024)
+                              ).toFixed(2)}{" "}
+                              MB
+                              {videoDuration > 0 &&
+                                ` • ${formatDuration(videoDuration)}`}
                             </p>
                           </div>
                         </div>
@@ -366,7 +382,10 @@ export default function UploadVideoForm() {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            setVideoData(prev => ({ ...prev, videoFile: null }));
+                            setVideoData((prev) => ({
+                              ...prev,
+                              videoFile: null,
+                            }));
                             setVideoPreview(null);
                             setVideoDuration(0);
                           }}
@@ -374,12 +393,12 @@ export default function UploadVideoForm() {
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                      
+
                       {videoPreview && (
                         <div className="relative">
-                          <video 
-                            src={videoPreview} 
-                            controls 
+                          <video
+                            src={videoPreview}
+                            controls
                             className="w-full max-h-64 rounded-lg"
                           />
                         </div>
@@ -429,9 +448,12 @@ export default function UploadVideoForm() {
 
                   <div className="space-y-2">
                     <Label htmlFor="category">Category</Label>
-                    <Select value={videoData.category} onValueChange={(value) => 
-                      setVideoData(prev => ({ ...prev, category: value }))
-                    }>
+                    <Select
+                      value={videoData.category}
+                      onValueChange={(value) =>
+                        setVideoData((prev) => ({ ...prev, category: value }))
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a category" />
                       </SelectTrigger>
@@ -457,7 +479,11 @@ export default function UploadVideoForm() {
                     />
                     <div className="flex flex-wrap gap-2 mt-2">
                       {videoData.tags.map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="gap-1">
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="gap-1"
+                        >
                           {tag}
                           <button
                             type="button"
@@ -489,13 +515,15 @@ export default function UploadVideoForm() {
                 </CardHeader>
                 <CardContent>
                   {!thumbnailPreview ? (
-                    <div 
+                    <div
                       className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors aspect-video"
                       onClick={() => thumbnailInputRef.current?.click()}
                     >
                       <ImageIcon className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm font-medium mb-1">Upload thumbnail</p>
-                    
+                      <p className="text-sm font-medium mb-1">
+                        Upload thumbnail
+                      </p>
+
                       <input
                         ref={thumbnailInputRef}
                         type="file"
@@ -506,9 +534,8 @@ export default function UploadVideoForm() {
                     </div>
                   ) : (
                     <div className="relative">
-                    
-                     <img 
-                        src={thumbnailPreview} 
+                      <img
+                        src={thumbnailPreview}
                         alt="Thumbnail preview"
                         className="w-full aspect-video object-cover rounded-lg"
                       />
@@ -518,7 +545,10 @@ export default function UploadVideoForm() {
                         size="sm"
                         className="absolute top-2 right-2"
                         onClick={() => {
-                          setVideoData(prev => ({ ...prev, thumbnail: null }));
+                          setVideoData((prev) => ({
+                            ...prev,
+                            thumbnail: null,
+                          }));
                           setThumbnailPreview(null);
                         }}
                       >
@@ -554,16 +584,18 @@ export default function UploadVideoForm() {
                     </div>
                     <Switch
                       checked={videoData.isPublished}
-                      onCheckedChange={(checked) => 
-                        setVideoData(prev => ({ ...prev, isPublished: checked }))
+                      onCheckedChange={(checked) =>
+                        setVideoData((prev) => ({
+                          ...prev,
+                          isPublished: checked,
+                        }))
                       }
                     />
                   </div>
                   <p className="text-sm text-muted-foreground mt-2">
-                    {videoData.isPublished 
+                    {videoData.isPublished
                       ? "Anyone can search for and view this video"
-                      : "Only you can view this video"
-                    }
+                      : "Only you can view this video"}
                   </p>
                 </CardContent>
               </Card>
@@ -589,16 +621,16 @@ export default function UploadVideoForm() {
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-4 pt-6 border-t">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => router.push("/channelDashboard/dashboard")}
               disabled={isUploading}
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={isUploading || !videoData.videoFile}
               className="min-w-32"
             >

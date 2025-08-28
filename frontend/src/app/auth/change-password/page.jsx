@@ -1,156 +1,170 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { Lock, ArrowLeft, Eye, EyeOff } from "lucide-react"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Lock, ArrowLeft, Eye, EyeOff } from "lucide-react";
 
-import { Button } from "@/components/ui/Button"
-import { Input } from "@/components/ui/Input"
-import { Label } from "@/components/ui/Label"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card"
-import { useToast } from "@/hooks/useToast"
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/Card";
+import { useToast } from "@/hooks/useToast";
 
 export default function ChangePasswordPage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  
+  const router = useRouter();
+  const { toast } = useToast();
+
   const [formData, setFormData] = useState({
     oldPassword: "",
     newPassword: "",
     confirmPassword: "",
-  })
-  
+  });
+
   const [showPasswords, setShowPasswords] = useState({
     oldPassword: false,
     newPassword: false,
     confirmPassword: false,
-  })
-  
-  const [isLoading, setIsLoading] = useState(false)
-  const [errors, setErrors] = useState({})
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
-    const { id, value } = e.target
-    setFormData((prev) => ({ ...prev, [id]: value }))
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
     // Clear error when user starts typing
     if (errors[id]) {
-      setErrors((prev) => ({ ...prev, [id]: "" }))
+      setErrors((prev) => ({ ...prev, [id]: "" }));
     }
-  }
+  };
 
   const togglePasswordVisibility = (field) => {
     setShowPasswords((prev) => ({
       ...prev,
       [field]: !prev[field],
-    }))
-  }
+    }));
+  };
 
   const validateForm = () => {
-    const newErrors = {}
+    const newErrors = {};
 
     if (!formData.oldPassword) {
-      newErrors.oldPassword = "Current password is required"
+      newErrors.oldPassword = "Current password is required";
     }
 
     if (!formData.newPassword) {
-      newErrors.newPassword = "New password is required"
+      newErrors.newPassword = "New password is required";
     } else if (formData.newPassword.length < 6) {
-      newErrors.newPassword = "New password must be at least 6 characters"
+      newErrors.newPassword = "New password must be at least 6 characters";
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your new password"
+      newErrors.confirmPassword = "Please confirm your new password";
     } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match"
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     if (formData.oldPassword === formData.newPassword) {
-      newErrors.newPassword = "New password must be different from current password"
+      newErrors.newPassword =
+        "New password must be different from current password";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
 
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token")
-      
+      const token =
+        localStorage.getItem("token") || sessionStorage.getItem("token");
+
       if (!token) {
         toast({
           title: "Error",
           description: "You must be logged in to change your password",
           variant: "destructive",
-        })
-        router.push("/auth/login")
-        return
+        });
+        router.push("/auth/login");
+        return;
       }
 
-      const response = await fetch("http://localhost:8000/api/v1/users/change-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+      const response = await fetch(
+        "http://localhost:8000/api/v1/users/change-password",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            oldPassword: formData.oldPassword,
+            newPassword: formData.newPassword,
+          }),
         },
-        body: JSON.stringify({
-          oldPassword: formData.oldPassword,
-          newPassword: formData.newPassword,
-        }),
-      })
+      );
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        if (response.status === 401 && data.message === "Old password is incorrect") {
-          setErrors({ oldPassword: "Current password is incorrect" })
+        if (
+          response.status === 401 &&
+          data.message === "Old password is incorrect"
+        ) {
+          setErrors({ oldPassword: "Current password is incorrect" });
           toast({
             title: "Error",
             description: "Current password is incorrect",
             variant: "destructive",
-          })
+          });
         } else {
-          throw new Error(data.message || "Failed to change password")
+          throw new Error(data.message || "Failed to change password");
         }
-        return
+        return;
       }
 
       toast({
         title: "Success",
         description: "Password changed successfully",
-      })
+      });
 
       // Clear form
       setFormData({
         oldPassword: "",
         newPassword: "",
         confirmPassword: "",
-      })
+      });
 
       // Redirect to profile or dashboard after successful change
       setTimeout(() => {
-        router.push("/profile")
-      }, 1500)
-
+        router.push("/profile");
+      }, 1500);
     } catch (error) {
-      console.error("Change password error:", error)
+      console.error("Change password error:", error);
       toast({
         title: "Error",
-        description: error.message || "Failed to change password. Please try again.",
+        description:
+          error.message || "Failed to change password. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -272,7 +286,9 @@ export default function ChangePasswordPage() {
                   </Button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-sm text-red-500">{errors.confirmPassword}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.confirmPassword}
+                  </p>
                 )}
               </div>
 
@@ -293,5 +309,5 @@ export default function ChangePasswordPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
