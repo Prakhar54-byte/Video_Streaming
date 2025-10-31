@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
+import axios from "axios"
 import {
   Search,
   Home,
@@ -165,17 +166,11 @@ export default function HomePage() {
     const checkAuth = async () => {
       try {
         // Verify token and get user data using cookies
-        const userResponse = await fetch("http://localhost:8000/api/v1/users/current-user", {
-          credentials: "include"
+        const userResponse = await axios.get("http://localhost:8000/api/v1/users/current-user", {
+          withCredentials: true
         })
 
-        if (!userResponse.ok) {
-          router.push("/auth/login")
-          return
-        }
-
-        const userData = await userResponse.json()
-        setUser(userData.data)
+        setUser(userResponse.data.data)
       } catch (error) {
         console.error("Auth check failed:", error)
         router.push("/auth/login")
@@ -195,35 +190,26 @@ export default function HomePage() {
       setIsLoading(true)
       try {
         // Fetch videos
-        const videosResponse = await fetch("http://localhost:8000/api/v1/videos?page=1&limit=25&sortBy=createdAt&sortType=-1", {
-          credentials: "include"
+        const videosResponse = await axios.get("http://localhost:8000/api/v1/videos?page=1&limit=25&sortBy=createdAt&sortType=-1", {
+          withCredentials: true
         })
         
-        if (videosResponse.ok) {
-          const videosData = await videosResponse.json()
-          setVideos(videosData.data.videos || [])
-          setFilteredVideos(videosData.data.videos || [])
-        }
+        setVideos(videosResponse.data.data.videos || [])
+        setFilteredVideos(videosResponse.data.data.videos || [])
 
         // Fetch tweets using the correct backend route
-        const tweetsResponse = await fetch("http://localhost:8000/api/v1/tweets", {
-          credentials: "include"
+        const tweetsResponse = await axios.get("http://localhost:8000/api/v1/tweets", {
+          withCredentials: true
         })
         
-        if (tweetsResponse.ok) {
-          const tweetsData = await tweetsResponse.json()
-          setTweets(tweetsData.data || [])
-        }
+        setTweets(tweetsResponse.data.data || [])
 
         // Fetch subscriptions
-        const subscriptionsResponse = await fetch("http://localhost:8000/api/v1/subscriptions/c/subscribed", {
-          credentials: "include"
+        const subscriptionsResponse = await axios.get("http://localhost:8000/api/v1/subscriptions/c/subscribed", {
+          withCredentials: true
         })
         
-        if (subscriptionsResponse.ok) {
-          const subscriptionsData = await subscriptionsResponse.json()
-          setSubscriptions(subscriptionsData.data || [])
-        }
+        setSubscriptions(subscriptionsResponse.data.data || [])
 
       } catch (error) {
         console.error("Error fetching data:", error)
@@ -260,9 +246,8 @@ export default function HomePage() {
     if (!isConfirmed) return
 
     try {
-      await fetch("http://localhost:8000/api/v1/users/logout", {
-        method: "POST",
-        credentials: "include"
+      await axios.post("http://localhost:8000/api/v1/users/logout", {}, {
+        withCredentials: true
       })
       
       toast({
@@ -285,22 +270,18 @@ export default function HomePage() {
   const handleCreateClick = async () => {
     try {
       // Check if user has a channel
-      const channelResponse = await fetch("http://localhost:8000/api/v1/channels/user/me", {
-        credentials: "include"
+      const channelResponse = await axios.get("http://localhost:8000/api/v1/channels/user/me", {
+        withCredentials: true
       })
 
-      if (channelResponse.ok) {
-        const data = await channelResponse.json()
-        if (data.data && data.data.length > 0) {
-          router.push("/channelDashboard/dashboard")
-        } else {
-          router.push("/channelDashboard/create")
-        }
+      if (channelResponse.data && channelResponse.data.data && channelResponse.data.data.length > 0) {
+        router.push("/channelDashboard/dashboard")
       } else {
         router.push("/channelDashboard/create")
       }
     } catch (error) {
       console.error("Error checking channel", error)
+      router.push("/channelDashboard/create")
       toast({
         title: "Error",
         description: "Error checking channel. Please try again.",
@@ -325,36 +306,27 @@ export default function HomePage() {
     setIsSubmittingTweet(true)
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/tweets", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ content: tweetContent }),
-        credentials: "include"
-      })
+      const response = await axios.post("http://localhost:8000/api/v1/tweets", 
+        { content: tweetContent },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      )
 
-      if (response.ok) {
-        const data = await response.json()
-        setTweets([data.data, ...tweets])
-        setTweetContent("")
-        toast({
-          title: "Success",
-          description: "Message posted successfully",
-        })
-      } else {
-        const error = await response.json()
-        toast({
-          title: "Error",
-          description: "Error posting message: " + error.message,
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
+      setTweets([response.data.data, ...tweets])
+      setTweetContent("")
+      toast({
+        title: "Success",
+        description: "Message posted successfully",
+      })
+    } catch (error: any) {
       console.error("Error posting message:", error)
       toast({
         title: "Error",
-        description: "Error posting message. Please try again.",
+        description: "Error posting message: " + (error.response?.data?.message || error.message),
         variant: "destructive",
       })
     } finally {
@@ -365,41 +337,32 @@ export default function HomePage() {
   // Handle tweet update
   const handleTweetUpdate = async (tweetId: string, newContent: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/tweets/${tweetId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ content: newContent }),
-        credentials: "include"
-      })
+      const response = await axios.patch(`http://localhost:8000/api/v1/tweets/${tweetId}`, 
+        { content: newContent },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      )
 
-      if (response.ok) {
-        const data = await response.json()
-        setTweets(prevTweets =>
-          prevTweets.map(tweet =>
-            tweet._id === tweetId ? { ...tweet, content: newContent, updatedAt: new Date().toISOString() } : tweet
-          )
+      setTweets(prevTweets =>
+        prevTweets.map(tweet =>
+          tweet._id === tweetId ? { ...tweet, content: newContent, updatedAt: new Date().toISOString() } : tweet
         )
-        setEditingTweet(null)
-        setEditContent("")
-        toast({
-          title: "Success",
-          description: "Message updated successfully",
-        })
-      } else {
-        const error = await response.json()
-        toast({
-          title: "Error",
-          description: "Error updating message: " + error.message,
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
+      )
+      setEditingTweet(null)
+      setEditContent("")
+      toast({
+        title: "Success",
+        description: "Message updated successfully",
+      })
+    } catch (error: any) {
       console.error("Error updating tweet:", error)
       toast({
         title: "Error",
-        description: "Error updating message. Please try again.",
+        description: "Error updating message: " + (error.response?.data?.message || error.message),
         variant: "destructive",
       })
     }
@@ -410,30 +373,20 @@ export default function HomePage() {
     if (!window.confirm("Are you sure you want to delete this message?")) return
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/tweets/${tweetId}`, {
-        method: "DELETE",
-        credentials: "include"
+      await axios.delete(`http://localhost:8000/api/v1/tweets/${tweetId}`, {
+        withCredentials: true
       })
 
-      if (response.ok) {
-        setTweets(prevTweets => prevTweets.filter(tweet => tweet._id !== tweetId))
-        toast({
-          title: "Success",
-          description: "Message deleted successfully",
-        })
-      } else {
-        const error = await response.json()
-        toast({
-          title: "Error",
-          description: "Error deleting message: " + error.message,
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
+      setTweets(prevTweets => prevTweets.filter(tweet => tweet._id !== tweetId))
+      toast({
+        title: "Success",
+        description: "Message deleted successfully",
+      })
+    } catch (error: any) {
       console.error("Error deleting tweet:", error)
       toast({
         title: "Error",
-        description: "Error deleting message. Please try again.",
+        description: "Error deleting message: " + (error.response?.data?.message || error.message),
         variant: "destructive",
       })
     }
@@ -451,25 +404,22 @@ export default function HomePage() {
     setIsSearching(true)
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/videos?query=${encodeURIComponent(searchQuery)}&page=1&limit=25`, {
-        credentials: "include"
+      const response = await axios.get(`http://localhost:8000/api/v1/videos?query=${encodeURIComponent(searchQuery)}&page=1&limit=25`, {
+        withCredentials: true
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setFilteredVideos(data.data.videos || [])
-        
-        if (data.data.videos.length === 0) {
-          toast({
-            title: "No results",
-            description: `No videos found for "${searchQuery}"`,
-          })
-        } else {
-          toast({
-            title: "Search results",
-            description: `Found ${data.data.videos.length} videos for "${searchQuery}"`,
-          })
-        }
+      setFilteredVideos(response.data.data.videos || [])
+      
+      if (response.data.data.videos.length === 0) {
+        toast({
+          title: "No results",
+          description: `No videos found for "${searchQuery}"`,
+        })
+      } else {
+        toast({
+          title: "Search results",
+          description: `Found ${response.data.data.videos.length} videos for "${searchQuery}"`,
+        })
       }
     } catch (error) {
       console.error("Error searching:", error)
@@ -486,25 +436,22 @@ export default function HomePage() {
   // Handle like functionality for tweets
   const handleLikeTweet = async (tweetId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/likes/toggle/t/${tweetId}`, {
-        method: "POST",
-        credentials: "include"
+      await axios.post(`http://localhost:8000/api/v1/likes/toggle/t/${tweetId}`, {}, {
+        withCredentials: true
       })
 
-      if (response.ok) {
-        setTweets(prevTweets =>
-          prevTweets.map(tweet =>
-            tweet._id === tweetId
-              ? { ...tweet, likes: tweet.liked ? (tweet.likes || 0) - 1 : (tweet.likes || 0) + 1, liked: !tweet.liked }
-              : tweet
-          )
+      setTweets(prevTweets =>
+        prevTweets.map(tweet =>
+          tweet._id === tweetId
+            ? { ...tweet, likes: tweet.liked ? (tweet.likes || 0) - 1 : (tweet.likes || 0) + 1, liked: !tweet.liked }
+            : tweet
         )
+      )
 
-        toast({
-          title: "Success",
-          description: "Like updated",
-        })
-      }
+      toast({
+        title: "Success",
+        description: "Like updated",
+      })
     } catch (error) {
       console.error("Error liking tweet:", error)
     }
