@@ -374,9 +374,6 @@ export default function HomePage() {
         { content: tweetContent },
         {
           withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-          },
         },
       );
 
@@ -408,9 +405,6 @@ export default function HomePage() {
         { content: newContent },
         {
           withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-          },
         },
       );
 
