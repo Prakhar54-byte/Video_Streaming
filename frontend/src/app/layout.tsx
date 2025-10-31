@@ -1,6 +1,7 @@
 import React from "react"
 import { Inter } from "next/font/google"
 import {  ThemeProvider } from "../context/ThemeProvider"
+import { AuthProvider} from "../context/AuthContext"
 import  Toaster  from "../components/ui/Toaster"
 import "../styles/global.css"
 
@@ -19,10 +20,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
+        <AuthProvider>
         <ThemeProvider>
           {children}
           <Toaster />
         </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   )

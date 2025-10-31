@@ -59,6 +59,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { TextArea } from "@/components/ui/TextArea"
 import { useToast } from "@/hooks/useToast.js"
+import axios from "axios"
+
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL
 
 interface Video {
   _id: string
@@ -158,25 +161,19 @@ export default function HomePage() {
   ])
   const [selectedCategory, setSelectedCategory] = useState("All")
 
-  console.log("This is home page");
 
   // Check authentication and fetch initial data
   useEffect(() => {
     const checkAuth = async () => {
       try {
         // Verify token and get user data using cookies
-        const userResponse = await fetch("http://localhost:8000/api/v1/users/current-user", {
-          credentials: "include"
+        const userResponse = await axios.get(`${API_URL}/users/current-user`,{
+          credentials:true,
+      
         })
 
-        if (!userResponse.ok) {
-          router.push("/auth/login")
-          return
-        }
-
-        const userData = await userResponse.json()
-        setUser(userData.data)
-      } catch (error) {
+        setUser(userResponse.data.data)
+           } catch (error) {
         console.error("Auth check failed:", error)
         router.push("/auth/login")
       } finally {
@@ -195,34 +192,32 @@ export default function HomePage() {
       setIsLoading(true)
       try {
         // Fetch videos
-        const videosResponse = await fetch("http://localhost:8000/api/v1/videos?page=1&limit=25&sortBy=createdAt&sortType=-1", {
-          credentials: "include"
+        const videosResponse = await axios.get(`${API_URL}/videos?page=1&limit=25&sortBy=createdAt&sortType=-1`,{
+          credentials:true
         })
         
         if (videosResponse.ok) {
           const videosData = await videosResponse.json()
-          setVideos(videosData.data.videos || [])
-          setFilteredVideos(videosData.data.videos || [])
+          setVideos(videosResponse.data.data.videos || [])
+          setFilteredVideos(videosResponse.data.data.videos || [])
         }
 
         // Fetch tweets using the correct backend route
-        const tweetsResponse = await fetch("http://localhost:8000/api/v1/tweets", {
-          credentials: "include"
+        const tweetsResponse = await axios.get(`${API_URL}/tweets/user/${user._id}`,{
+          credentials:true,
         })
-        
         if (tweetsResponse.ok) {
           const tweetsData = await tweetsResponse.json()
-          setTweets(tweetsData.data || [])
+          setTweets(tweetsResponse.data.data || [])
         }
 
         // Fetch subscriptions
-        const subscriptionsResponse = await fetch("http://localhost:8000/api/v1/subscriptions/c/subscribed", {
-          credentials: "include"
+        const subscriptionsResponse = await axios.get(`${API_URL}/subscriptions/c/subscribed`,{
+          withCredentials:true
         })
-        
         if (subscriptionsResponse.ok) {
-          const subscriptionsData = await subscriptionsResponse.json()
-          setSubscriptions(subscriptionsData.data || [])
+          
+          setSubscriptions(subscriptionsResponse.data.data || [])
         }
 
       } catch (error) {
@@ -241,7 +236,7 @@ export default function HomePage() {
       fetchData()
     }
 
-    console.log("Fetching data for user:", user?.username);
+
 
   }, [user, toast, userLoaded])
 
@@ -260,9 +255,8 @@ export default function HomePage() {
     if (!isConfirmed) return
 
     try {
-      await fetch("http://localhost:8000/api/v1/users/logout", {
-        method: "POST",
-        credentials: "include"
+      await axios.post(`${API_URL}/users/logout`,{},{
+        credentials:true
       })
       
       toast({
@@ -285,17 +279,15 @@ export default function HomePage() {
   const handleCreateClick = async () => {
     try {
       // Check if user has a channel
-      const channelResponse = await fetch("http://localhost:8000/api/v1/channels/user/me", {
-        credentials: "include"
+      const channelResponse = await axios.get(`${API_URL}/channels/user/me`,{
+        credentials:true
       })
 
-      if (channelResponse.ok) {
-        const data = await channelResponse.json()
-        if (data.data && data.data.length > 0) {
-          router.push("/channelDashboard/dashboard")
-        } else {
-          router.push("/channelDashboard/create")
-        }
+      if (channelResponse.data &&
+          channelResponse.data.data &&
+          channelResponse.data.data.length >0
+      ) {
+        router.push("/channelDashboard/dashboard");
       } else {
         router.push("/channelDashboard/create")
       }
@@ -311,7 +303,7 @@ export default function HomePage() {
 
   // Handle tweet submission
   const handleTweetSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!tweetContent.trim()) {
       toast({
@@ -325,31 +317,22 @@ export default function HomePage() {
     setIsSubmittingTweet(true)
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/tweets", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ content: tweetContent }),
-        credentials: "include"
+
+
+
+      console.log("this is editContent ",editContent);
+      const response = await axios.post(`${API_URL}/tweets`,{
+        content:editContent
+      },{
+        withCredentials:true
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setTweets([data.data, ...tweets])
-        setTweetContent("")
-        toast({
-          title: "Success",
-          description: "Message posted successfully",
-        })
-      } else {
-        const error = await response.json()
-        toast({
-          title: "Error",
-          description: "Error posting message: " + error.message,
-          variant: "destructive",
-        })
-      }
+      setTweets([response.data.data, ...tweets]);
+      setTweetContent("");
+      toast({
+        title:"Success",
+        description:"Message posted succesfully"
+      })
     } catch (error) {
       console.error("Error posting message:", error)
       toast({
@@ -365,36 +348,33 @@ export default function HomePage() {
   // Handle tweet update
   const handleTweetUpdate = async (tweetId: string, newContent: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/tweets/${tweetId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ content: newContent }),
-        credentials: "include"
+      console.log("this is newContent ",newContent);
+      console.log("this is editContent ",editContent);
+      
+      const response = await axios.patch(`${API_URL}/tweets/${tweetId}`,{
+        content:newContent
+      },{
+        credentials:true
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setTweets(prevTweets =>
-          prevTweets.map(tweet =>
-            tweet._id === tweetId ? { ...tweet, content: newContent, updatedAt: new Date().toISOString() } : tweet
-          )
-        )
-        setEditingTweet(null)
-        setEditContent("")
-        toast({
-          title: "Success",
-          description: "Message updated successfully",
-        })
-      } else {
-        const error = await response.json()
-        toast({
-          title: "Error",
-          description: "Error updating message: " + error.message,
-          variant: "destructive",
-        })
-      }
+      setTweets((prevTweets)=>
+      prevTweets.map((tweet)=>
+      tweet._id === tweetId
+    ? {
+      ...tweet,
+      content:newContent,
+      updatedAt:new Date().toISOString(),
+    }
+  : tweet,))
+
+  setEditingTweet(null);
+  setEditContent("");
+  toast({
+        title: "Success",
+        description: "Message updated successfully",
+      });
+
+      
     } catch (error) {
       console.error("Error updating tweet:", error)
       toast({
@@ -410,30 +390,22 @@ export default function HomePage() {
     if (!window.confirm("Are you sure you want to delete this message?")) return
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/tweets/${tweetId}`, {
-        method: "DELETE",
-        credentials: "include"
+      const response = await axios.delete(`${API_URL}/tweets/${tweetId}`,{
+        credentials:true
       })
 
-      if (response.ok) {
-        setTweets(prevTweets => prevTweets.filter(tweet => tweet._id !== tweetId))
-        toast({
-          title: "Success",
-          description: "Message deleted successfully",
-        })
-      } else {
-        const error = await response.json()
-        toast({
-          title: "Error",
-          description: "Error deleting message: " + error.message,
-          variant: "destructive",
-        })
-      }
+      setTweet((prevTweets)=>
+      prevTweets.filter((tweet)=>tweet._id !== tweetId),)
+
+      toast({
+        title: "Success",
+        description: "Message deleted successfully",
+      });
     } catch (error) {
       console.error("Error deleting tweet:", error)
       toast({
         title: "Error",
-        description: "Error deleting message. Please try again.",
+        description: "Error deleting message. Please try again."+(error.response?.data?.message || error.message),
         variant: "destructive",
       })
     }
@@ -451,26 +423,26 @@ export default function HomePage() {
     setIsSearching(true)
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/videos?query=${encodeURIComponent(searchQuery)}&page=1&limit=25`, {
-        credentials: "include"
-      })
+      const response = await axios.get(`${API_URL}/videos?query=${encodeURIComponent(searchQuery)}&page=1&limit=25`,
+    {
+      credentials:true
+    }
+    )
 
-      if (response.ok) {
-        const data = await response.json()
-        setFilteredVideos(data.data.videos || [])
-        
-        if (data.data.videos.length === 0) {
-          toast({
-            title: "No results",
-            description: `No videos found for "${searchQuery}"`,
-          })
-        } else {
-          toast({
-            title: "Search results",
-            description: `Found ${data.data.videos.length} videos for "${searchQuery}"`,
-          })
-        }
-      }
+
+    setFilteredVideos(response.data.data.videos || [])
+    if(response.data.data.videos.length === 0){
+      toast({
+          title: "No results",
+          description: `No videos found for "${searchQuery}"`,
+        });
+      } else {
+        toast({
+          title: "Search results",
+          description: `Found ${response.data.data.videos.length} videos for "${searchQuery}"`,
+    })
+  }
+
     } catch (error) {
       console.error("Error searching:", error)
       toast({
@@ -486,25 +458,32 @@ export default function HomePage() {
   // Handle like functionality for tweets
   const handleLikeTweet = async (tweetId: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/likes/toggle/t/${tweetId}`, {
-        method: "POST",
-        credentials: "include"
-      })
+      const response = await axios.post(
+        `http://localhost:8000/api/v1/likes/toggle/t/${tweetId}`,
+        {},
+        {
+          withCredentials: true,
+        },
+      );
 
-      if (response.ok) {
-        setTweets(prevTweets =>
-          prevTweets.map(tweet =>
-            tweet._id === tweetId
-              ? { ...tweet, likes: tweet.liked ? (tweet.likes || 0) - 1 : (tweet.likes || 0) + 1, liked: !tweet.liked }
-              : tweet
-          )
-        )
-
+      setTweets((prevTweets) =>
+        prevTweets.map((tweet) =>
+          tweet._id === tweetId
+            ? {
+                ...tweet,
+                likes: tweet.liked
+                  ? (tweet.likes || 0) - 1
+                  : (tweet.likes || 0) + 1,
+                liked: !tweet.liked,
+              }
+            : tweet,
+        ),
+      );
         toast({
           title: "Success",
           description: "Like updated",
         })
-      }
+      
     } catch (error) {
       console.error("Error liking tweet:", error)
     }
@@ -789,7 +768,7 @@ export default function HomePage() {
 
   const unreadNotificationsCount = notifications.filter((n) => !n.read).length
 
-  console.log("This is User:", user);
+
 
   if (!user) {
     return (

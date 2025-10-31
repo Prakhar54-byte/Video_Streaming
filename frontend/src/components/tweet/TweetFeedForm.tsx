@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import axios from "axios";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card"
 import { Button } from "@/components/ui/Button"
 import { TextArea } from "@/components/ui/TextArea"
@@ -9,25 +10,33 @@ import { Heart, MessageCircle, Share, MoreHorizontal } from "lucide-react"
 import { useAuth } from "@/context/AuthContext"
 import { LoadingSpinner } from "@/components/common/LoadingSpinner"
 
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 export function TweetFeed() {
   const [tweets, setTweets] = useState([])
   const [newTweet, setNewTweet] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const { user, isAuthenticated } = useAuth()
+  
+  const { isAuthenticated, user } = useAuth();
+
 
   useEffect(() => {
     fetchTweets()
   }, [])
 
   const fetchTweets = async () => {
+    if(!user || !user._id){
+      setLoading(false)
+      return ;
+    }
     try {
       setLoading(true)
-      const response = await fetch("/api/tweets")
-      const data = await response.json()
+      const response = await axios.get(`${API_URL}/tweets/user/${user._id}`)
+      
 
       if (response.ok) {
-        setTweets(data.tweets || [])
+        setTweets(response.data || [])
       }
     } catch (error) {
       console.error("Error fetching tweets:", error)
@@ -35,6 +44,15 @@ export function TweetFeed() {
       setLoading(false)
     }
   }
+
+  useEffect(()=>{
+    if(isAuthenticated && user){
+      fetchTweets()
+    }else{
+      setTweets([])
+      setLoading(false)
+    }
+  },[isAuthenticated,user])
 
   const handleSubmitTweet = async (e) => {
     e.preventDefault()
@@ -44,19 +62,14 @@ export function TweetFeed() {
     try {
       setSubmitting(true)
 
-      const response = await fetch("/api/tweets", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: newTweet,
-        }),
+      const response = await axios.post(`${API_URL}/tweets/`,{
+        content:newTweet,
       })
 
-      const data = await response.json()
+      
 
       if (response.ok) {
+        setTweets([response.data, ...tweets])
         setNewTweet("")
         fetchTweets() // Refresh tweets
       }
@@ -66,6 +79,40 @@ export function TweetFeed() {
       setSubmitting(false)
     }
   }
+
+
+const handelDeleteTweet = async(tweetId)=>{
+  if(!tweetId)return ;
+
+  // For confirmation
+  
+
+  try {
+    await axios.delete(`${API_URL}/tweets/${tweetId}`)
+
+    setTweets(tweets.filter((tweet) => tweet._id !== tweetId))
+    
+  } catch (error) {
+    console.error("Error deleting tweet:",error)
+  }
+}
+
+
+const handelUpdateTweet = async(tweetId,newContent)=>{
+  if(!tweetId || !newContent)return;
+
+  try {
+    const response = await axios.patch(`${API_URL}/tweets/${tweetId}`,{
+      content:newContent,
+    })
+
+    setTweets(tweets.map((tweet)=>{
+      tweet._id === tweetId ? response.data : tweet
+    }))
+  } catch (error) {
+    console.error("Error updating message:",error)
+  }
+}
 
 const formatTimeAgo = (dateString) => {
     const date = new Date(dateString)
@@ -84,7 +131,7 @@ const formatTimeAgo = (dateString) => {
     }
     
     // Handle very recent times
-    if (diffInSeconds < 1) return "just now"
+    if (diffInSeconds <= 1) return "just now"
     if (diffInSeconds < 60) return `${diffInSeconds}s ago`
     
     const diffInMinutes = Math.floor(diffInSeconds / 60)

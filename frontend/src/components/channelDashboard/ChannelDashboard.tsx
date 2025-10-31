@@ -105,7 +105,7 @@ export default function ChannelDashboard() {
       
 
         // Fetch current user data to get channel info
-        const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/current-user`, {
+        const userResponse = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/current-user`, {
           headers: {
             "Content-Type": "application/json"
           },

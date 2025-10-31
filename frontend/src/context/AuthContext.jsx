@@ -2,70 +2,67 @@
 
 import { createContext, useState, useEffect, useContext } from 'react'
 import axios from 'axios'
-import { jwtDecode } from 'jwt-decode'
+
+// jwtDecode is no longer needed, as we can't read httpOnly cookies
+// import { jwtDecode } from 'jwt-decode' 
 
 const AuthContext = createContext()
+
+// *** IMPORTANT ***
+// Configure axios to send cookies with all requests
+axios.defaults.withCredentials = true;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  const isAuthenticated  = !!user
+
   useEffect(() => {
-    // Check if there's a token in localStorage
-    const token = localStorage.getItem('token')
-    
-    if (token) {
+    // On mount, check if the user has a valid session cookie
+    // We do this by asking our backend for the user's data
+    const checkUserSession = async () => {
       try {
-        // Verify token hasn't expired
-        const decodedToken = jwtDecode(token)
-        const currentTime = Date.now() / 1000
+        // The browser will AUTOMATICALLY send the cookie
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/current-user`)
         
-        if (decodedToken.exp > currentTime) {
-          // Set auth header for all requests
-          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-          
-          // Get user data
-          fetchUserData(token)
-        } else {
-          // Token expired
-          localStorage.removeItem('token')
-          setLoading(false)
-        }
+        // If we get data, the user is logged in
+        setUser(response.data)
       } catch (error) {
-        // Invalid token
-        localStorage.removeItem('token')
+        // If it fails (e.g., 401 Unauthorized), the user is not logged in
+        setUser(null)
+      } finally {
         setLoading(false)
       }
-    } else {
-      setLoading(false)
     }
+
+    checkUserSession()
   }, [])
 
-  const fetchUserData = async (token) => {
-    try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/users/me`)
-      setUser(response.data)
-      setLoading(false)
-    } catch (error) {
-      localStorage.removeItem('token')
-      setLoading(false)
-    }
-  }
+  // This function is no longer needed as part of the initial load
+  // const fetchUserData = async (token) => { ... }
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/login`, {
         email,
         password
       })
       
-      const { token, user } = response.data
+      // The backend should set the httpOnly cookie in its response headers.
+      // The response.data should be the user object.
       
-      // Save token to localStorage
-      localStorage.setItem('token', token)
+      // We no longer get a 'token' in the body
+      // const { token, user } = response.data 
       
-      // Set auth header for all requests
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      // We just get the user data
+      const user = response.data 
+      
+      // We DO NOT save the token in localStorage
+      // localStorage.setItem('token', token)
+      
+      // We DO NOT set the auth header. The browser does it.
+      // axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
       
       // Set user in state
       setUser(user)
@@ -81,19 +78,16 @@ export function AuthProvider({ children }) {
 
   const register = async (username, email, password) => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/register`, {
         username,
         email,
         password
       })
       
-      const { token, user } = response.data
+      // Same as login: backend sets cookie, response is user data
+      const user = response.data
       
-      // Save token to localStorage
-      localStorage.setItem('token', token)
-      
-      // Set auth header for all requests
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      // No localStorage or axios header manipulation needed
       
       // Set user in state
       setUser(user)
@@ -107,19 +101,27 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const logout = () => {
-    // Remove token from localStorage
-    localStorage.removeItem('token')
+  const logout = async () => {
+    try {
+      // We must tell the backend to clear the cookie
+      await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/logout`)
+    } catch (error) {
+      // Even if the backend call fails, log the user out on the client
+      console.error("Server logout failed:", error)
+    }
     
-    // Remove auth header
-    delete axios.defaults.headers.common['Authorization']
+    // We DO NOT need to remove from localStorage
+    // localStorage.removeItem('token')
+    
+    // We DO NOT need to remove the header
+    // delete axios.defaults.headers.common['Authorization']
     
     // Clear user from state
     setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout,isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   )
