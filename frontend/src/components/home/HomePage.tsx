@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef } from "react"
-import { useRouter } from "next/navigation"
-import Image from "next/image"
-import Link from "next/link"
+import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
 import {
   Search,
   Home,
@@ -47,259 +47,308 @@ import {
   Flame,
   Award,
   Crown,
-} from "lucide-react"
+} from "lucide-react";
 
-import { Button } from "@/components/ui/Button"
-import { Input } from "@/components/ui/Input"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tab"
-import { Card, CardContent } from "@/components/ui/Card"
-import { Badge } from "@/components/ui/Badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { TextArea } from "@/components/ui/TextArea"
-import { useToast } from "@/hooks/useToast.js"
-import axios from "axios"
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/Avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tab";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/Tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { TextArea } from "@/components/ui/TextArea";
+import { useToast } from "@/hooks/useToast.js";
+import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 interface Video {
-  _id: string
-  title: string
-  description: string
-  thumbnail?: string
-  duration: number
-  views: number
+  _id: string;
+  title: string;
+  description: string;
+  thumbnail?: string;
+  duration: number;
+  views: number;
   owner: {
-    isVerified: any
-    _id: string
-    username: string
-    fullName: string
-    avatar: string
-  }
-  createdAt: string
-  isPublished: boolean
-  likes?: number
-  category?: string
-  tags?: string[]
+    isVerified: any;
+    _id: string;
+    username: string;
+    fullName: string;
+    avatar: string;
+  };
+  createdAt: string;
+  isPublished: boolean;
+  likes?: number;
+  category?: string;
+  tags?: string[];
 }
 
 interface Tweet {
-  _id: string
-  content: string
+  _id: string;
+  content: string;
   owner: {
-    _id: string
-    username: string
-    fullName: string
-    avatar: string
-  }
-  createdAt: string
-  updatedAt: string
-  likes?: number
-  liked?: boolean
-  retweets?: number
-  retweeted?: boolean
-  replies?: number
+    _id: string;
+    username: string;
+    fullName: string;
+    avatar: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  likes?: number;
+  liked?: boolean;
+  retweets?: number;
+  retweeted?: boolean;
+  replies?: number;
 }
 
 interface User {
-  _id: string
-  username: string
-  fullName: string
-  email: string
-  avatar: string
-  coverImage?: string
-  subscribersCount?: number
-  isVerified?: boolean
+  _id: string;
+  username: string;
+  fullName: string;
+  email: string;
+  avatar: string;
+  coverImage?: string;
+  subscribersCount?: number;
+  isVerified?: boolean;
 }
 
 interface TrendingTopic {
-  tag: string
-  count: number
-  category: string
+  tag: string;
+  count: number;
+  category: string;
 }
 
 export default function HomePage() {
-  const router = useRouter()
-  const { toast } = useToast()
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  
+  const router = useRouter();
+  const { toast } = useToast();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   // State management
-  const [user, setUser] = useState<User | null>(null)
-  const [userLoaded, setUserLoaded] = useState(false)
-  const [sidebarVisible, setSidebarVisible] = useState(true)
-  const [videos, setVideos] = useState<Video[]>([])
-  const [filteredVideos, setFilteredVideos] = useState<Video[]>([])
-  const [tweets, setTweets] = useState<Tweet[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("videos")
-  const [tweetContent, setTweetContent] = useState("")
-  const [isSubmittingTweet, setIsSubmittingTweet] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-  const [isSearching, setIsSearching] = useState(false)
+  const [user, setUser] = useState<User | null>(null);
+  const [userLoaded, setUserLoaded] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(true);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [filteredVideos, setFilteredVideos] = useState<Video[]>([]);
+  const [tweets, setTweets] = useState<Tweet[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("videos");
+  const [tweetContent, setTweetContent] = useState("");
+  const [isSubmittingTweet, setIsSubmittingTweet] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const [notifications, setNotifications] = useState([
-    { id: 1, content: "Your video reached 1,000 views!", read: false, type: "milestone" },
-    { id: 2, content: "Channel XYZ subscribed to you", read: false, type: "subscription" },
-    { id: 3, content: "New comment on your video", read: true, type: "comment" },
-    { id: 4, content: "Your video is trending!", read: false, type: "trending" },
-  ])
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [sortOption, setSortOption] = useState("recent")
-  const [subscriptions, setSubscriptions] = useState([])
+    {
+      id: 1,
+      content: "Your video reached 1,000 views!",
+      read: false,
+      type: "milestone",
+    },
+    {
+      id: 2,
+      content: "Channel XYZ subscribed to you",
+      read: false,
+      type: "subscription",
+    },
+    {
+      id: 3,
+      content: "New comment on your video",
+      read: true,
+      type: "comment",
+    },
+    {
+      id: 4,
+      content: "Your video is trending!",
+      read: false,
+      type: "trending",
+    },
+  ]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [sortOption, setSortOption] = useState("recent");
+  const [subscriptions, setSubscriptions] = useState([]);
   const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([
     { tag: "WebDevelopment", count: 12500, category: "Technology" },
     { tag: "NextJS", count: 8900, category: "Programming" },
     { tag: "VideoStreaming", count: 6700, category: "Technology" },
     { tag: "ReactJS", count: 15200, category: "Programming" },
     { tag: "AI", count: 23400, category: "Technology" },
-  ])
-  const [editingTweet, setEditingTweet] = useState<string | null>(null)
-  const [editContent, setEditContent] = useState("")
+  ]);
+  const [editingTweet, setEditingTweet] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
   const [videoCategories] = useState([
-    "All", "Technology", "Gaming", "Music", "Education", "Entertainment", 
-    "Sports", "News", "Comedy", "Travel", "Cooking", "Fashion"
-  ])
-  const [selectedCategory, setSelectedCategory] = useState("All")
-
+    "All",
+    "Technology",
+    "Gaming",
+    "Music",
+    "Education",
+    "Entertainment",
+    "Sports",
+    "News",
+    "Comedy",
+    "Travel",
+    "Cooking",
+    "Fashion",
+  ]);
+  const [selectedCategory, setSelectedCategory] = useState("All");
 
   // Check authentication and fetch initial data
   useEffect(() => {
     const checkAuth = async () => {
       try {
         // Verify token and get user data using cookies
-        const userResponse = await axios.get(`${API_URL}/users/current-user`,{
-          credentials:true,
-      
-        })
+        const userResponse = await axios.get(`${API_URL}/users/current-user`, {
+          credentials: true,
+        });
 
-        setUser(userResponse.data.data)
-           } catch (error) {
-        console.error("Auth check failed:", error)
-        router.push("/auth/login")
+        setUser(userResponse.data.data);
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        router.push("/auth/login");
       } finally {
-        setUserLoaded(true)
+        setUserLoaded(true);
       }
-    }
+    };
 
-    checkAuth()
-  }, [router])
+    checkAuth();
+  }, [router]);
 
   // Fetch videos and tweets
   useEffect(() => {
     const fetchData = async () => {
-      if (!user) return
-      
-      setIsLoading(true)
+      if (!user) return;
+
+      setIsLoading(true);
       try {
         // Fetch videos
-        const videosResponse = await axios.get(`${API_URL}/videos?page=1&limit=25&sortBy=createdAt&sortType=-1`,{
-          credentials:true
-        })
-        
+        const videosResponse = await axios.get(
+          `${API_URL}/videos?page=1&limit=25&sortBy=createdAt&sortType=-1`,
+          {
+            credentials: true,
+          },
+        );
+
         if (videosResponse.ok) {
-          const videosData = await videosResponse.json()
-          setVideos(videosResponse.data.data.videos || [])
-          setFilteredVideos(videosResponse.data.data.videos || [])
+          const videosData = await videosResponse.json();
+          setVideos(videosResponse.data.data.videos || []);
+          setFilteredVideos(videosResponse.data.data.videos || []);
         }
 
         // Fetch tweets using the correct backend route
-        const tweetsResponse = await axios.get(`${API_URL}/tweets/user/${user._id}`,{
-          credentials:true,
-        })
+        const tweetsResponse = await axios.get(
+          `${API_URL}/tweets/user/${user._id}`,
+          {
+            credentials: true,
+          },
+        );
         if (tweetsResponse.ok) {
-          const tweetsData = await tweetsResponse.json()
-          setTweets(tweetsResponse.data.data || [])
+          const tweetsData = await tweetsResponse.json();
+          setTweets(tweetsResponse.data.data || []);
         }
 
         // Fetch subscriptions
-        const subscriptionsResponse = await axios.get(`${API_URL}/subscriptions/c/subscribed`,{
-          withCredentials:true
-        })
+        const subscriptionsResponse = await axios.get(
+          `${API_URL}/subscriptions/c/subscribed`,
+          {
+            withCredentials: true,
+          },
+        );
         if (subscriptionsResponse.ok) {
-          
-          setSubscriptions(subscriptionsResponse.data.data || [])
+          setSubscriptions(subscriptionsResponse.data.data || []);
         }
-
       } catch (error) {
-        console.error("Error fetching data:", error)
+        console.error("Error fetching data:", error);
         toast({
           title: "Error",
           description: "Failed to load content. Please try again.",
           variant: "destructive",
-        })
+        });
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
     if (userLoaded && user) {
-      fetchData()
+      fetchData();
     }
-
-
-
-  }, [user, toast, userLoaded])
+  }, [user, toast, userLoaded]);
 
   // Toggle sidebar visibility
   const toggleSidebar = () => {
-    document.body.classList.add("layout-transitioning")
-    setSidebarVisible(!sidebarVisible)
+    document.body.classList.add("layout-transitioning");
+    setSidebarVisible(!sidebarVisible);
     setTimeout(() => {
-      document.body.classList.remove("layout-transitioning")
-    }, 300)
-  }
+      document.body.classList.remove("layout-transitioning");
+    }, 300);
+  };
 
   // Handle logout
   const handleLogout = async () => {
-    const isConfirmed = window.confirm("Are you sure you want to logout?")
-    if (!isConfirmed) return
+    const isConfirmed = window.confirm("Are you sure you want to logout?");
+    if (!isConfirmed) return;
 
     try {
-      await axios.post(`${API_URL}/users/logout`,{},{
-        credentials:true
-      })
-      
+      await axios.post(
+        `${API_URL}/users/logout`,
+        {},
+        {
+          credentials: true,
+        },
+      );
+
       toast({
         title: "Success",
         description: "You have been logged out successfully",
-      })
+      });
 
-      router.push("/auth/login")
+      router.push("/auth/login");
     } catch (error) {
-      console.error("Error logging out", error)
+      console.error("Error logging out", error);
       toast({
         title: "Error",
         description: "Failed to log out. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   // Handle create/upload button click
   const handleCreateClick = async () => {
     try {
       // Check if user has a channel
-      const channelResponse = await axios.get(`${API_URL}/channels/user/me`,{
-        credentials:true
-      })
+      const channelResponse = await axios.get(`${API_URL}/channels/user/me`, {
+        credentials: true,
+      });
 
-      if (channelResponse.data &&
-          channelResponse.data.data &&
-          channelResponse.data.data.length >0
+      if (
+        channelResponse.data &&
+        channelResponse.data.data &&
+        channelResponse.data.data.length > 0
       ) {
         router.push("/channelDashboard/dashboard");
       } else {
-        router.push("/channelDashboard/create")
+        router.push("/channelDashboard/create");
       }
     } catch (error) {
-      console.error("Error checking channel", error)
+      console.error("Error checking channel", error);
       toast({
         title: "Error",
         description: "Error checking channel. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   // Handle tweet submission
   const handleTweetSubmit = async (e: React.FormEvent) => {
@@ -310,129 +359,138 @@ export default function HomePage() {
         title: "Error",
         description: "Please enter a message",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    setIsSubmittingTweet(true)
+    setIsSubmittingTweet(true);
 
     try {
-
-
-
-      console.log("this is editContent ",editContent);
-      const response = await axios.post(`${API_URL}/tweets`,{
-        content:editContent
-      },{
-        withCredentials:true
-      })
+      console.log("this is editContent ", editContent);
+      const response = await axios.post(
+        `${API_URL}/tweets`,
+        {
+          content: editContent,
+        },
+        {
+          withCredentials: true,
+        },
+      );
 
       setTweets([response.data.data, ...tweets]);
       setTweetContent("");
       toast({
-        title:"Success",
-        description:"Message posted succesfully"
-      })
+        title: "Success",
+        description: "Message posted succesfully",
+      });
     } catch (error) {
-      console.error("Error posting message:", error)
+      console.error("Error posting message:", error);
       toast({
         title: "Error",
         description: "Error posting message. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsSubmittingTweet(false)
+      setIsSubmittingTweet(false);
     }
-  }
+  };
 
   // Handle tweet update
   const handleTweetUpdate = async (tweetId: string, newContent: string) => {
     try {
-      console.log("this is newContent ",newContent);
-      console.log("this is editContent ",editContent);
-      
-      const response = await axios.patch(`${API_URL}/tweets/${tweetId}`,{
-        content:newContent
-      },{
-        credentials:true
-      })
+      console.log("this is newContent ", newContent);
+      console.log("this is editContent ", editContent);
 
-      setTweets((prevTweets)=>
-      prevTweets.map((tweet)=>
-      tweet._id === tweetId
-    ? {
-      ...tweet,
-      content:newContent,
-      updatedAt:new Date().toISOString(),
-    }
-  : tweet,))
+      const response = await axios.patch(
+        `${API_URL}/tweets/${tweetId}`,
+        {
+          content: newContent,
+        },
+        {
+          credentials: true,
+        },
+      );
 
-  setEditingTweet(null);
-  setEditContent("");
-  toast({
+      setTweets((prevTweets) =>
+        prevTweets.map((tweet) =>
+          tweet._id === tweetId
+            ? {
+                ...tweet,
+                content: newContent,
+                updatedAt: new Date().toISOString(),
+              }
+            : tweet,
+        ),
+      );
+
+      setEditingTweet(null);
+      setEditContent("");
+      toast({
         title: "Success",
         description: "Message updated successfully",
       });
-
-      
     } catch (error) {
-      console.error("Error updating tweet:", error)
+      console.error("Error updating tweet:", error);
       toast({
         title: "Error",
         description: "Error updating message. Please try again.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   // Handle tweet deletion
   const handleTweetDelete = async (tweetId: string) => {
-    if (!window.confirm("Are you sure you want to delete this message?")) return
+    if (!window.confirm("Are you sure you want to delete this message?"))
+      return;
 
     try {
-      const response = await axios.delete(`${API_URL}/tweets/${tweetId}`,{
-        credentials:true
-      })
+      const response = await axios.delete(`${API_URL}/tweets/${tweetId}`, {
+        credentials: true,
+      });
 
-      setTweet((prevTweets)=>
-      prevTweets.filter((tweet)=>tweet._id !== tweetId),)
+      setTweet((prevTweets) =>
+        prevTweets.filter((tweet) => tweet._id !== tweetId),
+      );
 
       toast({
         title: "Success",
         description: "Message deleted successfully",
       });
     } catch (error) {
-      console.error("Error deleting tweet:", error)
+      console.error("Error deleting tweet:", error);
       toast({
         title: "Error",
-        description: "Error deleting message. Please try again."+(error.response?.data?.message || error.message),
+        description:
+          "Error deleting message. Please try again." +
+          (error.response?.data?.message || error.message),
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   // Handle search functionality
   const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!searchQuery.trim()) {
-      setFilteredVideos(videos)
-      return
+      setFilteredVideos(videos);
+      return;
     }
 
-    setIsSearching(true)
+    setIsSearching(true);
 
     try {
-      const response = await axios.get(`${API_URL}/videos?query=${encodeURIComponent(searchQuery)}&page=1&limit=25`,
-    {
-      credentials:true
-    }
-    )
+      const response = await axios.get(
+        `${API_URL}/videos?query=${encodeURIComponent(searchQuery)}&page=1&limit=25`,
+        {
+          credentials: true,
+        },
+      );
 
-
-    setFilteredVideos(response.data.data.videos || [])
-    if(response.data.data.videos.length === 0){
-      toast({
+      setFilteredVideos(response.data.data.videos || []);
+      if (response.data.data.videos.length === 0) {
+        toast({
           title: "No results",
           description: `No videos found for "${searchQuery}"`,
         });
@@ -440,20 +498,19 @@ export default function HomePage() {
         toast({
           title: "Search results",
           description: `Found ${response.data.data.videos.length} videos for "${searchQuery}"`,
-    })
-  }
-
+        });
+      }
     } catch (error) {
-      console.error("Error searching:", error)
+      console.error("Error searching:", error);
       toast({
         title: "Error",
         description: "Error performing search. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsSearching(false)
+      setIsSearching(false);
     }
-  }
+  };
 
   // Handle like functionality for tweets
   const handleLikeTweet = async (tweetId: string) => {
@@ -479,87 +536,92 @@ export default function HomePage() {
             : tweet,
         ),
       );
-        toast({
-          title: "Success",
-          description: "Like updated",
-        })
-      
+      toast({
+        title: "Success",
+        description: "Like updated",
+      });
     } catch (error) {
-      console.error("Error liking tweet:", error)
+      console.error("Error liking tweet:", error);
     }
-  }
+  };
 
   // Handle video category filter
   const handleCategoryFilter = (category: string) => {
-    setSelectedCategory(category)
+    setSelectedCategory(category);
     if (category === "All") {
-      setFilteredVideos(videos)
+      setFilteredVideos(videos);
     } else {
-      setFilteredVideos(videos.filter(video => video.category === category))
+      setFilteredVideos(videos.filter((video) => video.category === category));
     }
-  }
+  };
 
   // Handle sorting videos
   const handleSortVideos = (option: string) => {
-    setSortOption(option)
+    setSortOption(option);
 
-    const sorted = [...filteredVideos]
+    const sorted = [...filteredVideos];
 
     switch (option) {
       case "recent":
-        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        break
+        sorted.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+        break;
       case "popular":
-        sorted.sort((a, b) => b.views - a.views)
-        break
+        sorted.sort((a, b) => b.views - a.views);
+        break;
       case "trending":
-        sorted.sort((a, b) => (b.likes || 0) - (a.likes || 0))
-        break
+        sorted.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+        break;
       case "oldest":
-        sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-        break
+        sorted.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+        break;
       default:
-        break
+        break;
     }
 
-    setFilteredVideos(sorted)
-  }
+    setFilteredVideos(sorted);
+  };
 
   // Helper functions
   const formatDuration = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = seconds % 60
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`
-  }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
 
   const formatViews = (views: number) => {
     if (views >= 1000000) {
-      return `${(views / 1000000).toFixed(1)}M`
+      return `${(views / 1000000).toFixed(1)}M`;
     } else if (views >= 1000) {
-      return `${(views / 1000).toFixed(1)}K`
+      return `${(views / 1000).toFixed(1)}K`;
     }
-    return views?.toString() || "0"
-  }
+    return views?.toString() || "0";
+  };
 
   const formatTimeAgo = (dateString: string) => {
-    if (!dateString) return "Unknown time"
+    if (!dateString) return "Unknown time";
 
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
     if (diffInSeconds < 60) {
-      return `${diffInSeconds}s ago`
+      return `${diffInSeconds}s ago`;
     } else if (diffInSeconds < 3600) {
-      return `${Math.floor(diffInSeconds / 60)}m ago`
+      return `${Math.floor(diffInSeconds / 60)}m ago`;
     } else if (diffInSeconds < 86400) {
-      return `${Math.floor(diffInSeconds / 3600)}h ago`
+      return `${Math.floor(diffInSeconds / 3600)}h ago`;
     } else if (diffInSeconds < 604800) {
-      return `${Math.floor(diffInSeconds / 86400)}d ago`
+      return `${Math.floor(diffInSeconds / 86400)}d ago`;
     } else {
-      return date.toLocaleDateString()
+      return date.toLocaleDateString();
     }
-  }
+  };
 
   // Enhanced Video Card Component
   const VideoCard = ({ video }: { video: Video }) => (
@@ -576,13 +638,20 @@ export default function HomePage() {
         </div>
         <div className="absolute top-2 left-2">
           {video.category && (
-            <Badge variant="secondary" className="text-xs bg-black/60 text-white">
+            <Badge
+              variant="secondary"
+              className="text-xs bg-black/60 text-white"
+            >
               {video.category}
             </Badge>
           )}
         </div>
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <Button variant="secondary" size="sm" className="rounded-full shadow-lg">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="rounded-full shadow-lg"
+          >
             <Play className="h-5 w-5 mr-1" /> Watch Now
           </Button>
         </div>
@@ -590,15 +659,22 @@ export default function HomePage() {
       <div className="p-4">
         <div className="flex gap-3">
           <Avatar className="h-10 w-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
-            <AvatarImage src={video.owner?.avatar} alt={video.owner?.username} />
-            <AvatarFallback>{video.owner?.username?.[0]?.toUpperCase() || 'U'}</AvatarFallback>
+            <AvatarImage
+              src={video.owner?.avatar}
+              alt={video.owner?.username}
+            />
+            <AvatarFallback>
+              {video.owner?.username?.[0]?.toUpperCase() || "U"}
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors duration-300">
               {video.title}
             </h3>
             <div className="flex items-center gap-1 mt-1">
-              <p className="text-sm text-muted-foreground">{video.owner?.username}</p>
+              <p className="text-sm text-muted-foreground">
+                {video.owner?.username}
+              </p>
               {video.owner?.isVerified && (
                 <Verified className="h-3 w-3 text-blue-500" />
               )}
@@ -620,7 +696,7 @@ export default function HomePage() {
         </div>
       </div>
     </div>
-  )
+  );
 
   // Enhanced Tweet Card Component
   const TweetCard = ({ tweet }: { tweet: Tweet }) => (
@@ -628,8 +704,13 @@ export default function HomePage() {
       <CardContent className="pt-6">
         <div className="flex gap-3">
           <Avatar className="h-10 w-10 flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
-            <AvatarImage src={tweet.owner?.avatar} alt={tweet.owner?.username} />
-            <AvatarFallback>{tweet.owner?.username?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+            <AvatarImage
+              src={tweet.owner?.avatar}
+              alt={tweet.owner?.username}
+            />
+            <AvatarFallback>
+              {tweet.owner?.username?.[0]?.toUpperCase() || "U"}
+            </AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="flex items-center justify-between">
@@ -637,8 +718,12 @@ export default function HomePage() {
                 <p className="font-semibold group-hover:text-primary transition-colors duration-300">
                   {tweet.owner?.fullName}
                 </p>
-                <p className="text-sm text-muted-foreground">@{tweet.owner?.username}</p>
-                <p className="text-xs text-muted-foreground">• {formatTimeAgo(tweet.createdAt)}</p>
+                <p className="text-sm text-muted-foreground">
+                  @{tweet.owner?.username}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  • {formatTimeAgo(tweet.createdAt)}
+                </p>
                 {tweet.updatedAt !== tweet.createdAt && (
                   <Badge variant="outline" className="text-xs">
                     edited
@@ -648,19 +733,25 @@ export default function HomePage() {
               {tweet.owner?._id === user?._id && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => {
-                      setEditingTweet(tweet._id)
-                      setEditContent(tweet.content)
-                    }}>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setEditingTweet(tweet._id);
+                        setEditContent(tweet.content);
+                      }}
+                    >
                       <Edit className="h-4 w-4 mr-2" />
                       Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={() => handleTweetDelete(tweet._id)}
                       className="text-red-600"
                     >
@@ -671,7 +762,7 @@ export default function HomePage() {
                 </DropdownMenu>
               )}
             </div>
-            
+
             {editingTweet === tweet._id ? (
               <div className="mt-2 space-y-2">
                 <TextArea
@@ -681,19 +772,19 @@ export default function HomePage() {
                   rows={3}
                 />
                 <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     onClick={() => handleTweetUpdate(tweet._id, editContent)}
                     disabled={!editContent.trim()}
                   >
                     Save
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => {
-                      setEditingTweet(null)
-                      setEditContent("")
+                      setEditingTweet(null);
+                      setEditContent("");
                     }}
                   >
                     Cancel
@@ -703,7 +794,7 @@ export default function HomePage() {
             ) : (
               <p className="mt-2 whitespace-pre-wrap">{tweet.content}</p>
             )}
-            
+
             <div className="flex gap-6 mt-4">
               <TooltipProvider>
                 <Tooltip>
@@ -738,7 +829,10 @@ export default function HomePage() {
                       className={`text-sm flex items-center gap-1 transition-colors duration-200 ${tweet.liked ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
                       onClick={() => handleLikeTweet(tweet._id)}
                     >
-                      <Heart className={`h-4 w-4 ${tweet.liked ? "fill-current" : ""}`} /> {tweet.likes || 0}
+                      <Heart
+                        className={`h-4 w-4 ${tweet.liked ? "fill-current" : ""}`}
+                      />{" "}
+                      {tweet.likes || 0}
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -764,11 +858,9 @@ export default function HomePage() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 
-  const unreadNotificationsCount = notifications.filter((n) => !n.read).length
-
-
+  const unreadNotificationsCount = notifications.filter((n) => !n.read).length;
 
   if (!user) {
     return (
@@ -778,7 +870,7 @@ export default function HomePage() {
           <p className="text-lg font-medium">Loading...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -824,8 +916,8 @@ export default function HomePage() {
                 type="button"
                 className="absolute right-12 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors duration-200"
                 onClick={() => {
-                  setSearchQuery("")
-                  setFilteredVideos(videos)
+                  setSearchQuery("");
+                  setFilteredVideos(videos);
                 }}
               >
                 <X className="h-4 w-4" />
@@ -839,7 +931,11 @@ export default function HomePage() {
               className="absolute right-1 top-1/2 -translate-y-1/2 h-8 px-2 hover:bg-primary/10 transition-colors duration-200"
               disabled={isSearching}
             >
-              {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+              {isSearching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Search"
+              )}
             </Button>
           </form>
 
@@ -877,14 +973,26 @@ export default function HomePage() {
                           onClick={() => setShowNotifications(false)}
                         >
                           <div className="flex items-start gap-2">
-                            {notification.type === "milestone" && <Award className="h-4 w-4 text-yellow-500 mt-1" />}
-                            {notification.type === "subscription" && <Users className="h-4 w-4 text-blue-500 mt-1" />}
-                            {notification.type === "comment" && <MessageSquare className="h-4 w-4 text-green-500 mt-1" />}
-                            {notification.type === "trending" && <Flame className="h-4 w-4 text-red-500 mt-1" />}
+                            {notification.type === "milestone" && (
+                              <Award className="h-4 w-4 text-yellow-500 mt-1" />
+                            )}
+                            {notification.type === "subscription" && (
+                              <Users className="h-4 w-4 text-blue-500 mt-1" />
+                            )}
+                            {notification.type === "comment" && (
+                              <MessageSquare className="h-4 w-4 text-green-500 mt-1" />
+                            )}
+                            {notification.type === "trending" && (
+                              <Flame className="h-4 w-4 text-red-500 mt-1" />
+                            )}
                             <div>
                               <p className="text-sm">{notification.content}</p>
                               <p className="text-xs text-muted-foreground mt-1">
-                                {formatTimeAgo(new Date(Date.now() - Math.random() * 86400000 * 3).toISOString())}
+                                {formatTimeAgo(
+                                  new Date(
+                                    Date.now() - Math.random() * 86400000 * 3,
+                                  ).toISOString(),
+                                )}
                               </p>
                             </div>
                           </div>
@@ -914,7 +1022,9 @@ export default function HomePage() {
                 <div className="relative">
                   <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all duration-200">
                     <AvatarImage src={user.avatar} alt={user.username} />
-                    <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>
+                      {user.username[0].toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
                   {user.isVerified && (
                     <Crown className="h-4 w-4 absolute -top-1 -right-1 text-yellow-500" />
@@ -928,7 +1038,9 @@ export default function HomePage() {
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/channelDashboard/dashboard")}>
+                <DropdownMenuItem
+                  onClick={() => router.push("/channelDashboard/dashboard")}
+                >
                   <Video className="mr-2 h-4 w-4" />
                   <span>My Channel</span>
                 </DropdownMenuItem>
@@ -937,7 +1049,10 @@ export default function HomePage() {
                   <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-red-500 focus:text-red-500"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>
                 </DropdownMenuItem>
@@ -950,7 +1065,11 @@ export default function HomePage() {
       {/* Main Content */}
       <div
         className="container grid gap-6 px-4 py-6 transition-all duration-300 ease-in-out"
-        style={{ gridTemplateColumns: sidebarVisible ? "minmax(280px, 1fr) 3fr" : "1fr" }}
+        style={{
+          gridTemplateColumns: sidebarVisible
+            ? "minmax(280px, 1fr) 3fr"
+            : "1fr",
+        }}
       >
         {/* Enhanced Sidebar */}
         {sidebarVisible && (
@@ -964,7 +1083,6 @@ export default function HomePage() {
                   <Home className="h-5 w-5" />
                   <span className="font-medium">Home</span>
                 </Link>
-
 
                 <Link
                   href="/tweets"
@@ -1022,13 +1140,19 @@ export default function HomePage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium text-sm">#{topic.tag}</p>
-                          <p className="text-xs text-muted-foreground">{topic.category}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {topic.category}
+                          </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs font-medium">{formatViews(topic.count)}</p>
+                          <p className="text-xs font-medium">
+                            {formatViews(topic.count)}
+                          </p>
                           <div className="flex items-center gap-1">
                             <Flame className="h-3 w-3 text-red-500" />
-                            <span className="text-xs text-muted-foreground">#{i + 1}</span>
+                            <span className="text-xs text-muted-foreground">
+                              #{i + 1}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1050,10 +1174,17 @@ export default function HomePage() {
                       className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-muted transition-colors duration-200"
                     >
                       <Avatar className="h-6 w-6 transition-transform duration-200 hover:scale-110">
-                        <AvatarImage src={subscription.channel?.avatar} alt={subscription.channel?.name} />
-                        <AvatarFallback>{subscription.channel?.name?.[0] || 'C'}</AvatarFallback>
+                        <AvatarImage
+                          src={subscription.channel?.avatar}
+                          alt={subscription.channel?.name}
+                        />
+                        <AvatarFallback>
+                          {subscription.channel?.name?.[0] || "C"}
+                        </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">{subscription.channel?.name || `Channel ${i + 1}`}</span>
+                      <span className="font-medium">
+                        {subscription.channel?.name || `Channel ${i + 1}`}
+                      </span>
                     </Link>
                   ))}
                   {subscriptions.length > 5 && (
@@ -1073,13 +1204,24 @@ export default function HomePage() {
 
         {/* Main Content */}
         <main className={sidebarVisible ? "" : "col-span-full"}>
-          <Tabs defaultValue="videos" value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <Tabs
+            defaultValue="videos"
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="mb-6"
+          >
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="videos" className="transition-all duration-200">
+              <TabsTrigger
+                value="videos"
+                className="transition-all duration-200"
+              >
                 <Video className="h-4 w-4 mr-2" />
                 Videos
               </TabsTrigger>
-              <TabsTrigger value="tweets" className="transition-all duration-200">
+              <TabsTrigger
+                value="tweets"
+                className="transition-all duration-200"
+              >
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Messages
               </TabsTrigger>
@@ -1093,7 +1235,9 @@ export default function HomePage() {
                   {videoCategories.map((category) => (
                     <Button
                       key={category}
-                      variant={selectedCategory === category ? "default" : "outline"}
+                      variant={
+                        selectedCategory === category ? "default" : "outline"
+                      }
                       size="sm"
                       onClick={() => handleCategoryFilter(category)}
                       className="whitespace-nowrap"
@@ -1124,9 +1268,15 @@ export default function HomePage() {
                         <DropdownMenuItem>Watched</DropdownMenuItem>
                         <DropdownMenuItem>Unwatched</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>Short Videos ({"<"} 5 min)</DropdownMenuItem>
-                        <DropdownMenuItem>Medium Videos (5-20 min)</DropdownMenuItem>
-                        <DropdownMenuItem>Long Videos ({">"} 20 min)</DropdownMenuItem>
+                        <DropdownMenuItem>
+                          Short Videos ({"<"} 5 min)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          Medium Videos (5-20 min)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          Long Videos ({">"} 20 min)
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
 
@@ -1137,27 +1287,47 @@ export default function HomePage() {
                           size="sm"
                           className="gap-1 hover:bg-muted transition-colors duration-200"
                         >
-                          <span>Sort: {sortOption.charAt(0).toUpperCase() + sortOption.slice(1)}</span>
+                          <span>
+                            Sort:{" "}
+                            {sortOption.charAt(0).toUpperCase() +
+                              sortOption.slice(1)}
+                          </span>
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuLabel>Sort Videos</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleSortVideos("recent")}>
+                        <DropdownMenuItem
+                          onClick={() => handleSortVideos("recent")}
+                        >
                           Most Recent
-                          {sortOption === "recent" && <Check className="h-4 w-4 ml-auto" />}
+                          {sortOption === "recent" && (
+                            <Check className="h-4 w-4 ml-auto" />
+                          )}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleSortVideos("popular")}>
+                        <DropdownMenuItem
+                          onClick={() => handleSortVideos("popular")}
+                        >
                           Most Popular
-                          {sortOption === "popular" && <Check className="h-4 w-4 ml-auto" />}
+                          {sortOption === "popular" && (
+                            <Check className="h-4 w-4 ml-auto" />
+                          )}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleSortVideos("trending")}>
+                        <DropdownMenuItem
+                          onClick={() => handleSortVideos("trending")}
+                        >
                           Trending
-                          {sortOption === "trending" && <Check className="h-4 w-4 ml-auto" />}
+                          {sortOption === "trending" && (
+                            <Check className="h-4 w-4 ml-auto" />
+                          )}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleSortVideos("oldest")}>
+                        <DropdownMenuItem
+                          onClick={() => handleSortVideos("oldest")}
+                        >
                           Oldest First
-                          {sortOption === "oldest" && <Check className="h-4 w-4 ml-auto" />}
+                          {sortOption === "oldest" && (
+                            <Check className="h-4 w-4 ml-auto" />
+                          )}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -1165,14 +1335,15 @@ export default function HomePage() {
 
                   {searchQuery && (
                     <div className="text-sm text-muted-foreground">
-                      Showing results for: <span className="font-medium">{searchQuery}</span>
+                      Showing results for:{" "}
+                      <span className="font-medium">{searchQuery}</span>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="ml-2 h-7 px-2 hover:bg-primary/10 transition-colors duration-200"
                         onClick={() => {
-                          setSearchQuery("")
-                          setFilteredVideos(videos)
+                          setSearchQuery("");
+                          setFilteredVideos(videos);
                         }}
                       >
                         Clear
@@ -1185,7 +1356,10 @@ export default function HomePage() {
               {isLoading ? (
                 <div className="grid gap-6 transition-all duration-300 ease-in-out grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {Array.from({ length: 16 }).map((_, i) => (
-                    <div key={i} className="overflow-hidden rounded-lg border bg-card shadow-sm animate-pulse">
+                    <div
+                      key={i}
+                      className="overflow-hidden rounded-lg border bg-card shadow-sm animate-pulse"
+                    >
                       <div className="aspect-video bg-muted"></div>
                       <div className="p-4">
                         <div className="flex gap-3">
@@ -1212,13 +1386,15 @@ export default function HomePage() {
                     <Search className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="text-lg font-medium mb-2">No videos found</h3>
-                  <p className="text-muted-foreground mb-4">We  find any videos matching your search.</p>
+                  <p className="text-muted-foreground mb-4">
+                    We find any videos matching your search.
+                  </p>
                   <Button
                     variant="outline"
                     onClick={() => {
-                      setSearchQuery("")
-                      setFilteredVideos(videos)
-                      setSelectedCategory("All")
+                      setSearchQuery("");
+                      setFilteredVideos(videos);
+                      setSelectedCategory("All");
                     }}
                   >
                     Clear filters
@@ -1236,7 +1412,9 @@ export default function HomePage() {
                       <div className="flex gap-3">
                         <Avatar className="h-12 w-12 flex-shrink-0">
                           <AvatarImage src={user.avatar} alt={user.username} />
-                          <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                          <AvatarFallback>
+                            {user.username[0].toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 space-y-3">
                           <TextArea
@@ -1260,7 +1438,9 @@ export default function HomePage() {
                             </div>
                             <Button
                               type="submit"
-                              disabled={isSubmittingTweet || !tweetContent.trim()}
+                              disabled={
+                                isSubmittingTweet || !tweetContent.trim()
+                              }
                               className="hover:bg-primary/90 transition-colors duration-200 rounded-full"
                             >
                               {isSubmittingTweet ? (
@@ -1318,8 +1498,12 @@ export default function HomePage() {
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
                       <MessageSquare className="h-8 w-8 text-muted-foreground" />
                     </div>
-                    <h3 className="text-lg font-medium mb-2">No messages yet</h3>
-                    <p className="text-muted-foreground mb-4">Be the first to post a message!</p>
+                    <h3 className="text-lg font-medium mb-2">
+                      No messages yet
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Be the first to post a message!
+                    </p>
                   </div>
                 )}
               </div>
@@ -1328,5 +1512,5 @@ export default function HomePage() {
         </main>
       </div>
     </div>
-  )
+  );
 }
