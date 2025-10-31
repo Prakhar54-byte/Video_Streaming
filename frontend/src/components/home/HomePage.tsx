@@ -1388,7 +1388,7 @@ export default function HomePage() {
                   </div>
                   <h3 className="text-lg font-medium mb-2">No videos found</h3>
                   <p className="text-muted-foreground mb-4">
-                    We find any videos matching your search.
+                    We couldn't find any videos matching your search.
                   </p>
                   <Button
                     variant="outline"
