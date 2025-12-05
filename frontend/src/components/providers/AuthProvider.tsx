@@ -10,7 +10,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       // Skip auth check on auth pages to avoid redirect loops
-      if (typeof window !== 'undefined' && window.location.pathname.startsWith('/auth')) {
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname.startsWith("/auth")
+      ) {
         setLoading(false);
         return;
       }

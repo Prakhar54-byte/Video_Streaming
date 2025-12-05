@@ -6,7 +6,11 @@ import { cn } from "@/lib/utils";
 
 interface AnimatedBadgeProps {
   children: React.ReactNode;
-  variant?: "top_fan" | "new_subscriber" | "watched_10_plus" | "early_supporter";
+  variant?:
+    | "top_fan"
+    | "new_subscriber"
+    | "watched_10_plus"
+    | "early_supporter";
   className?: string;
 }
 
@@ -37,7 +41,11 @@ const badgeConfig = {
   },
 };
 
-export function AnimatedBadge({ children, variant = "new_subscriber", className }: AnimatedBadgeProps) {
+export function AnimatedBadge({
+  children,
+  variant = "new_subscriber",
+  className,
+}: AnimatedBadgeProps) {
   const config = badgeConfig[variant];
 
   return (
@@ -51,7 +59,7 @@ export function AnimatedBadge({ children, variant = "new_subscriber", className 
         config.gradient,
         config.glow,
         "text-white",
-        className
+        className,
       )}
     >
       <motion.span

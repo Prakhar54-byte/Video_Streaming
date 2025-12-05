@@ -44,19 +44,20 @@ export function VideoGrid({ subscribedOnly = false }: VideoGridProps) {
       // First get current user to get their ID
       const userResponse = await apiClient.get("/users/current-user");
       const userId = userResponse.data.data._id;
-      
+
       // Get subscribed channels
       const subsResponse = await apiClient.get(`/subscriptions/u/${userId}`);
-      const channels = subsResponse.data.data?.map((sub: any) => sub.channel._id) || [];
+      const channels =
+        subsResponse.data.data?.map((sub: any) => sub.channel._id) || [];
       setSubscribedChannels(channels);
-      
+
       // Fetch all videos then filter by subscribed channels
       const videosResponse = await apiClient.get("/videos?page=1&limit=100");
       const allVideos = videosResponse.data.data || [];
-      
+
       if (channels.length > 0) {
-        const filteredVideos = allVideos.filter((video: Video) => 
-          channels.includes(video.owner?._id)
+        const filteredVideos = allVideos.filter((video: Video) =>
+          channels.includes(video.owner?._id),
         );
         setVideos(filteredVideos);
       } else {
@@ -104,8 +105,8 @@ export function VideoGrid({ subscribedOnly = false }: VideoGridProps) {
           <div className="group cursor-pointer">
             <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
               {video.thumbnail ? (
-                <img 
-                  src={video.thumbnail} 
+                <img
+                  src={video.thumbnail}
                   alt={video.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -116,10 +117,11 @@ export function VideoGrid({ subscribedOnly = false }: VideoGridProps) {
               )}
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
               <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded text-xs text-white">
-                {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
+                {Math.floor(video.duration / 60)}:
+                {String(Math.floor(video.duration % 60)).padStart(2, "0")}
               </div>
             </div>
-            
+
             <div className="mt-3">
               <h3 className="text-lg font-semibold line-clamp-2 group-hover:text-primary transition-colors">
                 {video.title}

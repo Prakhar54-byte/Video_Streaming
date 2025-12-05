@@ -1,76 +1,85 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { Upload, Video, Image as ImageIcon, X, CheckCircle } from 'lucide-react';
-import Image from 'next/image';
-import apiClient from '@/lib/api';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Upload,
+  Video,
+  Image as ImageIcon,
+  X,
+  CheckCircle,
+} from "lucide-react";
+import Image from "next/image";
+import apiClient from "@/lib/api";
 
 export default function UploadPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
+
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
     videoFile: File | null;
     thumbnail: File | null;
   }>({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     videoFile: null,
     thumbnail: null,
   });
-  
+
   const [previews, setPreviews] = useState<{
     video: string;
     thumbnail: string;
   }>({
-    video: '',
-    thumbnail: '',
+    video: "",
+    thumbnail: "",
   });
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setFormData(prev => ({ ...prev, videoFile: file }));
-      
+      setFormData((prev) => ({ ...prev, videoFile: file }));
+
       // Create video preview URL
       const videoUrl = URL.createObjectURL(file);
-      setPreviews(prev => ({ ...prev, video: videoUrl }));
+      setPreviews((prev) => ({ ...prev, video: videoUrl }));
     }
   };
 
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      setFormData(prev => ({ ...prev, thumbnail: file }));
-      setPreviews(prev => ({ ...prev, thumbnail: URL.createObjectURL(file) }));
+      setFormData((prev) => ({ ...prev, thumbnail: file }));
+      setPreviews((prev) => ({
+        ...prev,
+        thumbnail: URL.createObjectURL(file),
+      }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.title.trim() || !formData.description.trim()) {
       toast({
-        title: 'Missing information',
-        description: 'Please provide title and description',
-        variant: 'destructive',
+        title: "Missing information",
+        description: "Please provide title and description",
+        variant: "destructive",
       });
       return;
     }
 
     if (!formData.videoFile || !formData.thumbnail) {
       toast({
-        title: 'Missing files',
-        description: 'Please select both video and thumbnail',
-        variant: 'destructive',
+        title: "Missing files",
+        description: "Please select both video and thumbnail",
+        variant: "destructive",
       });
       return;
     }
@@ -81,14 +90,15 @@ export default function UploadPage() {
     try {
       // Check for duplicate title BEFORE uploading files
       try {
-        const checkResponse = await apiClient.get('/videos/check-title', {
-          params: { title: formData.title }
+        const checkResponse = await apiClient.get("/videos/check-title", {
+          params: { title: formData.title },
         });
         if (checkResponse.data.exists) {
           toast({
-            title: 'Duplicate title',
-            description: 'You already have a video with this title. Please use a different title.',
-            variant: 'destructive',
+            title: "Duplicate title",
+            description:
+              "You already have a video with this title. Please use a different title.",
+            variant: "destructive",
           });
           setIsUploading(false);
           return;
@@ -101,14 +111,14 @@ export default function UploadPage() {
       }
 
       const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('videoFile', formData.videoFile);
-      formDataToSend.append('thumbnail', formData.thumbnail);
+      formDataToSend.append("title", formData.title);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("videoFile", formData.videoFile);
+      formDataToSend.append("thumbnail", formData.thumbnail);
 
       // Simulate progress for better UX
       const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
+        setUploadProgress((prev) => {
           if (prev >= 90) {
             clearInterval(progressInterval);
             return 90;
@@ -117,9 +127,9 @@ export default function UploadPage() {
         });
       }, 500);
 
-      const response = await apiClient.post('/videos', formDataToSend, {
+      const response = await apiClient.post("/videos", formDataToSend, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -127,30 +137,33 @@ export default function UploadPage() {
       setUploadProgress(100);
 
       toast({
-        title: 'Success!',
-        description: 'Video uploaded successfully',
+        title: "Success!",
+        description: "Video uploaded successfully",
       });
 
       // Reset form
       setFormData({
-        title: '',
-        description: '',
+        title: "",
+        description: "",
         videoFile: null,
         thumbnail: null,
       });
-      setPreviews({ video: '', thumbnail: '' });
+      setPreviews({ video: "", thumbnail: "" });
 
       setTimeout(() => {
         const videoId = response.data.data.video?._id || response.data.data._id;
         router.push(`/video/${videoId}`);
       }, 1000);
     } catch (error: any) {
-      console.error('Upload error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Something went wrong';
+      console.error("Upload error:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Something went wrong";
       toast({
-        title: 'Upload Failed',
+        title: "Upload Failed",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
       setUploadProgress(0);
     } finally {
@@ -159,13 +172,13 @@ export default function UploadPage() {
   };
 
   const clearVideo = () => {
-    setFormData(prev => ({ ...prev, videoFile: null }));
-    setPreviews(prev => ({ ...prev, video: '' }));
+    setFormData((prev) => ({ ...prev, videoFile: null }));
+    setPreviews((prev) => ({ ...prev, video: "" }));
   };
 
   const clearThumbnail = () => {
-    setFormData(prev => ({ ...prev, thumbnail: null }));
-    setPreviews(prev => ({ ...prev, thumbnail: '' }));
+    setFormData((prev) => ({ ...prev, thumbnail: null }));
+    setPreviews((prev) => ({ ...prev, thumbnail: "" }));
   };
 
   return (
@@ -184,13 +197,17 @@ export default function UploadPage() {
             <label className="block text-xl font-semibold mb-4">
               Video File <span className="text-destructive">*</span>
             </label>
-            
+
             {!formData.videoFile ? (
               <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors bg-muted/20">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <Video className="w-16 h-16 mb-4 text-muted-foreground" />
-                  <p className="mb-2 text-lg font-semibold">Click to upload video</p>
-                  <p className="text-base text-muted-foreground">MP4, WebM, or OGG (MAX. 800MB)</p>
+                  <p className="mb-2 text-lg font-semibold">
+                    Click to upload video
+                  </p>
+                  <p className="text-base text-muted-foreground">
+                    MP4, WebM, or OGG (MAX. 800MB)
+                  </p>
                 </div>
                 <input
                   type="file"
@@ -215,7 +232,9 @@ export default function UploadPage() {
                 >
                   <X className="w-5 h-5" />
                 </button>
-                <p className="mt-3 text-base text-muted-foreground">{formData.videoFile.name}</p>
+                <p className="mt-3 text-base text-muted-foreground">
+                  {formData.videoFile.name}
+                </p>
               </div>
             )}
           </div>
@@ -225,13 +244,17 @@ export default function UploadPage() {
             <label className="block text-xl font-semibold mb-4">
               Thumbnail <span className="text-destructive">*</span>
             </label>
-            
+
             {!formData.thumbnail ? (
               <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors bg-muted/20">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <ImageIcon className="w-12 h-12 mb-4 text-muted-foreground" />
-                  <p className="mb-2 text-base font-semibold">Click to upload thumbnail</p>
-                  <p className="text-sm text-muted-foreground">PNG, JPG, or WebP (Recommended: 1280x720)</p>
+                  <p className="mb-2 text-base font-semibold">
+                    Click to upload thumbnail
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    PNG, JPG, or WebP (Recommended: 1280x720)
+                  </p>
                 </div>
                 <input
                   type="file"
@@ -272,7 +295,9 @@ export default function UploadPage() {
                 type="text"
                 required
                 value={formData.title}
-                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, title: e.target.value }))
+                }
                 className="w-full py-4 px-4 text-base bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Enter video title"
                 disabled={isUploading}
@@ -286,7 +311,12 @@ export default function UploadPage() {
               <textarea
                 required
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
                 className="w-full py-4 px-4 text-base bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary min-h-[150px] resize-none"
                 placeholder="Tell viewers about your video"
                 disabled={isUploading}
@@ -299,7 +329,9 @@ export default function UploadPage() {
             <div className="bg-card border rounded-xl p-8">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-lg font-semibold">Uploading...</span>
-                <span className="text-base text-muted-foreground">{uploadProgress}%</span>
+                <span className="text-base text-muted-foreground">
+                  {uploadProgress}%
+                </span>
               </div>
               <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
                 <div
@@ -310,7 +342,9 @@ export default function UploadPage() {
               {uploadProgress === 100 && (
                 <div className="flex items-center gap-2 mt-4 text-green-500">
                   <CheckCircle className="w-5 h-5" />
-                  <span className="text-base font-semibold">Upload complete!</span>
+                  <span className="text-base font-semibold">
+                    Upload complete!
+                  </span>
                 </div>
               )}
             </div>
@@ -329,10 +363,14 @@ export default function UploadPage() {
             </Button>
             <Button
               type="submit"
-              disabled={isUploading || !formData.videoFile || !formData.thumbnail}
+              disabled={
+                isUploading || !formData.videoFile || !formData.thumbnail
+              }
               className="flex-1 py-6 text-lg font-semibold bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 hover:opacity-90"
             >
-              {isUploading ? 'Uploading...' : (
+              {isUploading ? (
+                "Uploading..."
+              ) : (
                 <>
                   <Upload className="w-5 h-5 mr-2" />
                   Upload Video

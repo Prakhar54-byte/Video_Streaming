@@ -10,8 +10,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ShimmerButton } from "@/components/ui/shimmer-button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Sparkles, Video, Gift, BarChart3, Save } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ArrowLeft,
+  Sparkles,
+  Video,
+  Gift,
+  BarChart3,
+  Save,
+} from "lucide-react";
 import apiClient from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -93,7 +106,8 @@ export default function AutoWelcomePage() {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to save configuration",
+        description:
+          error.response?.data?.message || "Failed to save configuration",
         variant: "destructive",
       });
     } finally {
@@ -377,15 +391,16 @@ export default function AutoWelcomePage() {
                             }
                             placeholder={`Option ${index + 1}`}
                           />
-                          {config.pollOptions && config.pollOptions.length > 2 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removePollOption(index)}
-                            >
-                              ×
-                            </Button>
-                          )}
+                          {config.pollOptions &&
+                            config.pollOptions.length > 2 && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removePollOption(index)}
+                              >
+                                ×
+                              </Button>
+                            )}
                         </div>
                       ))}
                       <Button

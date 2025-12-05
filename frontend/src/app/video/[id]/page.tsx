@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { useAuthStore } from '@/store/authStore';
-import apiClient from '@/lib/api';
-import { formatViewCount, formatTimeAgo } from '@/lib/utils';
-import Image from 'next/image';
-import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/store/authStore";
+import apiClient from "@/lib/api";
+import { formatViewCount, formatTimeAgo } from "@/lib/utils";
+import Image from "next/image";
+import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye } from "lucide-react";
 
 interface Video {
   _id: string;
@@ -46,14 +46,14 @@ export default function VideoPlayerPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuthStore();
-  
+
   const [video, setVideo] = useState<Video | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
-  const [newComment, setNewComment] = useState('');
+  const [newComment, setNewComment] = useState("");
   const [postingComment, setPostingComment] = useState(false);
 
   useEffect(() => {
@@ -72,10 +72,10 @@ export default function VideoPlayerPage() {
       setVideo(response.data.data);
     } catch (error) {
       toast({
-        title: 'Error loading video',
-        variant: 'destructive',
+        title: "Error loading video",
+        variant: "destructive",
       });
-      router.push('/');
+      router.push("/");
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ export default function VideoPlayerPage() {
       const response = await apiClient.get(`/comments/${params.id}`);
       setComments(response.data.data || []);
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      console.error("Error fetching comments:", error);
     }
   };
 
@@ -95,24 +95,28 @@ export default function VideoPlayerPage() {
     try {
       const response = await apiClient.get(`/subscriptions/u/${user?._id}`);
       const subscriptions = response.data.data || [];
-      setIsSubscribed(subscriptions.some((sub: any) => sub.channel._id === video.owner._id));
+      setIsSubscribed(
+        subscriptions.some((sub: any) => sub.channel._id === video.owner._id),
+      );
     } catch (error) {
-      console.error('Error checking subscription:', error);
+      console.error("Error checking subscription:", error);
     }
   };
 
   const checkLikeStatus = async () => {
     try {
       // Get all liked videos for the user
-      const response = await apiClient.get(`${user ? `/likes/videos/${user._id}` : `/likes/videos/`}`);
+      const response = await apiClient.get(
+        `${user ? `/likes/videos/${user._id}` : `/likes/videos/`}`,
+      );
       const likedVideos = response.data.data || [];
-      console.log("Liked video",likedVideos);
-      
+      console.log("Liked video", likedVideos);
+
       // const isVideoLiked = likedVideos.some((v: any) => v._id === params.id);
       // setIsLiked(isVideoLiked);
       // You can get likes count from video data
     } catch (error) {
-      console.error('Error checking like status:', error);
+      console.error("Error checking like status:", error);
       // Non-critical, continue without like status
     }
   };
@@ -121,7 +125,7 @@ export default function VideoPlayerPage() {
     try {
       await apiClient.post(`/videos/watchhis/${params.id}`);
     } catch (error) {
-      console.error('Error adding to watch history:', error);
+      console.error("Error adding to watch history:", error);
     }
   };
 
@@ -131,12 +135,12 @@ export default function VideoPlayerPage() {
       await apiClient.post(`/subscriptions/c/${video.owner._id}`);
       setIsSubscribed(!isSubscribed);
       toast({
-        title: isSubscribed ? 'Unsubscribed' : 'Subscribed successfully!',
+        title: isSubscribed ? "Unsubscribed" : "Subscribed successfully!",
       });
     } catch (error) {
       toast({
-        title: 'Error',
-        variant: 'destructive',
+        title: "Error",
+        variant: "destructive",
       });
     }
   };
@@ -145,30 +149,30 @@ export default function VideoPlayerPage() {
     try {
       await apiClient.post(`/likes/video/${params.id}/toggle`);
       setIsLiked(!isLiked);
-      setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
+      setLikesCount((prev) => (isLiked ? prev - 1 : prev + 1));
     } catch (error) {
       toast({
-        title: 'Error liking video',
-        variant: 'destructive',
+        title: "Error liking video",
+        variant: "destructive",
       });
     }
   };
 
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
-    
+
     setPostingComment(true);
     try {
       const response = await apiClient.post(`/comments/${params.id}`, {
         content: newComment,
       });
       setComments([response.data.data, ...comments]);
-      setNewComment('');
-      toast({ title: 'Comment posted!' });
+      setNewComment("");
+      toast({ title: "Comment posted!" });
     } catch (error) {
       toast({
-        title: 'Error posting comment',
-        variant: 'destructive',
+        title: "Error posting comment",
+        variant: "destructive",
       });
     } finally {
       setPostingComment(false);
@@ -178,7 +182,7 @@ export default function VideoPlayerPage() {
   const handleShare = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url);
-    toast({ title: 'Link copied to clipboard!' });
+    toast({ title: "Link copied to clipboard!" });
   };
 
   if (loading) {
@@ -215,7 +219,7 @@ export default function VideoPlayerPage() {
             {/* Video Info */}
             <div className="space-y-4">
               <h1 className="text-3xl font-bold">{video.title}</h1>
-              
+
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4 text-base text-muted-foreground">
                   <span className="flex items-center gap-2">
@@ -229,13 +233,13 @@ export default function VideoPlayerPage() {
                 <div className="flex items-center gap-3">
                   <Button
                     onClick={handleLike}
-                    variant={isLiked ? 'default' : 'outline'}
+                    variant={isLiked ? "default" : "outline"}
                     className="flex items-center gap-2 text-base py-5"
                   >
                     <ThumbsUp className="w-5 h-5" />
                     {likesCount}
                   </Button>
-                  
+
                   <Button
                     onClick={handleShare}
                     variant="outline"
@@ -253,15 +257,19 @@ export default function VideoPlayerPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <Image
-                    src={video.owner?.avatar || '/placeholder/user-avatar.png'}
-                    alt={video.owner?.username || 'User'}
+                    src={video.owner?.avatar || "/placeholder/user-avatar.png"}
+                    alt={video.owner?.username || "User"}
                     width={56}
                     height={56}
                     className="w-14 h-14 rounded-full object-cover"
                   />
                   <div>
-                    <h3 className="text-xl font-semibold">{video.owner.fullName}</h3>
-                    <p className="text-base text-muted-foreground">@{video.owner.username}</p>
+                    <h3 className="text-xl font-semibold">
+                      {video.owner.fullName}
+                    </h3>
+                    <p className="text-base text-muted-foreground">
+                      @{video.owner.username}
+                    </p>
                   </div>
                 </div>
 
@@ -270,18 +278,24 @@ export default function VideoPlayerPage() {
                     onClick={handleSubscribe}
                     className={`flex items-center gap-2 text-base py-5 px-6 ${
                       isSubscribed
-                        ? 'bg-muted text-foreground hover:bg-muted/80'
-                        : 'bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500'
+                        ? "bg-muted text-foreground hover:bg-muted/80"
+                        : "bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500"
                     }`}
                   >
-                    {isSubscribed ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
-                    {isSubscribed ? 'Subscribed' : 'Subscribe'}
+                    {isSubscribed ? (
+                      <BellOff className="w-5 h-5" />
+                    ) : (
+                      <Bell className="w-5 h-5" />
+                    )}
+                    {isSubscribed ? "Subscribed" : "Subscribe"}
                   </Button>
                 )}
               </div>
 
               <div className="mt-6 pt-6 border-t">
-                <p className="text-base leading-relaxed whitespace-pre-wrap">{video.description}</p>
+                <p className="text-base leading-relaxed whitespace-pre-wrap">
+                  {video.description}
+                </p>
               </div>
             </div>
 
@@ -292,8 +306,8 @@ export default function VideoPlayerPage() {
               <div className="flex items-start gap-4">
                 {user?.avatar ? (
                   <Image
-                    src={user.avatar || '/placeholder/user-avatar.png'}
-                    alt={user.username || 'User'}
+                    src={user.avatar || "/placeholder/user-avatar.png"}
+                    alt={user.username || "User"}
                     width={48}
                     height={48}
                     className="w-12 h-12 rounded-full object-cover"
@@ -311,7 +325,7 @@ export default function VideoPlayerPage() {
                   />
                   <div className="flex justify-end gap-3 mt-3">
                     <Button
-                      onClick={() => setNewComment('')}
+                      onClick={() => setNewComment("")}
                       variant="outline"
                       disabled={postingComment}
                       className="text-base py-5"
@@ -323,7 +337,7 @@ export default function VideoPlayerPage() {
                       disabled={!newComment.trim() || postingComment}
                       className="text-base py-5 bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500"
                     >
-                      {postingComment ? 'Posting...' : 'Comment'}
+                      {postingComment ? "Posting..." : "Comment"}
                     </Button>
                   </div>
                 </div>
@@ -333,20 +347,26 @@ export default function VideoPlayerPage() {
                 {comments.map((comment) => (
                   <div key={comment._id} className="flex gap-4">
                     <Image
-                      src={comment.owner?.avatar || '/placeholder/user-avatar.png'}
-                      alt={comment.owner?.username || 'User'}
+                      src={
+                        comment.owner?.avatar || "/placeholder/user-avatar.png"
+                      }
+                      alt={comment.owner?.username || "User"}
                       width={48}
                       height={48}
                       className="w-12 h-12 rounded-full object-cover"
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-base">{comment.owner?.fullName || 'Unknown User'}</span>
+                        <span className="font-semibold text-base">
+                          {comment.owner?.fullName || "Unknown User"}
+                        </span>
                         <span className="text-sm text-muted-foreground">
                           {formatTimeAgo(comment.createdAt)}
                         </span>
                       </div>
-                      <p className="mt-2 text-base leading-relaxed">{comment.content}</p>
+                      <p className="mt-2 text-base leading-relaxed">
+                        {comment.content}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -358,7 +378,9 @@ export default function VideoPlayerPage() {
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Related Videos</h2>
             {/* Placeholder for related videos */}
-            <p className="text-base text-muted-foreground">Related videos coming soon...</p>
+            <p className="text-base text-muted-foreground">
+              Related videos coming soon...
+            </p>
           </div>
         </div>
       </div>
