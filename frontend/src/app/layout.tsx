@@ -1,33 +1,32 @@
-import React from "react"
-import { Inter } from "next/font/google"
-import {  ThemeProvider } from "../context/ThemeProvider"
-import { AuthProvider} from "../context/AuthContext"
-import  Toaster  from "../components/ui/Toaster"
-import "../styles/global.css"
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
-  title: "Video Sharing Platform",
-  description: "Share and discover videos from creators around the world",
-}
+export const metadata: Metadata = {
+  title: "Spark - Video Streaming & Messaging Platform",
+  description: "Modern video streaming platform with real-time messaging, video editing, and social features",
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark">
+      <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+      </head>
       <body className={inter.className}>
         <AuthProvider>
-        <ThemeProvider>
           {children}
           <Toaster />
-        </ThemeProvider>
         </AuthProvider>
       </body>
     </html>
-  )
+  );
 }
-

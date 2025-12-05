@@ -1,0 +1,33 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Spark Logo - Gradient Fire/Spark Effect -->
+  <defs>
+    <linearGradient id="sparkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#facc15;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Main Spark Shape -->
+  <path d="M60 10 L70 45 L95 40 L75 65 L85 95 L60 75 L35 95 L45 65 L25 40 L50 45 Z" 
+        fill="url(#sparkGradient)" 
+        filter="url(#glow)" 
+        stroke="#fbbf24" 
+        stroke-width="2"/>
+  
+  <!-- Inner Spark Detail -->
+  <circle cx="60" cy="60" r="12" fill="#fef3c7" opacity="0.8"/>
+  
+  <!-- Small Spark Particles -->
+  <circle cx="85" cy="30" r="3" fill="#fbbf24" opacity="0.6"/>
+  <circle cx="35" cy="30" r="3" fill="#fb923c" opacity="0.6"/>
+  <circle cx="90" cy="70" r="2.5" fill="#fcd34d" opacity="0.5"/>
+  <circle cx="30" cy="70" r="2.5" fill="#f87171" opacity="0.5"/>
+</svg>
