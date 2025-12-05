@@ -40,7 +40,10 @@ function toUint8Array(data: unknown): Uint8Array {
  * Helper: Get video duration (simplified version)
  * In production, you'd parse ffprobe output for accurate duration
  */
-async function getVideoDuration(ffmpeg: FFmpeg, filename: string): Promise<number> {
+async function getVideoDuration(
+  ffmpeg: FFmpeg,
+  filename: string,
+): Promise<number> {
   // This is a simplified version - returns default duration
   // In production, you would run ffprobe and parse the output
   return 10; // Default 10 seconds
@@ -70,8 +73,14 @@ export function useFFmpeg() {
       // Load ffmpeg-core from CDN
       const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
       await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+        coreURL: await toBlobURL(
+          `${baseURL}/ffmpeg-core.js`,
+          "text/javascript",
+        ),
+        wasmURL: await toBlobURL(
+          `${baseURL}/ffmpeg-core.wasm`,
+          "application/wasm",
+        ),
       });
 
       ffmpegRef.current = ffmpeg;
@@ -119,7 +128,7 @@ export function useFFmpeg() {
         // Rough bitrate calculation
         const videoDuration = await getVideoDuration(ffmpeg, inputName);
         const targetBitrate = Math.floor(
-          (targetSizeMB * 8192) / videoDuration - 128
+          (targetSizeMB * 8192) / videoDuration - 128,
         );
         args.push("-b:v", `${targetBitrate}k`);
       }
@@ -139,7 +148,7 @@ export function useFFmpeg() {
 
       return new Blob([], { type: "video/mp4" });
     },
-    [loaded]
+    [loaded],
   );
 
   /**
@@ -177,7 +186,7 @@ export function useFFmpeg() {
 
       return new Blob([], { type: "image/jpeg" });
     },
-    [loaded]
+    [loaded],
   );
 
   /**
@@ -225,7 +234,7 @@ export function useFFmpeg() {
 
       return thumbnails;
     },
-    [loaded]
+    [loaded],
   );
 
   /**
@@ -267,7 +276,7 @@ export function useFFmpeg() {
 
       return new Blob([], { type: "video/mp4" });
     },
-    [loaded]
+    [loaded],
   );
 
   /**
@@ -304,7 +313,7 @@ export function useFFmpeg() {
       const mimeType = `video/${outputFormat}`;
       return new Blob([uint8.buffer as ArrayBuffer], { type: mimeType });
     },
-    [loaded]
+    [loaded],
   );
 
   /**
@@ -339,7 +348,7 @@ export function useFFmpeg() {
 
       return new Blob([uint8.buffer as ArrayBuffer], { type: "audio/mpeg" });
     },
-    [loaded]
+    [loaded],
   );
 
   /**
@@ -351,7 +360,7 @@ export function useFFmpeg() {
       startTime = 0,
       duration = 3,
       fps = 10,
-      width = 480
+      width = 480,
     ): Promise<Blob> => {
       if (!loaded || !ffmpegRef.current) {
         throw new Error("FFmpeg not loaded");
@@ -383,7 +392,7 @@ export function useFFmpeg() {
 
       return new Blob([uint8.buffer as ArrayBuffer], { type: "image/gif" });
     },
-    [loaded]
+    [loaded],
   );
 
   return {

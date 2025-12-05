@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  async rewrites() {
+  async rewrites () {
     return [
       {
         source: '/.well-known/:path*',
-        destination: '/404',
-      },
-    ];
+        destination: '/404'
+      }
+    ]
   },
   images: {
     remotePatterns: [
@@ -14,36 +14,36 @@ const nextConfig = {
         protocol: 'http',
         hostname: 'localhost',
         port: '8000',
-        pathname: '/**',
+        pathname: '/**'
       },
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
-        pathname: '/**',
+        pathname: '/**'
       },
       {
         protocol: 'http',
         hostname: 'res.cloudinary.com',
-        pathname: '/**',
+        pathname: '/**'
       }
-    ],
+    ]
   },
   webpack: (config, { isServer }) => {
     // Enable WebAssembly
     config.experiments = {
       ...config.experiments,
       asyncWebAssembly: true,
-      layers: true,
-    };
+      layers: true
+    }
 
     // Add rule for .wasm files
     config.module.rules.push({
       test: /\.wasm$/,
-      type: 'asset/resource',
-    });
+      type: 'asset/resource'
+    })
 
-    return config;
-  },
-};
+    return config
+  }
+}
 
-export default nextConfig;
+export default nextConfig

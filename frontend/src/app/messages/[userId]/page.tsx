@@ -7,7 +7,13 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AnimatedBadge } from "@/components/ui/animated-badge";
-import { Send, ArrowLeft, Sparkles, Video as VideoIcon, Gift } from "lucide-react";
+import {
+  Send,
+  ArrowLeft,
+  Sparkles,
+  Video as VideoIcon,
+  Gift,
+} from "lucide-react";
 import Image from "next/image";
 import apiClient from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -88,7 +94,9 @@ export default function ConversationPage() {
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/tweets/conversation/${params.userId}`);
+      const response = await apiClient.get(
+        `/tweets/conversation/${params.userId}`,
+      );
       setMessages(response.data.data || []);
     } catch (error: any) {
       console.error("Error fetching messages:", error);
@@ -146,23 +154,31 @@ export default function ConversationPage() {
             ⭐ Creator You Follow
           </div>
         )}
-        
-        <p className="text-sm break-words whitespace-pre-wrap">{message.content}</p>
-        
+
+        <p className="text-sm break-words whitespace-pre-wrap">
+          {message.content}
+        </p>
+
         {/* Show engagement badges */}
         {message.badges && message.badges.length > 0 && (
           <div className="flex gap-1 flex-wrap mt-2">
             {message.badges.map((badge, idx) => (
               // eslint-disable-next-line react/no-children-prop
-              <AnimatedBadge key={idx} variant={badge as any} children={undefined} />
+              <AnimatedBadge
+                key={idx}
+                variant={badge as any}
+                children={undefined}
+              />
             ))}
           </div>
         )}
-        
+
         {hasVideo && (
           <div className="mt-2 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg flex items-center gap-2">
             <VideoIcon className="w-4 h-4 text-orange-500" />
-            <span className="text-xs text-muted-foreground">Video included in message</span>
+            <span className="text-xs text-muted-foreground">
+              Video included in message
+            </span>
           </div>
         )}
 
@@ -219,7 +235,9 @@ export default function ConversationPage() {
 
             <div className="flex-1">
               <h2 className="font-semibold">{otherUser.fullName}</h2>
-              <p className="text-sm text-muted-foreground">@{otherUser.username}</p>
+              <p className="text-sm text-muted-foreground">
+                @{otherUser.username}
+              </p>
             </div>
           </div>
         </div>
@@ -251,7 +269,9 @@ export default function ConversationPage() {
                       {isAutoWelcome && !isOwnMessage && (
                         <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/20">
                           <Sparkles className="w-4 h-4" />
-                          <span className="text-xs font-semibold">Auto-Welcome Message</span>
+                          <span className="text-xs font-semibold">
+                            Auto-Welcome Message
+                          </span>
                         </div>
                       )}
 
@@ -259,7 +279,9 @@ export default function ConversationPage() {
 
                       <p
                         className={`text-xs mt-2 ${
-                          isOwnMessage ? "text-white/70" : "text-muted-foreground"
+                          isOwnMessage
+                            ? "text-white/70"
+                            : "text-muted-foreground"
                         }`}
                       >
                         {formatTimeAgo(message.createdAt)}

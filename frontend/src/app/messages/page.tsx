@@ -44,7 +44,9 @@ export default function MessagesPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading, user } = useAuthStore();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<"subscriber" | "following" | "non_subscriber">("subscriber");
+  const [activeTab, setActiveTab] = useState<
+    "subscriber" | "following" | "non_subscriber"
+  >("subscriber");
   const [conversations, setConversations] = useState<GroupedConversations>({
     subscriber: [],
     following: [],
@@ -123,7 +125,9 @@ export default function MessagesPage() {
           className="text-center py-12"
         >
           <MessageCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4 opacity-50" />
-          <p className="text-muted-foreground">No messages in this category yet</p>
+          <p className="text-muted-foreground">
+            No messages in this category yet
+          </p>
         </motion.div>
       );
     }
@@ -138,14 +142,19 @@ export default function MessagesPage() {
             transition={{ delay: index * 0.05 }}
           >
             <GlowingCard
-              onClick={() => router.push(`/messages/${conversation.otherUser._id}`)}
+              onClick={() =>
+                router.push(`/messages/${conversation.otherUser._id}`)
+              }
               className="hover:bg-accent/50"
             >
               <div className="flex items-start gap-4">
                 {/* Avatar */}
                 <div className="relative">
                   <Image
-                    src={conversation.otherUser.avatar || "/placeholder/user-avatar.png"}
+                    src={
+                      conversation.otherUser.avatar ||
+                      "/placeholder/user-avatar.png"
+                    }
                     alt={conversation.otherUser.fullName}
                     width={56}
                     height={56}
@@ -175,7 +184,9 @@ export default function MessagesPage() {
                             key={badge}
                             variant={badge as any}
                             // eslint-disable-next-line react/no-children-prop
-                            className="scale-75" children={undefined}                          />
+                            className="scale-75"
+                            children={undefined}
+                          />
                         ))}
                       </div>
                     )}
@@ -185,7 +196,8 @@ export default function MessagesPage() {
                   </p>
                   {conversation.lastMessage && (
                     <p className="text-sm text-muted-foreground truncate mt-1">
-                      {conversation.lastMessage.messageType === "auto_welcome" && "🎉 "}
+                      {conversation.lastMessage.messageType ===
+                        "auto_welcome" && "🎉 "}
                       {conversation.lastMessage.content}
                     </p>
                   )}
@@ -238,27 +250,33 @@ export default function MessagesPage() {
           </motion.div>
 
           {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as any)}
+            className="w-full"
+          >
             <TabsList className="grid w-full grid-cols-3 mb-6">
-              {(["subscriber", "following", "non_subscriber"] as const).map((tier) => {
-                const info = getTierInfo(tier);
-                const Icon = info.icon;
-                return (
-                  <TabsTrigger key={tier} value={tier} className="relative">
-                    <Icon className="w-4 h-4 mr-2" />
-                    {info.title}
-                    {info.count > 0 && (
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r ${info.gradient} text-white`}
-                      >
-                        {info.count}
-                      </motion.span>
-                    )}
-                  </TabsTrigger>
-                );
-              })}
+              {(["subscriber", "following", "non_subscriber"] as const).map(
+                (tier) => {
+                  const info = getTierInfo(tier);
+                  const Icon = info.icon;
+                  return (
+                    <TabsTrigger key={tier} value={tier} className="relative">
+                      <Icon className="w-4 h-4 mr-2" />
+                      {info.title}
+                      {info.count > 0 && (
+                        <motion.span
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className={`ml-2 px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r ${info.gradient} text-white`}
+                        >
+                          {info.count}
+                        </motion.span>
+                      )}
+                    </TabsTrigger>
+                  );
+                },
+              )}
             </TabsList>
 
             <TabsContent value="subscriber" className="mt-0">
@@ -272,7 +290,8 @@ export default function MessagesPage() {
                   Top Fans
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Messages from your most engaged subscribers with badges showing their support level
+                  Messages from your most engaged subscribers with badges
+                  showing their support level
                 </p>
               </motion.div>
               {renderConversations(conversations.subscriber)}
@@ -326,7 +345,8 @@ export default function MessagesPage() {
                   🎉 Auto-Welcome Messages
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Automatically greet new subscribers with custom messages, videos, and coupons
+                  Automatically greet new subscribers with custom messages,
+                  videos, and coupons
                 </p>
               </div>
               <Button

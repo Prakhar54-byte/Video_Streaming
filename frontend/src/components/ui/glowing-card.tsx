@@ -22,7 +22,7 @@ export function GlowingCard({
         "relative rounded-xl p-4 bg-card border border-border",
         "hover:border-orange-500/50 transition-all duration-300",
         onClick && "cursor-pointer",
-        className
+        className,
       )}
       whileHover={{
         scale: 1.02,
