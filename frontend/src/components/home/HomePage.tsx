@@ -168,7 +168,7 @@ export default function HomePage() {
       try {
         // Verify token and get user data using cookies
         const userResponse = await axios.get(`${API_URL}/users/current-user`,{
-          credentials:true,
+          withCredentials:true,
       
         })
 
@@ -193,32 +193,32 @@ export default function HomePage() {
       try {
         // Fetch videos
         const videosResponse = await axios.get(`${API_URL}/videos?page=1&limit=25&sortBy=createdAt&sortType=-1`,{
-          credentials:true
+          withCredentials:true
         })
         
-        if (videosResponse.ok) {
-          const videosData = await videosResponse.json()
+        // if (videosResponse.ok) {
+          // const videosData = await videosResponse.json()
           setVideos(videosResponse.data.data.videos || [])
           setFilteredVideos(videosResponse.data.data.videos || [])
-        }
+        
 
         // Fetch tweets using the correct backend route
         const tweetsResponse = await axios.get(`${API_URL}/tweets/user/${user._id}`,{
-          credentials:true,
+          withCredentials:true,
         })
-        if (tweetsResponse.ok) {
-          const tweetsData = await tweetsResponse.json()
+        
+          // const tweetsData = await tweetsResponse.json()
           setTweets(tweetsResponse.data.data || [])
-        }
+        
 
         // Fetch subscriptions
         const subscriptionsResponse = await axios.get(`${API_URL}/subscriptions/c/subscribed`,{
           withCredentials:true
         })
-        if (subscriptionsResponse.ok) {
+        
           
           setSubscriptions(subscriptionsResponse.data.data || [])
-        }
+        
 
       } catch (error) {
         console.error("Error fetching data:", error)
@@ -256,7 +256,7 @@ export default function HomePage() {
 
     try {
       await axios.post(`${API_URL}/users/logout`,{},{
-        credentials:true
+        withCredentials:true
       })
       
       toast({
@@ -280,7 +280,7 @@ export default function HomePage() {
     try {
       // Check if user has a channel
       const channelResponse = await axios.get(`${API_URL}/channels/user/me`,{
-        credentials:true
+        withCredentials:true
       })
 
       if (channelResponse.data &&
@@ -354,7 +354,7 @@ export default function HomePage() {
       const response = await axios.patch(`${API_URL}/tweets/${tweetId}`,{
         content:newContent
       },{
-        credentials:true
+        withCredentials:true
       })
 
       setTweets((prevTweets)=>
@@ -391,10 +391,10 @@ export default function HomePage() {
 
     try {
       const response = await axios.delete(`${API_URL}/tweets/${tweetId}`,{
-        credentials:true
+        withCredentials:true
       })
 
-      setTweet((prevTweets)=>
+      setTweets((prevTweets)=>
       prevTweets.filter((tweet)=>tweet._id !== tweetId),)
 
       toast({
@@ -425,7 +425,7 @@ export default function HomePage() {
     try {
       const response = await axios.get(`${API_URL}/videos?query=${encodeURIComponent(searchQuery)}&page=1&limit=25`,
     {
-      credentials:true
+      withCredentials:true
     }
     )
 
@@ -566,7 +566,7 @@ export default function HomePage() {
     <div className="group overflow-hidden rounded-lg border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       <div className="aspect-video relative bg-muted overflow-hidden">
         <Image
-          src={video.thumbnail || "/placeholder.svg?height=200&width=350"}
+          src={video.thumbnail || "/placeholder/images.svg?height=200&width=350"}
           alt={video.title}
           fill
           className="object-cover transition-transform duration-300 group-hover:scale-105"
