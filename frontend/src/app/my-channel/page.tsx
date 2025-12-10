@@ -11,9 +11,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import apiClient from "@/lib/api";
 import {
-  Play, Eye, Clock, MoreVertical, Trash2, Edit, Globe,
-  Lock, Upload, Video as VideoIcon, TrendingUp, Users, 
-  Settings, Scissors, Sparkles, Download, Share2
+  Play,
+  Eye,
+  Clock,
+  MoreVertical,
+  Trash2,
+  Edit,
+  Globe,
+  Lock,
+  Upload,
+  Video as VideoIcon,
+  TrendingUp,
+  Users,
+  Settings,
+  Scissors,
+  Sparkles,
+  Download,
+  Share2,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -78,13 +92,21 @@ export default function MyChannelPage() {
   const { toast } = useToast();
 
   const [videos, setVideos] = useState<Video[]>([]);
-  const [stats, setStats] = useState<Stats>({ totalVideos: 0, totalViews: 0, totalSubscribers: 0 });
+  const [stats, setStats] = useState<Stats>({
+    totalVideos: 0,
+    totalViews: 0,
+    totalSubscribers: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [processDialogOpen, setProcessDialogOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ title: "", description: "", isPublished: true });
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    isPublished: true,
+  });
   const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
@@ -100,7 +122,7 @@ export default function MyChannelPage() {
     try {
       setLoading(true);
       const response = await apiClient.get("/videos/search", {
-        params: { userId: user?._id }
+        params: { userId: user?._id },
       });
       setVideos(response.data.data || []);
     } catch (error) {
@@ -119,7 +141,7 @@ export default function MyChannelPage() {
     try {
       const response = await apiClient.get("/users/current-user");
       const userData = response.data.data;
-      
+
       setStats({
         totalVideos: videos.length,
         totalViews: videos.reduce((acc, v) => acc + v.views, 0),
@@ -209,7 +231,8 @@ export default function MyChannelPage() {
       });
       toast({
         title: "Processing started",
-        description: "Your video is being processed. This may take a few minutes.",
+        description:
+          "Your video is being processed. This may take a few minutes.",
       });
       setProcessDialogOpen(false);
     } catch (error) {
@@ -266,13 +289,15 @@ export default function MyChannelPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Videos</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Videos
+              </CardTitle>
               <VideoIcon className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalVideos}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {filteredVideos.filter(v => v.isPublished).length} published
+                {filteredVideos.filter((v) => v.isPublished).length} published
               </p>
             </CardContent>
           </Card>
@@ -283,7 +308,9 @@ export default function MyChannelPage() {
               <Eye className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatViewCount(stats.totalViews)}</div>
+              <div className="text-2xl font-bold">
+                {formatViewCount(stats.totalViews)}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Across all videos
               </p>
@@ -296,7 +323,9 @@ export default function MyChannelPage() {
               <Users className="w-4 h-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatViewCount(stats.totalSubscribers)}</div>
+              <div className="text-2xl font-bold">
+                {formatViewCount(stats.totalSubscribers)}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
                 Total followers
               </p>
@@ -309,10 +338,10 @@ export default function MyChannelPage() {
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="all">All ({videos.length})</TabsTrigger>
             <TabsTrigger value="published">
-              Published ({videos.filter(v => v.isPublished).length})
+              Published ({videos.filter((v) => v.isPublished).length})
             </TabsTrigger>
             <TabsTrigger value="unpublished">
-              Unpublished ({videos.filter(v => !v.isPublished).length})
+              Unpublished ({videos.filter((v) => !v.isPublished).length})
             </TabsTrigger>
           </TabsList>
 
@@ -339,7 +368,10 @@ export default function MyChannelPage() {
                   <Card key={video._id} className="overflow-hidden">
                     <div className="flex flex-col md:flex-row gap-4 p-4">
                       {/* Thumbnail */}
-                      <Link href={`/video/${video._id}`} className="relative w-full md:w-64 aspect-video shrink-0">
+                      <Link
+                        href={`/video/${video._id}`}
+                        className="relative w-full md:w-64 aspect-video shrink-0"
+                      >
                         <Image
                           src={video.thumbnail}
                           alt={video.title}
@@ -363,7 +395,7 @@ export default function MyChannelPage() {
                                 {video.title}
                               </h3>
                             </Link>
-                            
+
                             {/* Actions Dropdown */}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -372,13 +404,19 @@ export default function MyChannelPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuLabel>Video Actions</DropdownMenuLabel>
+                                <DropdownMenuLabel>
+                                  Video Actions
+                                </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleEditClick(video)}>
+                                <DropdownMenuItem
+                                  onClick={() => handleEditClick(video)}
+                                >
                                   <Edit className="w-4 h-4 mr-2" />
                                   Edit Details
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleTogglePublish(video)}>
+                                <DropdownMenuItem
+                                  onClick={() => handleTogglePublish(video)}
+                                >
                                   {video.isPublished ? (
                                     <>
                                       <Lock className="w-4 h-4 mr-2" />
@@ -391,12 +429,14 @@ export default function MyChannelPage() {
                                     </>
                                   )}
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleProcessVideo(video)}>
+                                <DropdownMenuItem
+                                  onClick={() => handleProcessVideo(video)}
+                                >
                                   <Sparkles className="w-4 h-4 mr-2" />
                                   Process Video
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   onClick={() => handleDeleteClick(video)}
                                   className="text-destructive focus:text-destructive"
                                 >
@@ -406,11 +446,11 @@ export default function MyChannelPage() {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                          
+
                           <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
                             {video.description}
                           </p>
-                          
+
                           <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Eye className="w-4 h-4" />
@@ -426,12 +466,16 @@ export default function MyChannelPage() {
                               {video.isPublished ? (
                                 <>
                                   <Globe className="w-4 h-4 text-green-500" />
-                                  <span className="text-green-500">Published</span>
+                                  <span className="text-green-500">
+                                    Published
+                                  </span>
                                 </>
                               ) : (
                                 <>
                                   <Lock className="w-4 h-4 text-orange-500" />
-                                  <span className="text-orange-500">Private</span>
+                                  <span className="text-orange-500">
+                                    Private
+                                  </span>
                                 </>
                               )}
                             </span>
@@ -440,24 +484,24 @@ export default function MyChannelPage() {
 
                         {/* Quick Actions */}
                         <div className="flex gap-2 mt-4">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => router.push(`/video/${video._id}`)}
                           >
                             <Play className="w-4 h-4 mr-1" />
                             Watch
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleEditClick(video)}
                           >
                             <Edit className="w-4 h-4 mr-1" />
                             Edit
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleProcessVideo(video)}
                           >
@@ -489,7 +533,9 @@ export default function MyChannelPage() {
                 <Input
                   id="title"
                   value={editForm.title}
-                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, title: e.target.value })
+                  }
                   placeholder="Enter video title"
                 />
               </div>
@@ -498,7 +544,9 @@ export default function MyChannelPage() {
                 <Textarea
                   id="description"
                   value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, description: e.target.value })
+                  }
                   placeholder="Enter video description"
                   rows={4}
                 />
@@ -513,12 +561,17 @@ export default function MyChannelPage() {
                 <Switch
                   id="publish"
                   checked={editForm.isPublished}
-                  onCheckedChange={(checked) => setEditForm({ ...editForm, isPublished: checked })}
+                  onCheckedChange={(checked) =>
+                    setEditForm({ ...editForm, isPublished: checked })
+                  }
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setEditDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button onClick={handleEditSubmit}>Save Changes</Button>
@@ -532,8 +585,9 @@ export default function MyChannelPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your video
-                &quot;{selectedVideo?.title}&quot; and remove it from our servers.
+                This action cannot be undone. This will permanently delete your
+                video &quot;{selectedVideo?.title}&quot; and remove it from our
+                servers.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -554,7 +608,8 @@ export default function MyChannelPage() {
             <DialogHeader>
               <DialogTitle>Process Video</DialogTitle>
               <DialogDescription>
-                Choose a processing action for &quot;{selectedVideo?.title}&quot;
+                Choose a processing action for &quot;{selectedVideo?.title}
+                &quot;
               </DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-2 gap-4 py-4">
@@ -592,7 +647,10 @@ export default function MyChannelPage() {
               </Button>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setProcessDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setProcessDialogOpen(false)}
+              >
                 Cancel
               </Button>
             </DialogFooter>
