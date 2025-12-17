@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import apiClient from "@/lib/api";
 import { VideoCard } from "@/components/video/VideoCard";
 import { Heart } from "lucide-react";
@@ -68,7 +74,8 @@ export function LikedVideos() {
           <div className="text-center space-y-2">
             <h3 className="text-2xl font-semibold">No Liked Videos Yet</h3>
             <p className="text-muted-foreground max-w-md">
-              Videos you like will appear here. Start exploring and liking videos!
+              Videos you like will appear here. Start exploring and liking
+              videos!
             </p>
           </div>
         </CardContent>

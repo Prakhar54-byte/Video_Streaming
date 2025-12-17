@@ -1,8 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css'; // Import Video.js CSS
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import videojs from "video.js";
+import "video.js/dist/video-js.css"; // Import Video.js CSS
 
 interface VideoJsPlayerProps {
   src: string;
@@ -14,25 +20,36 @@ interface VideoJsPlayerProps {
   introEndTime?: number; // New prop for skip intro
 }
 
-export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, spriteSheetVttUrl, introStartTime, introEndTime }: VideoJsPlayerProps) {
+export function VideoJsPlayer({
+  src,
+  fallbackSrc,
+  poster,
+  autoPlay = true,
+  spriteSheetVttUrl,
+  introStartTime,
+  introEndTime,
+}: VideoJsPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const playerRef = useRef<any>(null); // video.js player instance
   const [showSkipIntro, setShowSkipIntro] = useState(false);
   const didFallbackRef = useRef(false);
 
   const getVideoType = useCallback((url: string) => {
-    if (url.includes('.m3u8')) return 'application/x-mpegURL';
-    if (url.includes('.mp4')) return 'video/mp4';
-    if (url.includes('.webm')) return 'video/webm';
-    return 'video/mp4';
+    if (url.includes(".m3u8")) return "application/x-mpegURL";
+    if (url.includes(".mp4")) return "video/mp4";
+    if (url.includes(".webm")) return "video/webm";
+    return "video/mp4";
   }, []);
 
-  const setPlayerSource = useCallback((url: string) => {
-    if (!playerRef.current) return;
-    const videoType = getVideoType(url);
-    console.log('Loading video:', url, 'Type:', videoType);
-    playerRef.current.src({ src: url, type: videoType });
-  }, [getVideoType]);
+  const setPlayerSource = useCallback(
+    (url: string) => {
+      if (!playerRef.current) return;
+      const videoType = getVideoType(url);
+      console.log("Loading video:", url, "Type:", videoType);
+      playerRef.current.src({ src: url, type: videoType });
+    },
+    [getVideoType],
+  );
 
   useLayoutEffect(() => {
     const videoElement = videoRef.current;
@@ -53,9 +70,9 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
       }
 
       const initialType = getVideoType(src);
-      console.log('Loading video:', src, 'Type:', initialType);
+      console.log("Loading video:", src, "Type:", initialType);
 
-    // Initialize Video.js player once.
+      // Initialize Video.js player once.
       const player = (playerRef.current = videojs(
         videoElement,
         {
@@ -65,7 +82,7 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
           // The parent container already enforces aspect ratio; fill it.
           fluid: false,
           fill: true,
-          preload: 'auto',
+          preload: "auto",
           poster: poster,
           html5: {
             vhs: {
@@ -78,25 +95,25 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
           sources: [{ src, type: initialType }],
         },
         () => {
-          console.log('Video.js player is ready');
-        }
+          console.log("Video.js player is ready");
+        },
       ));
 
-    // Add VTT track for sprite sheet thumbnails if available
+      // Add VTT track for sprite sheet thumbnails if available
       if (spriteSheetVttUrl) {
         player.addRemoteTextTrack(
           {
-            kind: 'metadata',
+            kind: "metadata",
             src: spriteSheetVttUrl,
             default: true,
-            label: 'thumbnails',
+            label: "thumbnails",
           },
-          false
+          false,
         );
       }
 
-    // Add timeupdate listener for skip intro
-      player.on('timeupdate', () => {
+      // Add timeupdate listener for skip intro
+      player.on("timeupdate", () => {
         const currentTime = player.currentTime();
         if (
           currentTime !== undefined &&
@@ -111,19 +128,19 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
         }
       });
 
-    // Add error handling + HLS -> MP4 fallback
-      player.on('error', () => {
+      // Add error handling + HLS -> MP4 fallback
+      player.on("error", () => {
         const err = player.error();
-        console.error('Video.js error:', err);
+        console.error("Video.js error:", err);
         if (err) {
-          console.error('Error code:', err.code);
-          console.error('Error message:', err.message);
+          console.error("Error code:", err.code);
+          console.error("Error message:", err.message);
         }
 
-        const isHls = src.includes('.m3u8');
+        const isHls = src.includes(".m3u8");
         if (isHls && fallbackSrc && !didFallbackRef.current) {
           didFallbackRef.current = true;
-          console.warn('HLS failed; falling back to MP4:', fallbackSrc);
+          console.warn("HLS failed; falling back to MP4:", fallbackSrc);
           setPlayerSource(fallbackSrc);
           player.play()?.catch(() => {});
         }
@@ -143,7 +160,17 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
         playerRef.current = null;
       }
     };
-  }, [autoPlay, poster, spriteSheetVttUrl, introStartTime, introEndTime, src, fallbackSrc, setPlayerSource, getVideoType]);
+  }, [
+    autoPlay,
+    poster,
+    spriteSheetVttUrl,
+    introStartTime,
+    introEndTime,
+    src,
+    fallbackSrc,
+    setPlayerSource,
+    getVideoType,
+  ]);
 
   // Update source when URL changes
   useEffect(() => {
@@ -161,7 +188,11 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
 
   return (
     <div data-vjs-player className="relative">
-      <video ref={videoRef} className="video-js vjs-big-play-centered w-full h-full" crossOrigin="anonymous" />
+      <video
+        ref={videoRef}
+        className="video-js vjs-big-play-centered w-full h-full"
+        crossOrigin="anonymous"
+      />
       {showSkipIntro && (
         <button
           onClick={handleSkipIntro}

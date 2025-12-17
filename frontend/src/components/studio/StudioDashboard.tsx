@@ -1,12 +1,25 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  TrendingUp, Eye, Users, Video, Upload, 
-  BarChart3, Clock, ThumbsUp, MessageSquare 
+import {
+  TrendingUp,
+  Eye,
+  Users,
+  Video,
+  Upload,
+  BarChart3,
+  Clock,
+  ThumbsUp,
+  MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
 import apiClient from "@/lib/api";
@@ -40,14 +53,25 @@ export function StudioDashboard({ channel }: StudioDashboardProps) {
     try {
       // Fetch channel videos
       const videosResponse = await apiClient.get("/videos/search", {
-        params: { channelId: channel._id }
+        params: { channelId: channel._id },
       });
-      const videos = Array.isArray(videosResponse.data.data) ? videosResponse.data.data : [];
-      
+      const videos = Array.isArray(videosResponse.data.data)
+        ? videosResponse.data.data
+        : [];
+
       // Calculate stats
-      const totalViews = videos.reduce((acc: number, v: any) => acc + (v.views || 0), 0);
-      const totalLikes = videos.reduce((acc: number, v: any) => acc + (v.likesCount || 0), 0);
-      const totalComments = videos.reduce((acc: number, v: any) => acc + (v.commentsCount || 0), 0);
+      const totalViews = videos.reduce(
+        (acc: number, v: any) => acc + (v.views || 0),
+        0,
+      );
+      const totalLikes = videos.reduce(
+        (acc: number, v: any) => acc + (v.likesCount || 0),
+        0,
+      );
+      const totalComments = videos.reduce(
+        (acc: number, v: any) => acc + (v.commentsCount || 0),
+        0,
+      );
 
       setStats({
         totalVideos: videos.length,
@@ -102,9 +126,7 @@ export function StudioDashboard({ channel }: StudioDashboardProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalVideos}</div>
-            <p className="text-xs text-muted-foreground">
-              Published videos
-            </p>
+            <p className="text-xs text-muted-foreground">Published videos</p>
           </CardContent>
         </Card>
 
@@ -114,10 +136,10 @@ export function StudioDashboard({ channel }: StudioDashboardProps) {
             <Eye className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalViews.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              All-time views
-            </p>
+            <div className="text-2xl font-bold">
+              {stats.totalViews.toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground">All-time views</p>
           </CardContent>
         </Card>
 
@@ -127,10 +149,10 @@ export function StudioDashboard({ channel }: StudioDashboardProps) {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{channel.subscribers?.length || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Channel subscribers
-            </p>
+            <div className="text-2xl font-bold">
+              {channel.subscribers?.length || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Channel subscribers</p>
           </CardContent>
         </Card>
 
@@ -140,10 +162,10 @@ export function StudioDashboard({ channel }: StudioDashboardProps) {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalLikes + stats.totalComments}</div>
-            <p className="text-xs text-muted-foreground">
-              Likes & comments
-            </p>
+            <div className="text-2xl font-bold">
+              {stats.totalLikes + stats.totalComments}
+            </div>
+            <p className="text-xs text-muted-foreground">Likes & comments</p>
           </CardContent>
         </Card>
       </div>
@@ -220,7 +242,9 @@ export function StudioDashboard({ channel }: StudioDashboardProps) {
           <CardHeader>
             <Upload className="w-8 h-8 text-primary mb-2" />
             <CardTitle>Upload Video</CardTitle>
-            <CardDescription>Share new content with your audience</CardDescription>
+            <CardDescription>
+              Share new content with your audience
+            </CardDescription>
           </CardHeader>
         </Card>
 

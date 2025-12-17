@@ -7,7 +7,7 @@ import apiClient from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import {  Mail, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 // import { log } from "console";
 
 export default function LoginPage() {
@@ -25,10 +25,13 @@ export default function LoginPage() {
     try {
       // Determine if identifier is email or username
 
-      console.log("This dumb fuck has identifier lets see what info it has in identifier",identifier);
-      
-      const isEmail = identifier.includes('@');
-      const loginData = isEmail 
+      console.log(
+        "This dumb fuck has identifier lets see what info it has in identifier",
+        identifier,
+      );
+
+      const isEmail = identifier.includes("@");
+      const loginData = isEmail
         ? { email: identifier, password }
         : { username: identifier, password };
 
@@ -66,7 +69,9 @@ export default function LoginPage() {
         <div className="bg-card p-10 rounded-xl border shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-8">
             <div>
-              <label className="block text-base font-semibold mb-3">Email or Username</label>
+              <label className="block text-base font-semibold mb-3">
+                Email or Username
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
@@ -81,7 +86,9 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-base font-semibold mb-3">Password</label>
+              <label className="block text-base font-semibold mb-3">
+                Password
+              </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
@@ -115,7 +122,10 @@ export default function LoginPage() {
           <div className="mt-8 text-center">
             <p className="text-base text-muted-foreground">
               Don&apos;t have an account?{" "}
-              <Link href="/auth/register" className="text-primary hover:underline font-semibold text-lg transition-colors">
+              <Link
+                href="/auth/register"
+                className="text-primary hover:underline font-semibold text-lg transition-colors"
+              >
                 Create Account
               </Link>
             </p>

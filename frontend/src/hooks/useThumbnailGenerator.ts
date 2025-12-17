@@ -21,8 +21,14 @@ export function useThumbnailGenerator() {
 
       const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
       await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+        coreURL: await toBlobURL(
+          `${baseURL}/ffmpeg-core.js`,
+          "text/javascript",
+        ),
+        wasmURL: await toBlobURL(
+          `${baseURL}/ffmpeg-core.wasm`,
+          "application/wasm",
+        ),
       });
 
       ffmpegRef.current = ffmpeg;
@@ -61,11 +67,16 @@ export function useThumbnailGenerator() {
         ]);
 
         const data = await ffmpeg.readFile(outputName);
-        
+
         // Ensure data is Uint8Array before creating Blob
-        const uint8Array = data instanceof Uint8Array ? data : new Uint8Array(data as ArrayBuffer);
-        
-        const thumbnailBlob = new Blob([uint8Array.buffer], { type: "image/jpeg" });
+        const uint8Array =
+          data instanceof Uint8Array
+            ? data
+            : new Uint8Array(data as ArrayBuffer);
+
+        const thumbnailBlob = new Blob([uint8Array.buffer], {
+          type: "image/jpeg",
+        });
 
         // Cleanup virtual filesystem
         await ffmpeg.deleteFile(inputName);
@@ -77,7 +88,7 @@ export function useThumbnailGenerator() {
         return null;
       }
     },
-    []
+    [],
   );
 
   return {

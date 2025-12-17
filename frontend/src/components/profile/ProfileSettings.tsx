@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,8 +46,14 @@ export function ProfileSettings() {
 
     try {
       // Update profile info
-      if (formData.fullName !== user?.fullName || formData.email !== user?.email) {
-        const response = await apiClient.patch("/users/update-account", formData);
+      if (
+        formData.fullName !== user?.fullName ||
+        formData.email !== user?.email
+      ) {
+        const response = await apiClient.patch(
+          "/users/update-account",
+          formData,
+        );
         if (response.data.success) {
           setUser(response.data.data);
           toast.success("Profile updated successfully");
@@ -73,14 +85,19 @@ export function ProfileSettings() {
       <Card>
         <CardHeader>
           <CardTitle>Profile Settings</CardTitle>
-          <CardDescription>Update your account information and preferences</CardDescription>
+          <CardDescription>
+            Update your account information and preferences
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Avatar Section */}
             <div className="flex flex-col items-center space-y-4">
               <Avatar className="w-32 h-32">
-                <AvatarImage src={avatarPreview || user?.avatar} alt="Profile" />
+                <AvatarImage
+                  src={avatarPreview || user?.avatar}
+                  alt="Profile"
+                />
                 <AvatarFallback className="text-3xl">
                   {user?.fullName?.[0]?.toUpperCase()}
                 </AvatarFallback>
@@ -110,7 +127,9 @@ export function ProfileSettings() {
                 <Input
                   id="fullName"
                   value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullName: e.target.value })
+                  }
                   placeholder="Enter your full name"
                 />
               </div>
@@ -123,7 +142,9 @@ export function ProfileSettings() {
                   disabled
                   className="bg-muted"
                 />
-                <p className="text-xs text-muted-foreground">Username cannot be changed</p>
+                <p className="text-xs text-muted-foreground">
+                  Username cannot be changed
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -132,7 +153,9 @@ export function ProfileSettings() {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   placeholder="Enter your email"
                 />
               </div>
@@ -159,7 +182,9 @@ export function ProfileSettings() {
       <Card>
         <CardHeader>
           <CardTitle>Account Security</CardTitle>
-          <CardDescription>Manage your password and security settings</CardDescription>
+          <CardDescription>
+            Manage your password and security settings
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button variant="outline" className="w-full">

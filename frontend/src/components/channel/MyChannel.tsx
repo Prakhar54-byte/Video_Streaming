@@ -2,7 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +43,11 @@ export function MyChannel() {
   }, [fetchUserChannels]);
 
   const handleDeleteChannel = async (channelId: string) => {
-    if (!confirm("Are you sure you want to delete this channel? This action cannot be undone.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete this channel? This action cannot be undone.",
+      )
+    ) {
       return;
     }
 
@@ -72,7 +82,8 @@ export function MyChannel() {
             <div className="text-center space-y-2">
               <h3 className="text-2xl font-semibold">Create Your Channel</h3>
               <p className="text-muted-foreground max-w-md">
-                Start your journey as a content creator. Create your channel and share your videos with the world.
+                Start your journey as a content creator. Create your channel and
+                share your videos with the world.
               </p>
             </div>
             <Button
@@ -85,7 +96,7 @@ export function MyChannel() {
             </Button>
           </CardContent>
         </Card>
-        
+
         <CreateChannelModal
           open={isCreateModalOpen}
           onOpenChange={setIsCreateModalOpen}
@@ -100,7 +111,9 @@ export function MyChannel() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">My Channels</h2>
-            <p className="text-muted-foreground">Manage your content channels</p>
+            <p className="text-muted-foreground">
+              Manage your content channels
+            </p>
           </div>
           <Button onClick={() => setIsCreateModalOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
@@ -110,7 +123,10 @@ export function MyChannel() {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {channels.map((channel) => (
-            <Card key={channel._id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card
+              key={channel._id}
+              className="overflow-hidden hover:shadow-lg transition-shadow"
+            >
               {/* Banner */}
               {channel.banner && (
                 <div className="h-32 bg-gradient-to-r from-primary/20 to-primary/10 relative">
@@ -123,7 +139,7 @@ export function MyChannel() {
                   />
                 </div>
               )}
-              
+
               <CardHeader className="pb-4">
                 <div className="flex items-start gap-4">
                   <Avatar className="w-16 h-16 border-2 border-background -mt-8">

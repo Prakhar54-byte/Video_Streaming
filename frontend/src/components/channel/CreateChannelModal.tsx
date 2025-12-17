@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,13 +24,16 @@ interface CreateChannelModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateChannelModal({ open, onOpenChange }: CreateChannelModalProps) {
+export function CreateChannelModal({
+  open,
+  onOpenChange,
+}: CreateChannelModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { addChannel } = useChannelStore();
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,12 +50,12 @@ export function CreateChannelModal({ open, onOpenChange }: CreateChannelModalPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
       toast.error("Channel name is required");
       return;
     }
-    
+
     if (!description.trim()) {
       toast.error("Channel description is required");
       return;
@@ -63,7 +73,7 @@ export function CreateChannelModal({ open, onOpenChange }: CreateChannelModalPro
       if (response.success) {
         addChannel(response.data);
         toast.success("Channel created successfully!");
-        
+
         // Reset form
         setName("");
         setDescription("");
@@ -88,17 +98,21 @@ export function CreateChannelModal({ open, onOpenChange }: CreateChannelModalPro
             Start sharing your content by creating your own channel
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Avatar Upload */}
           <div className="flex flex-col items-center space-y-4">
             <Avatar className="w-24 h-24">
               <AvatarImage src={avatarPreview} alt="Channel avatar" />
               <AvatarFallback className="text-2xl">
-                {name ? name[0].toUpperCase() : <ImagePlus className="w-8 h-8" />}
+                {name ? (
+                  name[0].toUpperCase()
+                ) : (
+                  <ImagePlus className="w-8 h-8" />
+                )}
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="flex items-center justify-center w-full">
               <Label
                 htmlFor="avatar-upload"

@@ -1,13 +1,20 @@
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { useThumbnailGenerator } from '@/hooks/useThumbnailGenerator';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useRef, useEffect } from "react";
+import { useThumbnailGenerator } from "@/hooks/useThumbnailGenerator";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ThumbnailGeneratorModalProps {
   videoFile: File;
@@ -23,7 +30,8 @@ export function ThumbnailGeneratorModal({
   onThumbnailGenerated,
 }: ThumbnailGeneratorModalProps) {
   const { toast } = useToast();
-  const { isLoaded, isLoading, load, generateThumbnail } = useThumbnailGenerator();
+  const { isLoaded, isLoading, load, generateThumbnail } =
+    useThumbnailGenerator();
   const [isGenerating, setIsGenerating] = useState(false);
   const [timestamp, setTimestamp] = useState(1);
   const [videoDuration, setVideoDuration] = useState(0);
@@ -37,19 +45,24 @@ export function ThumbnailGeneratorModal({
 
   const handleGenerate = async () => {
     setIsGenerating(true);
-    toast({ title: 'Generating thumbnail...', description: 'This may take a moment.' });
-    
+    toast({
+      title: "Generating thumbnail...",
+      description: "This may take a moment.",
+    });
+
     const thumbnailBlob = await generateThumbnail(videoFile, timestamp);
-    
+
     if (thumbnailBlob) {
-      const thumbnailFile = new File([thumbnailBlob], 'thumbnail.jpg', { type: 'image/jpeg' });
+      const thumbnailFile = new File([thumbnailBlob], "thumbnail.jpg", {
+        type: "image/jpeg",
+      });
       onThumbnailGenerated(thumbnailFile);
-      toast({ title: 'Thumbnail generated successfully!' });
+      toast({ title: "Thumbnail generated successfully!" });
       onOpenChange(false);
     } else {
-      toast({ title: 'Failed to generate thumbnail', variant: 'destructive' });
+      toast({ title: "Failed to generate thumbnail", variant: "destructive" });
     }
-    
+
     setIsGenerating(false);
   };
 
@@ -66,7 +79,10 @@ export function ThumbnailGeneratorModal({
           <DialogTitle>Generate Thumbnail</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 overflow-y-auto flex-1 pr-2">
-          <div className="bg-black rounded-lg overflow-hidden flex items-center justify-center" style={{ maxHeight: '50vh' }}>
+          <div
+            className="bg-black rounded-lg overflow-hidden flex items-center justify-center"
+            style={{ maxHeight: "50vh" }}
+          >
             <video
               ref={videoRef}
               src={URL.createObjectURL(videoFile)}
@@ -77,7 +93,9 @@ export function ThumbnailGeneratorModal({
           </div>
           {videoDuration > 0 && (
             <div className="space-y-2">
-              <Label htmlFor="timestamp-slider">Select Timestamp: {timestamp.toFixed(1)}s</Label>
+              <Label htmlFor="timestamp-slider">
+                Select Timestamp: {timestamp.toFixed(1)}s
+              </Label>
               <Slider
                 id="timestamp-slider"
                 min={0}
@@ -95,9 +113,18 @@ export function ThumbnailGeneratorModal({
               Cancel
             </Button>
           </DialogClose>
-          <Button onClick={handleGenerate} disabled={!isLoaded || isGenerating || isLoading}>
-            {(isLoading || isGenerating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? 'Loading Processor...' : isGenerating ? 'Generating...' : 'Generate'}
+          <Button
+            onClick={handleGenerate}
+            disabled={!isLoaded || isGenerating || isLoading}
+          >
+            {(isLoading || isGenerating) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            {isLoading
+              ? "Loading Processor..."
+              : isGenerating
+                ? "Generating..."
+                : "Generate"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useAuthStore } from "@/store/authStore";
 import { Calendar, Mail, User as UserIcon } from "lucide-react";
 
@@ -15,7 +21,9 @@ export function ProfileInfo() {
       <Card>
         <CardHeader>
           <CardTitle>Profile Information</CardTitle>
-          <CardDescription>Your account details and information</CardDescription>
+          <CardDescription>
+            Your account details and information
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -47,7 +55,9 @@ export function ProfileInfo() {
               <Calendar className="w-5 h-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Account Status</p>
-                <p className="font-medium">{user.isVerified ? "Verified ✓" : "Unverified"}</p>
+                <p className="font-medium">
+                  {user.isVerified ? "Verified ✓" : "Unverified"}
+                </p>
               </div>
             </div>
           </div>

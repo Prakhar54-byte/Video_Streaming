@@ -1,9 +1,9 @@
-import axios from 'axios';
+import axios from "axios";
 
 const API_URL =
   process.env.NEXT_PUBLIC_BACKEND_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  'http://localhost:8000/api/v1';
+  "http://localhost:8000/api/v1";
 
 const api = axios.create({
   baseURL: API_URL,
@@ -12,7 +12,7 @@ const api = axios.create({
 
 // Add token to requests if available
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  const token = localStorage.getItem("accessToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -34,15 +34,15 @@ export const channelApi = {
   // Create a new channel
   createChannel: async (data: CreateChannelData) => {
     const formData = new FormData();
-    formData.append('name', data.name);
-    formData.append('description', data.description);
+    formData.append("name", data.name);
+    formData.append("description", data.description);
     if (data.avatar) {
-      formData.append('avatar', data.avatar);
+      formData.append("avatar", data.avatar);
     }
 
-    const response = await api.post('/channels/create', formData, {
+    const response = await api.post("/channels/create", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
@@ -50,7 +50,7 @@ export const channelApi = {
 
   // Get user's channels
   getUserChannels: async () => {
-    const response = await api.get('/channels/user/me');
+    const response = await api.get("/channels/user/me");
     return response.data;
   },
 
@@ -75,11 +75,11 @@ export const channelApi = {
   // Upload channel avatar
   uploadAvatar: async (channelId: string, avatar: File) => {
     const formData = new FormData();
-    formData.append('avatar', avatar);
+    formData.append("avatar", avatar);
 
     const response = await api.post(`/channels/${channelId}/avatar`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;
@@ -88,11 +88,11 @@ export const channelApi = {
   // Upload channel banner
   uploadBanner: async (channelId: string, banner: File) => {
     const formData = new FormData();
-    formData.append('banner', banner);
+    formData.append("banner", banner);
 
     const response = await api.post(`/channels/${channelId}/banner`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
     return response.data;

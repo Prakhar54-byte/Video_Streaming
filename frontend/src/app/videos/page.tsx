@@ -47,28 +47,37 @@ export default function VideosPage() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 mb-8 h-14">
-            <TabsTrigger value="subscribed" className="flex items-center gap-2 text-base py-3">
+            <TabsTrigger
+              value="subscribed"
+              className="flex items-center gap-2 text-base py-3"
+            >
               <Bell className="w-5 h-5" />
               Subscribed
             </TabsTrigger>
-            <TabsTrigger value="all" className="flex items-center gap-2 text-base py-3">
+            <TabsTrigger
+              value="all"
+              className="flex items-center gap-2 text-base py-3"
+            >
               <Grid className="w-5 h-5" />
               All Videos
             </TabsTrigger>
-            <TabsTrigger value="trending" className="flex items-center gap-2 text-base py-3">
+            <TabsTrigger
+              value="trending"
+              className="flex items-center gap-2 text-base py-3"
+            >
               <TrendingUp className="w-5 h-5" />
               Trending
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="subscribed" className="space-y-6">
             <VideoGrid subscribedOnly={true} />
           </TabsContent>
-          
+
           <TabsContent value="all" className="space-y-6">
             <VideoGrid />
           </TabsContent>
-          
+
           <TabsContent value="trending" className="space-y-6">
             <VideoGrid sortBy="views" />
           </TabsContent>

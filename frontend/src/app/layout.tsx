@@ -9,7 +9,8 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Spark - Video Streaming & Messaging Platform",
-  description: "Modern video streaming platform with real-time messaging, video editing, and social features",
+  description:
+    "Modern video streaming platform with real-time messaging, video editing, and social features",
 };
 
 export default function RootLayout({

@@ -1,11 +1,23 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  TrendingUp, Eye, Clock, ThumbsUp, MessageSquare,
-  Users, Video, Calendar
+import {
+  TrendingUp,
+  Eye,
+  Clock,
+  ThumbsUp,
+  MessageSquare,
+  Users,
+  Video,
+  Calendar,
 } from "lucide-react";
 import apiClient from "@/lib/api";
 import { toast } from "sonner";
@@ -57,18 +69,31 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
     try {
       // Fetch channel videos
       const videosResponse = await apiClient.get("/videos/search", {
-        params: { channelId: channel._id }
+        params: { channelId: channel._id },
       });
-      const videos = Array.isArray(videosResponse.data.data) ? videosResponse.data.data : [];
+      const videos = Array.isArray(videosResponse.data.data)
+        ? videosResponse.data.data
+        : [];
 
       // Calculate analytics
-      const totalViews = videos.reduce((acc: number, v: any) => acc + (v.views || 0), 0);
-      const totalLikes = videos.reduce((acc: number, v: any) => acc + (v.likesCount || 0), 0);
-      const totalComments = videos.reduce((acc: number, v: any) => acc + (v.commentsCount || 0), 0);
+      const totalViews = videos.reduce(
+        (acc: number, v: any) => acc + (v.views || 0),
+        0,
+      );
+      const totalLikes = videos.reduce(
+        (acc: number, v: any) => acc + (v.likesCount || 0),
+        0,
+      );
+      const totalComments = videos.reduce(
+        (acc: number, v: any) => acc + (v.commentsCount || 0),
+        0,
+      );
 
       // Mock views over time data (in real app, this would come from backend)
       const viewsOverTime = Array.from({ length: 7 }, (_, i) => ({
-        date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: new Date(
+          Date.now() - (6 - i) * 24 * 60 * 60 * 1000,
+        ).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
         views: Math.floor(Math.random() * 1000) + 100,
         engagement: Math.floor(Math.random() * 100) + 20,
       }));
@@ -78,7 +103,8 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
         .sort((a: any, b: any) => (b.views || 0) - (a.views || 0))
         .slice(0, 5)
         .map((v: any) => ({
-          title: v.title.length > 30 ? v.title.substring(0, 30) + '...' : v.title,
+          title:
+            v.title.length > 30 ? v.title.substring(0, 30) + "..." : v.title,
           views: v.views || 0,
           likes: v.likesCount || 0,
         }));
@@ -121,7 +147,9 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
       {/* Header */}
       <div>
         <h2 className="text-3xl font-bold">Analytics</h2>
-        <p className="text-muted-foreground">Track your channel&apos;s performance</p>
+        <p className="text-muted-foreground">
+          Track your channel&apos;s performance
+        </p>
       </div>
 
       {/* Overview Stats */}
@@ -135,7 +163,9 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
             <div className="text-2xl font-bold">
               {analytics.overview.totalViews.toLocaleString()}
             </div>
-            <p className="text-xs text-muted-foreground">All-time channel views</p>
+            <p className="text-xs text-muted-foreground">
+              All-time channel views
+            </p>
           </CardContent>
         </Card>
 
@@ -145,7 +175,9 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
             <Video className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{analytics.overview.totalVideos}</div>
+            <div className="text-2xl font-bold">
+              {analytics.overview.totalVideos}
+            </div>
             <p className="text-xs text-muted-foreground">Published content</p>
           </CardContent>
         </Card>
@@ -157,7 +189,9 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {(analytics.overview.totalLikes + analytics.overview.totalComments).toLocaleString()}
+              {(
+                analytics.overview.totalLikes + analytics.overview.totalComments
+              ).toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">Likes & comments</p>
           </CardContent>
@@ -165,7 +199,9 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Subscribers Gained</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Subscribers Gained
+            </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -178,12 +214,15 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. View Duration</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Avg. View Duration
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.floor(analytics.overview.avgViewDuration / 60)}:{String(analytics.overview.avgViewDuration % 60).padStart(2, '0')}
+              {Math.floor(analytics.overview.avgViewDuration / 60)}:
+              {String(analytics.overview.avgViewDuration % 60).padStart(2, "0")}
             </div>
             <p className="text-xs text-muted-foreground">Minutes per view</p>
           </CardContent>
@@ -254,13 +293,20 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
               {analytics.topVideos.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Video className="w-12 h-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No video data available</p>
+                  <p className="text-muted-foreground">
+                    No video data available
+                  </p>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={analytics.topVideos}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="title" angle={-45} textAnchor="end" height={100} />
+                    <XAxis
+                      dataKey="title"
+                      angle={-45}
+                      textAnchor="end"
+                      height={100}
+                    />
                     <YAxis />
                     <Tooltip />
                     <Legend />

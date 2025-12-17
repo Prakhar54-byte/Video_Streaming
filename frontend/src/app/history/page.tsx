@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { VideoCard } from '@/components/video/VideoCard';
-import apiClient from '@/lib/api';
-import { useAuthStore } from '@/store/authStore';
-import { useRouter } from 'next/navigation';
-import { Loader2, History as HistoryIcon } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { VideoCard } from "@/components/video/VideoCard";
+import apiClient from "@/lib/api";
+import { useAuthStore } from "@/store/authStore";
+import { useRouter } from "next/navigation";
+import { Loader2, History as HistoryIcon } from "lucide-react";
 
 interface Video {
   _id: string;
@@ -33,20 +33,20 @@ export default function HistoryPage() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
+      router.push("/auth/login");
       return;
     }
 
     const fetchWatchHistory = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get('/users/history');
+        const response = await apiClient.get("/users/history");
         const historyData = response.data.data;
-        
+
         // Extract videos from watch history
         setVideos(Array.isArray(historyData) ? historyData : []);
       } catch (error) {
-        console.error('Error fetching watch history:', error);
+        console.error("Error fetching watch history:", error);
         setVideos([]);
       } finally {
         setLoading(false);

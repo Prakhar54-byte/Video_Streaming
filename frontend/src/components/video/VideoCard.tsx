@@ -42,7 +42,8 @@ export function VideoCard({ video }: VideoCardProps) {
             />
           )}
           <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-            {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
+            {Math.floor(video.duration / 60)}:
+            {String(video.duration % 60).padStart(2, "0")}
           </div>
           {!video.isPublished && (
             <Badge className="absolute top-2 right-2" variant="secondary">
@@ -54,7 +55,10 @@ export function VideoCard({ video }: VideoCardProps) {
         <CardContent className="p-4">
           <div className="flex gap-3">
             <Avatar className="w-10 h-10 flex-shrink-0">
-              <AvatarImage src={video.owner.avatar} alt={video.owner.fullName} />
+              <AvatarImage
+                src={video.owner.avatar}
+                alt={video.owner.fullName}
+              />
               <AvatarFallback>{video.owner.fullName[0]}</AvatarFallback>
             </Avatar>
 
