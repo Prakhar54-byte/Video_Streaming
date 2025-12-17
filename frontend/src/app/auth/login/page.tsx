@@ -8,7 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import {  Mail, Lock } from "lucide-react";
-import { log } from "console";
+// import { log } from "console";
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState(""); // Can be email or username

@@ -1,12 +1,3 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import apiClient from "@/lib/api";
-import { Play, Eye, Clock, Bell } from "lucide-react";
-import {formatViewCount,  formatTimeAgo } from "@/lib/utils";
-import Link from "next/link";
-import { useAuthStore } from "@/store/authStore";
-
 interface Video {
   _id: string;
   title: string;
@@ -21,21 +12,47 @@ interface Video {
     avatar: string;
   };
   createdAt: string;
+  previewAnimationUrl?: string; // Added for animated WebP previews
 }
 
 interface VideoGridProps {
   subscribedOnly?: boolean;
 }
 
-export function VideoGrid({ subscribedOnly = false }: VideoGridProps) {
+import { useState,useEffect } from "react";
+import { useAuthStore } from "@/store/authStore";
+import apiClient from "@/lib/api";
+import Link from "next/link";
+import { Play, Eye, Clock, Bell } from "lucide-react";
+import { formatViewCount,formatTimeAgo } from "@/lib/utils";
+
+interface VideoGridProps {
+  subscribedOnly?: boolean;
+  sortBy?: 'recent' | 'views' | 'duration';
+  channelId?: string;
+}
+
+export function VideoGrid({ subscribedOnly = false, sortBy = 'recent', channelId }: VideoGridProps) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscribedChannels, setSubscribedChannels] = useState<Set<string>>(new Set());
+  const [previousVideoCount, setPreviousVideoCount] = useState(0);
   const { user } = useAuthStore();
 
   useEffect(() => {
     fetchVideosWithSubscriptions();
-  }, [subscribedOnly, user]);
+  }, [subscribedOnly, sortBy, channelId, user]);
+
+  // Auto-refresh when page becomes visible (after upload)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchVideosWithSubscriptions();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   const fetchVideosWithSubscriptions = async () => {
     try {
@@ -53,9 +70,29 @@ export function VideoGrid({ subscribedOnly = false }: VideoGridProps) {
         }
       }
       
-      // Fetch all videos
-      const videosResponse = await apiClient.get("/videos?page=1&limit=100");
-      const allVideos = videosResponse.data.data || [];
+      // Fetch all videos from homepage endpoint
+      const videosResponse = await apiClient.get("/videos");
+      // Handle both data.data and direct data arrays
+      let allVideos = videosResponse.data.data || videosResponse.data || [];
+      // Ensure it's an array
+      allVideos = Array.isArray(allVideos) ? allVideos : [];
+      
+      // Filter by channel if channelId is provided
+      if (channelId) {
+        allVideos = allVideos.filter((video: Video) => video.owner?._id === channelId);
+      }
+      
+      // Sort videos based on sortBy parameter
+      if (sortBy === 'views') {
+        allVideos.sort((a: Video, b: Video) => b.views - a.views);
+      } else if (sortBy === 'duration') {
+        allVideos.sort((a: Video, b: Video) => b.duration - a.duration);
+      } else {
+        // Default: sort by recent (createdAt)
+        allVideos.sort((a: Video, b: Video) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      }
       
       if (subscribedOnly) {
         // Filter to only show subscribed channel videos
@@ -65,12 +102,12 @@ export function VideoGrid({ subscribedOnly = false }: VideoGridProps) {
           );
           setVideos(filteredVideos);
         } else {
-          // If no subscriptions, show all videos
-          setVideos(allVideos);
+          // If no subscriptions, show empty
+          setVideos([]);
         }
       } else {
         // Show all videos but sort: subscribed channels first, then others
-        if (subscribedChannelIds.length > 0) {
+        if (subscribedChannelIds.length > 0 && sortBy === 'recent') {
           const subscribedVideos = allVideos.filter((video: Video) => 
             subscribedChannelIds.includes(video.owner?._id)
           );
@@ -79,7 +116,7 @@ export function VideoGrid({ subscribedOnly = false }: VideoGridProps) {
           );
           setVideos([...subscribedVideos, ...otherVideos]);
         } else {
-          // No subscriptions, show all videos normally
+          // No subscriptions or custom sort, show all videos normally
           setVideos(allVideos);
         }
       }
@@ -110,6 +147,33 @@ export function VideoGrid({ subscribedOnly = false }: VideoGridProps) {
     );
   }
 
+  if (videos.length === 0 && subscribedOnly) {
+    return (
+      <div className="text-center py-16 bg-card border rounded-xl">
+        <Bell className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+        <h3 className="text-xl font-semibold mb-2">No Subscribed Videos</h3>
+        <p className="text-muted-foreground mb-4">
+          You haven&apos;t subscribed to any channels yet.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Explore channels and subscribe to see their videos here!
+        </p>
+      </div>
+    );
+  }
+
+  if (videos.length === 0) {
+    return (
+      <div className="text-center py-16 bg-card border rounded-xl">
+        <Play className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+        <h3 className="text-xl font-semibold mb-2">No Videos Found</h3>
+        <p className="text-muted-foreground">
+          There are no videos to display at this time.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {videos.map((video) => {
@@ -122,6 +186,7 @@ export function VideoGrid({ subscribedOnly = false }: VideoGridProps) {
                 isSubscribed ? 'ring-2 ring-orange-500 shadow-lg shadow-orange-500/20' : ''
               }`}>
                 {video.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img 
                     src={video.thumbnail} 
                     alt={video.title}

@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { 
-  Home, Video, MessageSquare, Upload, 
-  User, Menu, X, LogOut, Bell, Sparkles 
+  Home, Video, MessageSquare, Upload,
+  User, Menu, X, LogOut, Bell, Sparkles, History, ThumbsUp 
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -58,17 +58,17 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { href: "/", icon: Home, label: "Home" },
     { href: "/videos", icon: Video, label: "Videos" },
     { href: "/subscribed", icon: Bell, label: "Subscribed" },
+    { href: "/liked", icon: ThumbsUp, label: "Liked Videos" },
+    { href: "/history", icon: History, label: "History" },
     { href: "/messages", icon: MessageSquare, label: "Messages" },
   ];
 
   const channelNavItem = { href: "/my-channel", icon: User, label: "My Channel" };
-  const uploadNavItem = { href: "/upload", icon: Upload, label: "Upload" };
 
   // Only show "My Channel" if user has uploaded videos
   const navItems = [
     ...baseNavItems,
     ...(hasChannel ? [channelNavItem] : []),
-    uploadNavItem,
   ];
 
   const isActive = (href: string) => {
@@ -208,6 +208,19 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       )}>
         {children}
       </main>
+
+      {/* Floating Upload Button */}
+      {user && (
+        <Link href="/upload">
+          <Button
+            size="lg"
+            className="fixed bottom-8 right-8 h-14 w-14 rounded-full shadow-2xl bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 hover:shadow-orange-500/50 hover:scale-110 transition-all duration-300 z-40"
+            title="Upload Video"
+          >
+            <Upload className="w-6 h-6" />
+          </Button>
+        </Link>
+      )}
     </div>
   );
 }

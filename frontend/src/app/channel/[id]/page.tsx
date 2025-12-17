@@ -7,21 +7,9 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/authStore';
 import apiClient from '@/lib/api';
-import { Bell, BellOff, Video, Eye, Calendar } from 'lucide-react';
+import { Bell, BellOff, Video, Users, Play, Settings } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { formatViewCount, formatTimeAgo } from '@/lib/utils';
-
-interface Video {
-  _id: string;
-  title: string;
-  description: string;
-  thumbnail: string;
-  videoFiles: string;
-  duration: number;
-  views: number;
-  createdAt: string;
-}
+import { VideoGrid } from '@/components/video/VideoGrid';
 
 interface Channel {
   _id: string;
@@ -39,7 +27,7 @@ export default function ChannelPage() {
   const { user } = useAuthStore();
   
   const [channel, setChannel] = useState<Channel | null>(null);
-  const [videos, setVideos] = useState<Video[]>([]);
+  const [videoCount, setVideoCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscribersCount, setSubscribersCount] = useState(0);
@@ -47,7 +35,7 @@ export default function ChannelPage() {
   useEffect(() => {
     if (params.id) {
       fetchChannelData();
-      fetchChannelVideos();
+      fetchVideoCount();
       checkSubscription();
     }
   }, [params.id]);
@@ -66,19 +54,19 @@ export default function ChannelPage() {
         variant: 'destructive',
       });
       router.push('/');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchChannelVideos = async () => {
+  const fetchVideoCount = async () => {
     try {
       const response = await apiClient.get(`/videos?page=1&limit=100`);
       const allVideos = response.data.data || [];
       const channelVideos = allVideos.filter((v: any) => v.owner?._id === params.id);
-      setVideos(channelVideos);
+      setVideoCount(channelVideos.length);
     } catch (error) {
-      console.error('Error fetching videos:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error fetching video count:', error);
     }
   };
 
@@ -187,12 +175,12 @@ export default function ChannelPage() {
                   <span className="text-lg">@{channel.username}</span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
-                    <Video className="w-4 h-4" />
-                    {videos.length} videos
+                    <Play className="w-4 h-4" />
+                    {videoCount} videos
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
-                    <Bell className="w-4 h-4" />
+                    <Users className="w-4 h-4" />
                     {subscribersCount} subscribers
                   </span>
                 </div>
@@ -227,11 +215,14 @@ export default function ChannelPage() {
           {/* Videos Section */}
           <div className="py-8">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Videos</h2>
-              <span className="text-muted-foreground">{videos.length} uploads</span>
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <Play className="w-6 h-6 text-orange-500" />
+                Channel Videos
+              </h2>
+              <span className="text-muted-foreground">{videoCount} uploads</span>
             </div>
 
-            {videos.length === 0 ? (
+            {videoCount === 0 ? (
               <div className="text-center py-16 bg-card border rounded-xl">
                 <Video className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
                 <h3 className="text-xl font-semibold mb-2">No videos yet</h3>
@@ -240,42 +231,7 @@ export default function ChannelPage() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {videos.map((video) => (
-                  <Link key={video._id} href={`/video/${video._id}`}>
-                    <div className="group cursor-pointer">
-                      <div className="relative aspect-video bg-muted rounded-xl overflow-hidden mb-3">
-                        <Image
-                          src={video.thumbnail}
-                          alt={video.title}
-                          fill
-                          className="object-cover transition-transform duration-300 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                        <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded text-sm font-semibold">
-                          {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="font-semibold line-clamp-2 text-lg group-hover:text-orange-500 transition-colors">
-                          {video.title}
-                        </h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Eye className="w-4 h-4" />
-                            {formatViewCount(video.views)}
-                          </span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            {formatTimeAgo(video.createdAt)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+              <VideoGrid channelId={params.id as string} sortBy="recent" />
             )}
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useAuthStore } from "@/store/authStore";
@@ -87,24 +87,33 @@ export default function MyChannelPage() {
   const [editForm, setEditForm] = useState({ title: "", description: "", isPublished: true });
   const [activeTab, setActiveTab] = useState("all");
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/auth/login");
-    } else if (isAuthenticated && user) {
-      fetchMyVideos();
-      fetchStats();
-    }
-  }, [isAuthenticated, isLoading, user, router]);
-
-  const fetchMyVideos = async () => {
+  const fetchMyVideos = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.get("/videos/search", {
         params: { userId: user?._id }
       });
-      setVideos(response.data.data || []);
+      const videoData = response.data.data;
+      // Ensure videos is always an array
+      const videoArray = Array.isArray(videoData) ? videoData : [];
+      setVideos(videoArray);
+      
+      // Fetch stats after getting videos
+      try {
+        const userResponse = await apiClient.get("/users/current-user");
+        const userData = userResponse.data.data;
+        
+        setStats({
+          totalVideos: videoArray.length,
+          totalViews: videoArray.reduce((acc, v) => acc + v.views, 0),
+          totalSubscribers: userData.subscribersCount || 0,
+        });
+      } catch (statsError) {
+        console.error("Error fetching stats:", statsError);
+      }
     } catch (error) {
       console.error("Error fetching videos:", error);
+      setVideos([]); // Set to empty array on error
       toast({
         title: "Error",
         description: "Failed to fetch your videos",
@@ -113,22 +122,28 @@ export default function MyChannelPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?._id, toast]);
 
-  const fetchStats = async () => {
-    try {
-      const response = await apiClient.get("/users/current-user");
-      const userData = response.data.data;
-      
-      setStats({
-        totalVideos: videos.length,
-        totalViews: videos.reduce((acc, v) => acc + v.views, 0),
-        totalSubscribers: userData.subscribersCount || 0,
-      });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/auth/login");
+    } else if (isAuthenticated && user) {
+      fetchMyVideos();
     }
-  };
+  }, [isAuthenticated, isLoading, user, router, fetchMyVideos]);
+
+  // Refresh on route change (when coming back from upload)
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          fetchMyVideos();
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }
+  }, [isAuthenticated, user, fetchMyVideos]);
 
   const handleEditClick = (video: Video) => {
     setSelectedVideo(video);
@@ -221,11 +236,13 @@ export default function MyChannelPage() {
     }
   };
 
-  const filteredVideos = videos.filter((video) => {
-    if (activeTab === "published") return video.isPublished;
-    if (activeTab === "unpublished") return !video.isPublished;
-    return true;
-  });
+  const filteredVideos = Array.isArray(videos) 
+    ? videos.filter((video) => {
+        if (activeTab === "published") return video.isPublished;
+        if (activeTab === "unpublished") return !video.isPublished;
+        return true;
+      })
+    : [];
 
   if (isLoading || loading) {
     return (

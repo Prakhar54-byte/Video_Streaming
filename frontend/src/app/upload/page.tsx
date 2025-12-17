@@ -5,15 +5,17 @@ import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Video, Image as ImageIcon, X, CheckCircle } from 'lucide-react';
+import { Upload, Video, Image as ImageIcon, X, CheckCircle, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import apiClient from '@/lib/api';
+import { ThumbnailGeneratorModal } from '@/components/video/ThumbnailGeneratorModal';
 
 export default function UploadPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [formData, setFormData] = useState<{
     title: string;
@@ -40,7 +42,6 @@ export default function UploadPage() {
       const file = e.target.files[0];
       setFormData(prev => ({ ...prev, videoFile: file }));
       
-      // Create video preview URL
       const videoUrl = URL.createObjectURL(file);
       setPreviews(prev => ({ ...prev, video: videoUrl }));
     }
@@ -52,6 +53,11 @@ export default function UploadPage() {
       setFormData(prev => ({ ...prev, thumbnail: file }));
       setPreviews(prev => ({ ...prev, thumbnail: URL.createObjectURL(file) }));
     }
+  };
+
+  const handleThumbnailGenerated = (thumbnailFile: File) => {
+    setFormData(prev => ({ ...prev, thumbnail: thumbnailFile }));
+    setPreviews(prev => ({ ...prev, thumbnail: URL.createObjectURL(thumbnailFile) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,59 +85,40 @@ export default function UploadPage() {
     setUploadProgress(0);
 
     try {
-      // Check for duplicate title BEFORE uploading files
-      try {
-        const checkResponse = await apiClient.get('/videos/check-title', {
-          params: { title: formData.title }
-        });
-        if (checkResponse.data.exists) {
-          toast({
-            title: 'Duplicate title',
-            description: 'You already have a video with this title. Please use a different title.',
-            variant: 'destructive',
-          });
-          setIsUploading(false);
-          return;
-        }
-      } catch (checkError: any) {
-        // If endpoint doesn't exist, continue with upload
-        if (checkError.response?.status !== 404) {
-          throw checkError;
-        }
-      }
-
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('videoFile', formData.videoFile);
       formDataToSend.append('thumbnail', formData.thumbnail);
 
-      // Simulate progress for better UX
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 500);
+      console.log('Uploading to:', apiClient.defaults.baseURL + '/videos');
+      console.log('Form data:', {
+        title: formData.title,
+        description: formData.description,
+        videoFileName: formData.videoFile.name,
+        thumbnailName: formData.thumbnail.name,
+      });
 
       const response = await apiClient.post('/videos', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / (progressEvent.total || 1)
+          );
+          setUploadProgress(percentCompleted);
+        },
       });
 
-      clearInterval(progressInterval);
-      setUploadProgress(100);
+      console.log('Upload successful:', response.data);
 
       toast({
-        title: 'Success!',
-        description: 'Video uploaded successfully',
+        title: 'Upload Complete! 🎉',
+        description: 'Your video is now live and visible on your channel.',
       });
 
-      // Reset form
+      // Clear form
       setFormData({
         title: '',
         description: '',
@@ -140,10 +127,11 @@ export default function UploadPage() {
       });
       setPreviews({ video: '', thumbnail: '' });
 
+      // Redirect to my-channel with refresh
       setTimeout(() => {
-        const videoId = response.data.data.video?._id || response.data.data._id;
-        router.push(`/video/${videoId}`);
-      }, 1000);
+        router.push('/my-channel');
+        router.refresh();
+      }, 1500);
     } catch (error: any) {
       console.error('Upload error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Something went wrong';
@@ -190,7 +178,7 @@ export default function UploadPage() {
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <Video className="w-16 h-16 mb-4 text-muted-foreground" />
                   <p className="mb-2 text-lg font-semibold">Click to upload video</p>
-                  <p className="text-base text-muted-foreground">MP4, WebM, or OGG (MAX. 800MB)</p>
+                  <p className="text-base text-muted-foreground">MP4, WebM, or OGG (MAX. 10GB)</p>
                 </div>
                 <input
                   type="file"
@@ -222,16 +210,27 @@ export default function UploadPage() {
 
           {/* Thumbnail Upload */}
           <div className="bg-card border rounded-xl p-8">
-            <label className="block text-xl font-semibold mb-4">
-              Thumbnail <span className="text-destructive">*</span>
-            </label>
+            <div className="flex justify-between items-center mb-4">
+                <label className="block text-xl font-semibold">
+                Thumbnail <span className="text-destructive">*</span>
+                </label>
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsModalOpen(true)}
+                    disabled={!formData.videoFile || isUploading}
+                >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Generate from Video
+                </Button>
+            </div>
             
             {!formData.thumbnail ? (
               <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary transition-colors bg-muted/20">
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                   <ImageIcon className="w-12 h-12 mb-4 text-muted-foreground" />
                   <p className="mb-2 text-base font-semibold">Click to upload thumbnail</p>
-                  <p className="text-sm text-muted-foreground">PNG, JPG, or WebP (Recommended: 1280x720)</p>
+                  <p className="text-sm text-muted-foreground">PNG, JPG, or WebP</p>
                 </div>
                 <input
                   type="file"
@@ -341,6 +340,15 @@ export default function UploadPage() {
             </Button>
           </div>
         </form>
+
+        {formData.videoFile && (
+            <ThumbnailGeneratorModal
+                videoFile={formData.videoFile}
+                open={isModalOpen}
+                onOpenChange={setIsModalOpen}
+                onThumbnailGenerated={handleThumbnailGenerated}
+            />
+        )}
       </div>
     </MainLayout>
   );

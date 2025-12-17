@@ -1,12 +1,27 @@
-version: '3.4'
-
 services:
   backends:
     image: backends
     build:
-      context: BACKEND-IN-JS
+      context: ./BACKEND
       dockerfile: ./Dockerfile
     environment:
       NODE_ENV: production
-    ports:
-      - 3000:3000
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      KAFKAJS_NO_PARTITIONER_WARNING: 1
+      CLOUDINARY_CLOUD_NAME: dfaytfq2n
+      CLOUDINARY_API_KEY: 386834226673114
+      CLOUDINARY_API_SECRET: uOVLF2th1fg8Hybk8f2OLFoKX0U
+      MONGODB_URL: mongodb+srv://prakharchauhan179:pqvSLLv6ruESFI4b@cluster0.mr0wiih.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+      PORT: 8000
+    depends_on:
+      - redis
+    network_mode: "host"
+
+  redis:
+    image: redis:alpine
+    network_mode: "host"
+
+  mongo:
+    image: mongo
+    network_mode: "host"

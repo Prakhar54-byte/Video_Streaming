@@ -9,7 +9,9 @@ import { useAuthStore } from '@/store/authStore';
 import apiClient from '@/lib/api';
 import { formatViewCount, formatTimeAgo } from '@/lib/utils';
 import Image from 'next/image';
+import { VideoJsPlayer } from '@/components/video/VideoJsPlayer';
 import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye } from 'lucide-react';
+import { log } from 'node:console';
 
 interface Video {
   _id: string;
@@ -20,6 +22,13 @@ interface Video {
   duration: number;
   views: number;
   isPublished: boolean;
+  processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
+  hlsMasterPlaylist?: string; // Added for HLS support
+  waveformUrl?: string; // Added for audio waveform display
+  spriteSheetUrl?: string; // Added for seeking previews
+  spriteSheetVttUrl?: string; // Added for seeking previews
+  introStartTime?: number; // Added for skip intro
+  introEndTime?: number; // Added for skip intro
   owner: {
     _id: string;
     username: string;
@@ -27,6 +36,7 @@ interface Video {
     avatar: string;
   };
   createdAt: string;
+  likesCount?: number;
 }
 
 interface Comment {
@@ -61,10 +71,38 @@ export default function VideoPlayerPage() {
       fetchVideo();
       fetchComments();
       checkSubscription();
-      checkLikeStatus();
       addToWatchHistory();
     }
   }, [params.id]);
+
+  useEffect(() => {
+    if (video) {
+      checkLikeStatus();
+      setLikesCount(video.likesCount || 0);
+    }
+  }, [video]);
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+  const backendOrigin = (() => {
+    const base = (apiClient.defaults.baseURL || '').toString();
+    if (base) return base.replace(/\/api\/v1\/?$/, '');
+    const envBase = (process.env.NEXT_PUBLIC_BACKEND_URL || '').toString();
+    if (envBase) return envBase.replace(/\/api\/v1\/?$/, '');
+    if (API_URL) return API_URL.replace(/\/api\/v1\/?$/, '');
+    return 'http://localhost:8000';
+  })();
+
+  const toUrl = (maybePath?: string) => {
+    if (!maybePath) return '';
+    // If backend already returned an absolute URL, use it.
+    if (/^https?:\/\//i.test(maybePath)) return maybePath;
+    const normalized = maybePath.replace(/\\/g, '/').replace(/^\//, '');
+    return `${backendOrigin}/${normalized}`;
+  };
+  
+
+  
 
   const fetchVideo = async () => {
     try {
@@ -104,13 +142,15 @@ export default function VideoPlayerPage() {
   const checkLikeStatus = async () => {
     try {
       // Get all liked videos for the user
-      const response = await apiClient.get(`${user ? `/likes/videos/${user._id}` : `/likes/videos/`}`);
+      const response = await apiClient.get(`${API_URL}/likes/videos`);
       const likedVideos = response.data.data || [];
-      console.log("Liked video",likedVideos);
       
-      // const isVideoLiked = likedVideos.some((v: any) => v._id === params.id);
-      // setIsLiked(isVideoLiked);
+      const isVideoLiked = likedVideos?.videos.some((v: any) => v._id === params.id);
+      setIsLiked(isVideoLiked);
       // You can get likes count from video data
+      if (video) {
+        setLikesCount(video.likesCount || 0);
+      }
     } catch (error) {
       console.error('Error checking like status:', error);
       // Non-critical, continue without like status
@@ -203,19 +243,42 @@ export default function VideoPlayerPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Video Player */}
             <div className="bg-black rounded-xl overflow-hidden aspect-video">
-              <video
-                src={video.videoFile}
-                controls
-                autoPlay
-                className="w-full h-full"
-                poster={video.thumbnail}
-              />
+              {(video.videoFile || video.hlsMasterPlaylist) ? (
+                <VideoJsPlayer
+                  src={toUrl(video.hlsMasterPlaylist || video.videoFile)}
+                  fallbackSrc={video.hlsMasterPlaylist ? toUrl(video.videoFile) : undefined}
+                  poster={video.thumbnail ? toUrl(video.thumbnail) : undefined}
+                  autoPlay
+                  spriteSheetVttUrl={video.spriteSheetVttUrl}
+                  introStartTime={video.introStartTime}
+                  introEndTime={video.introEndTime}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full bg-muted">
+                  <p className="text-muted-foreground">
+                    {video.processingStatus === 'failed' ? 'Video processing failed.' : 'Video is processing...'}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Video Info */}
             <div className="space-y-4">
               <h1 className="text-3xl font-bold">{video.title}</h1>
               
+              {video.waveformUrl && (
+                <div className="w-full bg-muted rounded-lg overflow-hidden">
+                  <Image
+                    src={video.waveformUrl}
+                    alt="Audio Waveform"
+                    width={1200} // Match FFmpeg output width
+                    height={120} // Match FFmpeg output height
+                    className="w-full h-auto object-cover"
+                    unoptimized
+                  />
+                </div>
+              )}
+
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4 text-base text-muted-foreground">
                   <span className="flex items-center gap-2">
