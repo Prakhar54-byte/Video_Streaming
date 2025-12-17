@@ -9,10 +9,10 @@ services:
       REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
       KAFKAJS_NO_PARTITIONER_WARNING: 1
-      CLOUDINARY_CLOUD_NAME: dfaytfq2n
-      CLOUDINARY_API_KEY: 386834226673114
-      CLOUDINARY_API_SECRET: uOVLF2th1fg8Hybk8f2OLFoKX0U
-      MONGODB_URL: mongodb+srv://prakharchauhan179:pqvSLLv6ruESFI4b@cluster0.mr0wiih.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      MONGODB_URL: ${MONGODB_URL}
       PORT: 8000
     depends_on:
       - redis
