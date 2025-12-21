@@ -29,8 +29,12 @@ export default function SubscribedPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading, user } = useAuthStore();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'subscribed' | 'explore'>('subscribed');
-  const [subscribedChannelsList, setSubscribedChannelsList] = useState<Channel[]>([]);
+  const [activeTab, setActiveTab] = useState<"subscribed" | "explore">(
+    "subscribed",
+  );
+  const [subscribedChannelsList, setSubscribedChannelsList] = useState<
+    Channel[]
+  >([]);
   const [allChannels, setAllChannels] = useState<Channel[]>([]);
   const [subscribedIds, setSubscribedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -58,44 +62,48 @@ export default function SubscribedPage() {
     try {
       const subsResponse = await apiClient.get(`/subscriptions/u/${user?._id}`);
       const subs = subsResponse.data.data || [];
-      
+
       // Get video counts for subscribed channels
       const videosResponse = await apiClient.get("/videos?page=1&limit=200");
       const allVideos = videosResponse.data.data || [];
-      
+
       const videoCountMap = new Map<string, number>();
       allVideos.forEach((video: any) => {
         if (video.owner?._id) {
-          videoCountMap.set(video.owner._id, (videoCountMap.get(video.owner._id) || 0) + 1);
+          videoCountMap.set(
+            video.owner._id,
+            (videoCountMap.get(video.owner._id) || 0) + 1,
+          );
         }
       });
-      
+
       // Fetch detailed channel info for each subscribed channel
-      const channelPromises = subs.map((sub: any) => 
-        apiClient.get(`/users/channel/${sub.channel._id}`).catch(() => null)
+      const channelPromises = subs.map((sub: any) =>
+        apiClient.get(`/users/channel/${sub.channel._id}`).catch(() => null),
       );
-      
+
       const channelResponses = await Promise.all(channelPromises);
-      
+
       const channels = subs.map((sub: any, index: number) => {
         const channelData = channelResponses[index]?.data?.data;
         return {
           _id: sub.channel._id,
-          username: sub.channel.username || channelData?.username || 'unknown',
-          fullName: sub.channel.fullName || channelData?.fullName || 'Unknown User',
+          username: sub.channel.username || channelData?.username || "unknown",
+          fullName:
+            sub.channel.fullName || channelData?.fullName || "Unknown User",
           avatar: sub.channel.avatar || channelData?.avatar,
           coverImage: channelData?.coverImage || sub.channel.coverImage,
           subscribersCount: channelData?.subscribersCount || 0,
-          videoCount: videoCountMap.get(sub.channel._id) || 0
+          videoCount: videoCountMap.get(sub.channel._id) || 0,
         };
       });
-      
+
       setSubscribedChannelsList(channels);
       setSubscribedIds(new Set(channels.map((c: { _id: string }) => c._id)));
-      
+
       // If no subscriptions, switch to explore tab
       if (channels.length === 0) {
-        setActiveTab('explore');
+        setActiveTab("explore");
       }
     } catch (error) {
       console.error("Error fetching subscribed channels:", error);
@@ -107,7 +115,7 @@ export default function SubscribedPage() {
       // Fetch all videos to get unique channels with counts
       const response = await apiClient.get("/videos?page=1&limit=200");
       const videos = response.data.data || [];
-      
+
       // Get unique channels with video counts
       const channelsMap = new Map<string, Channel>();
       videos.forEach((video: any) => {
@@ -115,12 +123,12 @@ export default function SubscribedPage() {
           if (!channelsMap.has(video.owner._id)) {
             channelsMap.set(video.owner._id, {
               _id: video.owner._id,
-              username: video.owner.username || 'unknown',
-              fullName: video.owner.fullName || 'Unknown User',
+              username: video.owner.username || "unknown",
+              fullName: video.owner.fullName || "Unknown User",
               avatar: video.owner.avatar,
               coverImage: video.owner.coverImage,
               videoCount: 1,
-              subscribersCount: 0
+              subscribersCount: 0,
             });
           } else {
             const channel = channelsMap.get(video.owner._id)!;
@@ -128,15 +136,15 @@ export default function SubscribedPage() {
           }
         }
       });
-      
+
       // Fetch detailed channel info for each unique channel
       const channelIds = Array.from(channelsMap.keys());
-      const channelPromises = channelIds.map(id => 
-        apiClient.get(`/users/channel/${id}`).catch(() => null)
+      const channelPromises = channelIds.map((id) =>
+        apiClient.get(`/users/channel/${id}`).catch(() => null),
       );
-      
+
       const channelResponses = await Promise.all(channelPromises);
-      
+
       channelResponses.forEach((resp, index) => {
         if (resp && resp.data.data) {
           const channelId = channelIds[index];
@@ -145,16 +153,17 @@ export default function SubscribedPage() {
             channelsMap.set(channelId, {
               ...existingChannel,
               coverImage: resp.data.data.coverImage,
-              subscribersCount: resp.data.data.subscribersCount || 0
+              subscribersCount: resp.data.data.subscribersCount || 0,
             });
           }
         }
       });
-      
+
       // Convert to array and sort by video count
-      const channels = Array.from(channelsMap.values())
-        .sort((a, b) => (b.videoCount || 0) - (a.videoCount || 0));
-      
+      const channels = Array.from(channelsMap.values()).sort(
+        (a, b) => (b.videoCount || 0) - (a.videoCount || 0),
+      );
+
       setAllChannels(channels);
     } catch (error) {
       console.error("Error fetching all channels:", error);
@@ -164,37 +173,44 @@ export default function SubscribedPage() {
   const handleSubscribe = async (channelId: string) => {
     try {
       await apiClient.post(`/subscriptions/c/${channelId}`);
-      
+
       // Find the channel in allChannels
-      const channelToSubscribe = allChannels.find(ch => ch._id === channelId);
-      
+      const channelToSubscribe = allChannels.find((ch) => ch._id === channelId);
+
       if (channelToSubscribe) {
         // Fetch updated channel info with correct subscriber count
         try {
-          const channelResponse = await apiClient.get(`/users/channel/${channelId}`);
+          const channelResponse = await apiClient.get(
+            `/users/channel/${channelId}`,
+          );
           const updatedChannel = {
             ...channelToSubscribe,
             subscribersCount: channelResponse.data.data.subscribersCount || 0,
-            coverImage: channelResponse.data.data.coverImage || channelToSubscribe.coverImage
+            coverImage:
+              channelResponse.data.data.coverImage ||
+              channelToSubscribe.coverImage,
           };
-          
+
           // Add to subscribed list with updated data
-          setSubscribedChannelsList(prev => [...prev, updatedChannel]);
+          setSubscribedChannelsList((prev) => [...prev, updatedChannel]);
         } catch {
           // Fallback to incrementing count if fetch fails
-          setSubscribedChannelsList(prev => [...prev, {
-            ...channelToSubscribe,
-            subscribersCount: (channelToSubscribe.subscribersCount || 0) + 1
-          }]);
+          setSubscribedChannelsList((prev) => [
+            ...prev,
+            {
+              ...channelToSubscribe,
+              subscribersCount: (channelToSubscribe.subscribersCount || 0) + 1,
+            },
+          ]);
         }
-        
+
         // Remove from explore list
-        setAllChannels(prev => prev.filter(ch => ch._id !== channelId));
-        
+        setAllChannels((prev) => prev.filter((ch) => ch._id !== channelId));
+
         // Update subscribed IDs
-        setSubscribedIds(prev => new Set([...prev, channelId]));
+        setSubscribedIds((prev) => new Set([...prev, channelId]));
       }
-      
+
       toast({
         title: "Subscribed successfully!",
         description: "Channel added to your subscriptions",
@@ -211,40 +227,52 @@ export default function SubscribedPage() {
   const handleUnsubscribe = async (channelId: string) => {
     try {
       await apiClient.post(`/subscriptions/c/${channelId}`);
-      
+
       // Find the channel in subscribed list
-      const channelToUnsubscribe = subscribedChannelsList.find(ch => ch._id === channelId);
-      
+      const channelToUnsubscribe = subscribedChannelsList.find(
+        (ch) => ch._id === channelId,
+      );
+
       if (channelToUnsubscribe) {
         // Remove from subscribed list
-        setSubscribedChannelsList(prev => prev.filter(ch => ch._id !== channelId));
-        
+        setSubscribedChannelsList((prev) =>
+          prev.filter((ch) => ch._id !== channelId),
+        );
+
         // Add to explore list with updated count (if not user's own channel)
         if (channelToUnsubscribe._id !== user?._id) {
           try {
-            const channelResponse = await apiClient.get(`/users/channel/${channelId}`);
+            const channelResponse = await apiClient.get(
+              `/users/channel/${channelId}`,
+            );
             const updatedChannel = {
               ...channelToUnsubscribe,
-              subscribersCount: channelResponse.data.data.subscribersCount || 0
+              subscribersCount: channelResponse.data.data.subscribersCount || 0,
             };
-            setAllChannels(prev => [updatedChannel, ...prev]);
+            setAllChannels((prev) => [updatedChannel, ...prev]);
           } catch {
             // Fallback to decrementing count if fetch fails
-            setAllChannels(prev => [{
-              ...channelToUnsubscribe,
-              subscribersCount: Math.max(0, (channelToUnsubscribe.subscribersCount || 1) - 1)
-            }, ...prev]);
+            setAllChannels((prev) => [
+              {
+                ...channelToUnsubscribe,
+                subscribersCount: Math.max(
+                  0,
+                  (channelToUnsubscribe.subscribersCount || 1) - 1,
+                ),
+              },
+              ...prev,
+            ]);
           }
         }
-        
+
         // Update subscribed IDs
-        setSubscribedIds(prev => {
+        setSubscribedIds((prev) => {
           const newSet = new Set(prev);
           newSet.delete(channelId);
           return newSet;
         });
       }
-      
+
       toast({
         title: "Unsubscribed",
         description: "Channel removed from your subscriptions",
@@ -272,7 +300,8 @@ export default function SubscribedPage() {
     return null;
   }
 
-  const displayChannels = activeTab === 'subscribed' ? subscribedChannelsList : allChannels;
+  const displayChannels =
+    activeTab === "subscribed" ? subscribedChannelsList : allChannels;
 
   return (
     <MainLayout>
@@ -290,41 +319,41 @@ export default function SubscribedPage() {
         {/* Tabs */}
         <div className="flex gap-4 mb-8 border-b">
           <button
-            onClick={() => setActiveTab('subscribed')}
+            onClick={() => setActiveTab("subscribed")}
             className={`px-6 py-3 text-lg font-semibold transition-all relative ${
-              activeTab === 'subscribed'
-                ? 'text-primary'
-                : 'text-muted-foreground hover:text-foreground'
+              activeTab === "subscribed"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <div className="flex items-center gap-2">
               <Bell className="w-5 h-5" />
               Subscribed ({subscribedChannelsList.length})
             </div>
-            {activeTab === 'subscribed' && (
+            {activeTab === "subscribed" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500" />
             )}
           </button>
           <button
-            onClick={() => setActiveTab('explore')}
+            onClick={() => setActiveTab("explore")}
             className={`px-6 py-3 text-lg font-semibold transition-all relative ${
-              activeTab === 'explore'
-                ? 'text-primary'
-                : 'text-muted-foreground hover:text-foreground'
+              activeTab === "explore"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5" />
               Explore ({allChannels.length})
             </div>
-            {activeTab === 'explore' && (
+            {activeTab === "explore" && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500" />
             )}
           </button>
         </div>
 
         {/* Empty State for Subscribed */}
-        {activeTab === 'subscribed' && subscribedChannelsList.length === 0 && (
+        {activeTab === "subscribed" && subscribedChannelsList.length === 0 && (
           <div className="text-center py-16">
             <div className="bg-gradient-to-br from-orange-500/10 via-red-500/10 to-yellow-500/10 rounded-full w-32 h-32 flex items-center justify-center mx-auto mb-6">
               <Bell className="w-16 h-16 text-orange-500" />
@@ -334,7 +363,7 @@ export default function SubscribedPage() {
               Start following your favorite creators to see their content here
             </p>
             <Button
-              onClick={() => setActiveTab('explore')}
+              onClick={() => setActiveTab("explore")}
               className="bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 text-white font-semibold px-8 py-6 text-lg"
             >
               <Sparkles className="w-5 h-5 mr-2" />
@@ -351,8 +380,8 @@ export default function SubscribedPage() {
                 key={channel._id}
                 className="group relative bg-card border rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2"
                 style={{
-                  transformStyle: 'preserve-3d',
-                  perspective: '1000px'
+                  transformStyle: "preserve-3d",
+                  perspective: "1000px",
                 }}
               >
                 {/* Cover Image */}
@@ -375,7 +404,7 @@ export default function SubscribedPage() {
                   <div className="absolute -top-12 left-6">
                     <div className="relative">
                       <Image
-                        src={channel.avatar || '/placeholder/user-avatar.png'}
+                        src={channel.avatar || "/placeholder/user-avatar.png"}
                         alt={channel.username}
                         width={96}
                         height={96}
@@ -388,24 +417,36 @@ export default function SubscribedPage() {
                   {/* Content */}
                   <div className="mt-16 space-y-3">
                     <div>
-                      <h3 className="text-xl font-bold mb-1 group-hover:text-orange-500 transition-colors line-clamp-1" title={channel.fullName}>
+                      <h3
+                        className="text-xl font-bold mb-1 group-hover:text-orange-500 transition-colors line-clamp-1"
+                        title={channel.fullName}
+                      >
                         {channel.fullName}
                       </h3>
-                      <p className="text-sm text-muted-foreground truncate" title={`@${channel.username}`}>@{channel.username}</p>
+                      <p
+                        className="text-sm text-muted-foreground truncate"
+                        title={`@${channel.username}`}
+                      >
+                        @{channel.username}
+                      </p>
                     </div>
 
                     {/* Stats */}
                     <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
                       <div className="flex items-center gap-1">
                         <Video className="w-4 h-4 flex-shrink-0" />
-                        <span className="whitespace-nowrap">{channel.videoCount || 0} videos</span>
+                        <span className="whitespace-nowrap">
+                          {channel.videoCount || 0} videos
+                        </span>
                       </div>
                       {channel.subscribersCount !== undefined && (
                         <>
                           <span>•</span>
                           <div className="flex items-center gap-1">
                             <Users className="w-4 h-4 flex-shrink-0" />
-                            <span className="whitespace-nowrap">{channel.subscribersCount} subs</span>
+                            <span className="whitespace-nowrap">
+                              {channel.subscribersCount} subs
+                            </span>
                           </div>
                         </>
                       )}

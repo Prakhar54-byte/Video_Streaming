@@ -31,7 +31,7 @@ export function ShimmerButton({
       }}
       className={cn(
         "relative overflow-hidden px-6 py-2 text-white font-medium",
-        className
+        className,
       )}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
