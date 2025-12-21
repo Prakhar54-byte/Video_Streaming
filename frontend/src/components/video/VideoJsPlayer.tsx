@@ -4,6 +4,9 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css'; // Import Video.js CSS
 
+// Handle ESM/CJS interop differences safely.
+const videojsLib: any = (videojs as any)?.default ?? (videojs as any);
+
 interface VideoJsPlayerProps {
   src: string;
   fallbackSrc?: string;
@@ -15,7 +18,7 @@ interface VideoJsPlayerProps {
 }
 
 export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, spriteSheetVttUrl, introStartTime, introEndTime }: VideoJsPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null); // video.js player instance
   const [showSkipIntro, setShowSkipIntro] = useState(false);
   const didFallbackRef = useRef(false);
@@ -27,63 +30,73 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
     return 'video/mp4';
   }, []);
 
-  const setPlayerSource = useCallback((url: string) => {
-    if (!playerRef.current) return;
-    const videoType = getVideoType(url);
-    console.log('Loading video:', url, 'Type:', videoType);
-    playerRef.current.src({ src: url, type: videoType });
-  }, [getVideoType]);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-  useLayoutEffect(() => {
-    const videoElement = videoRef.current;
-    if (!videoElement) return;
+    // Clean up any existing player/element before creating a new one
+    // This ensures we have a fresh start if dependencies change
+    container.innerHTML = '';
 
-    if (playerRef.current) return;
+    // Create video element programmatically to avoid React/Video.js DOM conflicts
+    const videoElement = document.createElement("video-js");
+    videoElement.classList.add('vjs-big-play-centered');
+    videoElement.classList.add('w-full');
+    videoElement.classList.add('h-full');
+    
+    // Append to container
+    container.appendChild(videoElement);
 
-    let cancelled = false;
-    let rafId: number | null = null;
+    const initialType = getVideoType(src);
+    console.log('[VideoJS] Init with URL:', src);
+    console.log('[VideoJS] Type:', initialType);
 
-    const initWhenConnected = () => {
-      if (cancelled) return;
-
-      // Video.js warns if you initialize with a node not attached to the DOM.
-      if (!videoElement.isConnected) {
-        rafId = window.requestAnimationFrame(initWhenConnected);
-        return;
+    let player: any;
+    try {
+      if (typeof videojsLib !== 'function') {
+        throw new Error(`videojs import is not a function (got: ${typeof videojsLib})`);
       }
 
-      const initialType = getVideoType(src);
-      console.log('Loading video:', src, 'Type:', initialType);
-
-    // Initialize Video.js player once.
-      const player = (playerRef.current = videojs(
-        videoElement,
-        {
-          autoplay: autoPlay,
-          controls: true,
-          responsive: true,
-          // The parent container already enforces aspect ratio; fill it.
-          fluid: false,
-          fill: true,
-          preload: 'auto',
-          poster: poster,
-          html5: {
-            vhs: {
-              overrideNative: true,
-            },
-            nativeVideoTracks: false,
-            nativeAudioTracks: false,
-            nativeTextTracks: false,
+      player = (playerRef.current = videojsLib(videoElement, {
+        autoplay: autoPlay,
+        controls: true,
+        responsive: true,
+        fluid: false,
+        fill: true,
+        preload: 'auto',
+        poster: poster,
+        html5: {
+          vhs: {
+            overrideNative: true,
           },
-          sources: [{ src, type: initialType }],
+          nativeVideoTracks: false,
+          nativeAudioTracks: false,
+          nativeTextTracks: false,
         },
-        () => {
-          console.log('Video.js player is ready');
-        }
-      ));
+        sources: [{ src, type: initialType }],
+      }));
 
-    // Add VTT track for sprite sheet thumbnails if available
+      player.ready(() => {
+        console.log('[VideoJS] Player ready, tech:', player.tech({ IWillNotUseThisInPlugins: true })?.name);
+      });
+
+      player.on('error', () => {
+        const err = player.error();
+        console.error('[VideoJS] ERROR:', err);
+        
+        const isHls = src.includes('.m3u8');
+        if (isHls && fallbackSrc && !didFallbackRef.current) {
+          didFallbackRef.current = true;
+          console.warn('[VideoJS] HLS failed, falling back to:', fallbackSrc);
+          const fallbackType = getVideoType(fallbackSrc);
+          player.src({ src: fallbackSrc, type: fallbackType });
+          player.play()?.catch(() => {});
+        }
+      });
+
+      // Add VTT track for sprite sheet thumbnails if available
       if (spriteSheetVttUrl) {
+        console.log("Adding sprite track:", spriteSheetVttUrl);
         player.addRemoteTextTrack(
           {
             kind: 'metadata',
@@ -95,7 +108,7 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
         );
       }
 
-    // Add timeupdate listener for skip intro
+      // Add timeupdate listener for skip intro
       player.on('timeupdate', () => {
         const currentTime = player.currentTime();
         if (
@@ -111,46 +124,18 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
         }
       });
 
-    // Add error handling + HLS -> MP4 fallback
-      player.on('error', () => {
-        const err = player.error();
-        console.error('Video.js error:', err);
-        if (err) {
-          console.error('Error code:', err.code);
-          console.error('Error message:', err.message);
-        }
+    } catch (e) {
+      console.error('Failed to initialize Video.js:', e);
+    }
 
-        const isHls = src.includes('.m3u8');
-        if (isHls && fallbackSrc && !didFallbackRef.current) {
-          didFallbackRef.current = true;
-          console.warn('HLS failed; falling back to MP4:', fallbackSrc);
-          setPlayerSource(fallbackSrc);
-          player.play()?.catch(() => {});
-        }
-      });
-    };
-
-    initWhenConnected();
-
-    // Cleanup only on unmount (avoids StrictMode double-mount warnings).
+    // Cleanup function
     return () => {
-      cancelled = true;
-      if (rafId !== null) {
-        window.cancelAnimationFrame(rafId);
-      }
-      if (playerRef.current) {
-        playerRef.current.dispose();
+      if (player) {
+        player.dispose();
         playerRef.current = null;
       }
     };
-  }, [autoPlay, poster, spriteSheetVttUrl, introStartTime, introEndTime, src, fallbackSrc, setPlayerSource, getVideoType]);
-
-  // Update source when URL changes
-  useEffect(() => {
-    if (!playerRef.current) return;
-    didFallbackRef.current = false;
-    setPlayerSource(src);
-  }, [src, setPlayerSource]);
+  }, [src, fallbackSrc, poster, autoPlay, spriteSheetVttUrl, introStartTime, introEndTime, getVideoType]);
 
   const handleSkipIntro = () => {
     if (playerRef.current && introEndTime !== undefined) {
@@ -160,8 +145,8 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
   };
 
   return (
-    <div data-vjs-player className="relative">
-      <video ref={videoRef} className="video-js vjs-big-play-centered w-full h-full" crossOrigin="anonymous" />
+    <div ref={containerRef} data-vjs-player className="relative w-full h-full bg-black rounded-xl overflow-hidden aspect-video">
+      {/* Video element will be injected here */}
       {showSkipIntro && (
         <button
           onClick={handleSkipIntro}
@@ -173,3 +158,5 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
     </div>
   );
 }
+
+

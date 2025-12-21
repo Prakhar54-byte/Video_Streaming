@@ -91,7 +91,7 @@ export default function SubscribedPage() {
       });
       
       setSubscribedChannelsList(channels);
-      setSubscribedIds(new Set(channels.map(c => c._id)));
+      setSubscribedIds(new Set(channels.map((c: { _id: string }) => c._id)));
       
       // If no subscriptions, switch to explore tab
       if (channels.length === 0) {

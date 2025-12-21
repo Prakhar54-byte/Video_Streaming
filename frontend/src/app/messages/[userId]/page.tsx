@@ -7,7 +7,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AnimatedBadge } from "@/components/ui/animated-badge";
-import { Send, ArrowLeft, Sparkles, Video as VideoIcon, Gift } from "lucide-react";
+import { Send, ArrowLeft, Sparkles, Video as VideoIcon, Gift, Trash2 } from "lucide-react";
 import Image from "next/image";
 import apiClient from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -125,6 +125,17 @@ export default function ConversationPage() {
       });
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!confirm("Are you sure you want to delete this message?")) return;
+    try {
+      await apiClient.delete(`/tweets/${messageId}`);
+      setMessages(messages.filter(m => m._id !== messageId));
+      toast({ title: "Message deleted" });
+    } catch (error) {
+      toast({ title: "Error deleting message", variant: "destructive" });
     }
   };
 
@@ -257,13 +268,24 @@ export default function ConversationPage() {
 
                       {renderMessageContent(message)}
 
-                      <p
-                        className={`text-xs mt-2 ${
-                          isOwnMessage ? "text-white/70" : "text-muted-foreground"
-                        }`}
-                      >
-                        {formatTimeAgo(message.createdAt)}
-                      </p>
+                      <div className="flex items-center justify-between mt-2">
+                        <p
+                          className={`text-xs ${
+                            isOwnMessage ? "text-white/70" : "text-muted-foreground"
+                          }`}
+                        >
+                          {formatTimeAgo(message.createdAt)}
+                        </p>
+                        {isOwnMessage && (
+                          <button 
+                            onClick={() => handleDeleteMessage(message._id)}
+                            className="text-xs opacity-50 hover:opacity-100 transition-opacity ml-2"
+                            title="Delete message"
+                          >
+                            <Trash2 className="w-3 h-3 text-white" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 );

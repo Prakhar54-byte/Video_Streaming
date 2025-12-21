@@ -95,7 +95,7 @@ export function MessageFeed() {
           <div key={message._id} className="bg-card p-8 rounded-lg border hover:border-primary/50 transition-colors">
             <div className="flex items-start gap-4">
               <img
-                src={message.owner.avatar || "/placeholder.png"}
+                src={(message.owner.avatar || '/placeholder.png').replace('/public', '')}
                 alt={message.owner.username}
                 className="w-14 h-14 rounded-full object-cover"
               />

@@ -181,7 +181,7 @@ export function StudioDashboard({ channel }: StudioDashboardProps) {
                   <div className="relative w-32 h-20 rounded-md overflow-hidden bg-muted">
                     {video.thumbnail && (
                       <img
-                        src={video.thumbnail}
+                        src={video.thumbnail.replace('/public', '')}
                         alt={video.title}
                         className="w-full h-full object-cover"
                       />

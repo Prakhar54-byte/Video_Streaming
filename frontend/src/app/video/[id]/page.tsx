@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,8 @@ import apiClient from '@/lib/api';
 import { formatViewCount, formatTimeAgo } from '@/lib/utils';
 import Image from 'next/image';
 import { VideoJsPlayer } from '@/components/video/VideoJsPlayer';
-import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye } from 'lucide-react';
-import { log } from 'node:console';
+import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye, Video, Trash2 } from 'lucide-react';
+// Removed server-only import
 
 interface Video {
   _id: string;
@@ -65,22 +65,8 @@ export default function VideoPlayerPage() {
   const [likesCount, setLikesCount] = useState(0);
   const [newComment, setNewComment] = useState('');
   const [postingComment, setPostingComment] = useState(false);
-
-  useEffect(() => {
-    if (params.id) {
-      fetchVideo();
-      fetchComments();
-      checkSubscription();
-      addToWatchHistory();
-    }
-  }, [params.id]);
-
-  useEffect(() => {
-    if (video) {
-      checkLikeStatus();
-      setLikesCount(video.likesCount || 0);
-    }
-  }, [video]);
+  const [relatedVideos, setRelatedVideos] = useState<Video[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -98,16 +84,19 @@ export default function VideoPlayerPage() {
     // If backend already returned an absolute URL, use it.
     if (/^https?:\/\//i.test(maybePath)) return maybePath;
     const normalized = maybePath.replace(/\\/g, '/').replace(/^\//, '');
-    return `${backendOrigin}/${normalized}`;
+    const withoutPublic = normalized.startsWith('public/') ? normalized.slice('public/'.length) : normalized;
+    return `${backendOrigin}/${withoutPublic}`;
   };
   
 
   
 
-  const fetchVideo = async () => {
+  const fetchVideo = useCallback(async () => {
     try {
       const response = await apiClient.get(`/videos/${params.id}`);
       setVideo(response.data.data);
+      console.log("Response",response.data);
+      
     } catch (error) {
       toast({
         title: 'Error loading video',
@@ -117,62 +106,119 @@ export default function VideoPlayerPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, router, toast]);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const response = await apiClient.get(`/comments/${params.id}`);
+      
       setComments(response.data.data || []);
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
-  };
+  }, [params.id]);
 
-  const checkSubscription = async () => {
-    if (!video) return;
+  const checkSubscription = useCallback(async (channelId: string) => {
+    if (!user?._id) return;
     try {
-      const response = await apiClient.get(`/subscriptions/u/${user?._id}`);
+      const response = await apiClient.get(`/subscriptions/u/${user._id}`);
       const subscriptions = response.data.data || [];
-      setIsSubscribed(subscriptions.some((sub: any) => sub.channel._id === video.owner._id));
+      setIsSubscribed(subscriptions.some((sub: any) => sub.channel?._id === channelId));
     } catch (error) {
       console.error('Error checking subscription:', error);
     }
-  };
+  }, [user?._id]);
 
-  const checkLikeStatus = async () => {
+  const checkLikeStatus = useCallback(async () => {
     try {
       // Get all liked videos for the user
-      const response = await apiClient.get(`${API_URL}/likes/videos`);
+      const response = await apiClient.get(`/likes/videos`);
       const likedVideos = response.data.data || [];
       
       const isVideoLiked = likedVideos?.videos.some((v: any) => v._id === params.id);
       setIsLiked(isVideoLiked);
-      // You can get likes count from video data
-      if (video) {
-        setLikesCount(video.likesCount || 0);
-      }
     } catch (error) {
       console.error('Error checking like status:', error);
       // Non-critical, continue without like status
     }
-  };
+  }, [params.id]);
 
-  const addToWatchHistory = async () => {
+  const addToWatchHistory = useCallback(async () => {
     try {
       await apiClient.post(`/videos/watchhis/${params.id}`);
     } catch (error) {
       console.error('Error adding to watch history:', error);
     }
-  };
+  }, [params.id]);
 
-  const handleSubscribe = async () => {
-    if (!video) return;
+  const fetchRelatedVideos = useCallback(async () => {
+    if (!video?._id) return;
+    setLoadingRelated(true);
     try {
+      const [videosResponse, subsResponse] = await Promise.all([
+        apiClient.get('/videos'),
+        user?._id ? apiClient.get(`/subscriptions/u/${user._id}`) : Promise.resolve({ data: { data: [] } }),
+      ]);
+
+      let allVideos: Video[] = (videosResponse.data.data || videosResponse.data || []) as Video[];
+      allVideos = Array.isArray(allVideos) ? allVideos : [];
+      allVideos = allVideos.filter((v) => v?._id && v._id !== video._id);
+
+      const checking =  (video.hlsMasterPlaylist);
+
+      console.log("URL: ", toUrl(checking));
+      
+      const subscriptions = subsResponse?.data?.data || [];
+      const subscribedChannelIds = new Set(
+        Array.isArray(subscriptions)
+          ? subscriptions.map((sub: any) => sub?.channel?._id).filter(Boolean)
+          : []
+      );
+
+      const thum = toUrl(video.thumbnail);
+      console.log("Thumbnail URL: ", thum);
+
+      const subscribedVideos = allVideos.filter((v) => subscribedChannelIds.has(v.owner?._id));
+      const sameChannelVideos = allVideos.filter(
+        (v) => v.owner?._id === video.owner?._id && !subscribedChannelIds.has(v.owner?._id)
+      );
+      const otherVideos = allVideos.filter(
+        (v) => v.owner?._id !== video.owner?._id && !subscribedChannelIds.has(v.owner?._id)
+      );
+
+      const byRecent = (a: Video, b: Video) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      subscribedVideos.sort(byRecent);
+      sameChannelVideos.sort(byRecent);
+      otherVideos.sort(byRecent);
+
+      setRelatedVideos([...subscribedVideos, ...sameChannelVideos, ...otherVideos].slice(0, 10));
+    } catch (error) {
+      console.error('Error fetching related videos:', error);
+      setRelatedVideos([]);
+    } finally {
+      setLoadingRelated(false);
+    }
+  }, [user?._id, video?._id, video?.hlsMasterPlaylist, video?.owner?._id]);
+
+const handleSubscribe = async () => {
+    if (!video) return;
+    if (!user?._id) {
+      router.push('/auth/login');
+      return;
+    }
+    try {
+      const wasSubscribed = isSubscribed;
       await apiClient.post(`/subscriptions/c/${video.owner._id}`);
-      setIsSubscribed(!isSubscribed);
+      setIsSubscribed(!wasSubscribed);
       toast({
-        title: isSubscribed ? 'Unsubscribed' : 'Subscribed successfully!',
+        title: wasSubscribed ? 'Unsubscribed' : 'Subscribed successfully!',
       });
+
+      // Re-sync after backend toggle.
+      setTimeout(() => {
+        if (video?.owner?._id) checkSubscription(video.owner._id);
+      }, 300);
     } catch (error) {
       toast({
         title: 'Error',
@@ -180,6 +226,37 @@ export default function VideoPlayerPage() {
       });
     }
   };
+
+  useEffect(() => {
+    if (params.id) {
+      fetchVideo();
+      fetchComments();
+      addToWatchHistory();
+    }
+  }, [params.id, addToWatchHistory, fetchComments, fetchVideo]);
+
+  useEffect(() => {
+    // Subscription depends on both the logged-in user and the loaded video owner.
+    if (!user?._id || !video?.owner?._id) {
+      setIsSubscribed(false);
+      return;
+    }
+
+    checkSubscription(video.owner._id);
+  }, [user?._id, video?.owner?._id, checkSubscription]);
+
+  useEffect(() => {
+    // Related videos should refresh when video changes or user subscriptions change.
+    if (!video?._id) return;
+    fetchRelatedVideos();
+  }, [video?._id, fetchRelatedVideos]);
+
+  useEffect(() => {
+    if (video) {
+      checkLikeStatus();
+      setLikesCount(video.likesCount || 0);
+    }
+  }, [video, checkLikeStatus]);
 
   const handleLike = async () => {
     try {
@@ -215,11 +292,23 @@ export default function VideoPlayerPage() {
     }
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    if (!confirm("Are you sure you want to delete this comment?")) return;
+    try {
+      await apiClient.delete(`/comments/${commentId}`);
+      setComments(comments.filter(c => c._id !== commentId));
+      toast({ title: "Comment deleted" });
+    } catch (error) {
+      toast({ title: "Error deleting comment", variant: "destructive" });
+    }
+  };
+
   const handleShare = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url);
     toast({ title: 'Link copied to clipboard!' });
   };
+
 
   if (loading) {
     return (
@@ -228,6 +317,8 @@ export default function VideoPlayerPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
       </MainLayout>
+
+
     );
   }
 
@@ -249,7 +340,7 @@ export default function VideoPlayerPage() {
                   fallbackSrc={video.hlsMasterPlaylist ? toUrl(video.videoFile) : undefined}
                   poster={video.thumbnail ? toUrl(video.thumbnail) : undefined}
                   autoPlay
-                  spriteSheetVttUrl={video.spriteSheetVttUrl}
+                  spriteSheetVttUrl={video.spriteSheetVttUrl ? toUrl(video.spriteSheetVttUrl) : undefined}
                   introStartTime={video.introStartTime}
                   introEndTime={video.introEndTime}
                 />
@@ -266,13 +357,15 @@ export default function VideoPlayerPage() {
             <div className="space-y-4">
               <h1 className="text-3xl font-bold">{video.title}</h1>
               
+              
+              
               {video.waveformUrl && (
                 <div className="w-full bg-muted rounded-lg overflow-hidden">
                   <Image
-                    src={video.waveformUrl}
+                    src={toUrl(video.waveformUrl)}
                     alt="Audio Waveform"
-                    width={1200} // Match FFmpeg output width
-                    height={120} // Match FFmpeg output height
+                    width={1200}
+                    height={120}
                     className="w-full h-auto object-cover"
                     unoptimized
                   />
@@ -411,6 +504,11 @@ export default function VideoPlayerPage() {
                       </div>
                       <p className="mt-2 text-base leading-relaxed">{comment.content}</p>
                     </div>
+                    {user?._id === comment.owner?._id && (
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteComment(comment._id)}>
+                        <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -420,8 +518,57 @@ export default function VideoPlayerPage() {
           {/* Sidebar - Related Videos */}
           <div className="space-y-4">
             <h2 className="text-xl font-bold">Related Videos</h2>
-            {/* Placeholder for related videos */}
-            <p className="text-base text-muted-foreground">Related videos coming soon...</p>
+
+            {loadingRelated ? (
+              <div className="space-y-3">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="flex gap-3 animate-pulse">
+                    <div className="w-40 aspect-video bg-muted rounded-lg" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted rounded" />
+                      <div className="h-3 bg-muted rounded w-2/3" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : relatedVideos.length === 0 ? (
+              <p className="text-base text-muted-foreground">No related videos found.</p>
+            ) : (
+              <div className="space-y-4">
+                {relatedVideos.map((v) => (
+                  <a
+                    key={v._id}
+                    href={`/video/${v._id}`}
+                    className="flex gap-3 group"
+                  >
+                    <div className="w-40 rounded-lg overflow-hidden bg-muted aspect-video flex-shrink-0">
+                      {v.thumbnail ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={toUrl(v.thumbnail)}
+                          alt={v.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Eye className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                        {v.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1 truncate">{v.owner?.fullName}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatViewCount(v.views)} views • {formatTimeAgo(v.createdAt)}
+                      </p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

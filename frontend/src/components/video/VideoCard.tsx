@@ -36,7 +36,7 @@ export function VideoCard({ video }: VideoCardProps) {
         <div className="relative aspect-video bg-muted">
           {video.thumbnail && (
             <img
-              src={video.thumbnail}
+              src={video.thumbnail.replace('/public', '')}
               alt={video.title}
               className="w-full h-full object-cover"
             />

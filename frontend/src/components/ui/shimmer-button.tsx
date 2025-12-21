@@ -35,7 +35,7 @@ export function ShimmerButton({
       )}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
-      {...props}
+      {...(props as any)}
     >
       <span className="relative z-10 flex items-center justify-center gap-2">
         {children}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,37 @@ export default function UploadPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+  const [checkingChannel, setCheckingChannel] = useState(true);
+
+  useEffect(() => {
+    const checkChannel = async () => {
+      try {
+        const response = await apiClient.get('/channels/user/current');
+        if (!response.data.data) {
+          toast({
+            title: "Channel Required",
+            description: "You need to create a channel before uploading videos.",
+            variant: "destructive",
+          });
+          // Redirect to home or channel creation page if it exists
+          router.push('/'); 
+        }
+      } catch (error) {
+        console.error("Error checking channel:", error);
+        // If 404 or other error, assume no channel or auth issue
+         toast({
+            title: "Error",
+            description: "Could not verify channel status.",
+            variant: "destructive",
+          });
+          router.push('/');
+      } finally {
+        setCheckingChannel(false);
+      }
+    };
+    checkChannel();
+  }, [router, toast]);
+
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
@@ -155,6 +185,16 @@ export default function UploadPage() {
     setFormData(prev => ({ ...prev, thumbnail: null }));
     setPreviews(prev => ({ ...prev, thumbnail: '' }));
   };
+
+  if (checkingChannel) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>

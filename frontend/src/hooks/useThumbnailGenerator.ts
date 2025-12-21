@@ -63,9 +63,9 @@ export function useThumbnailGenerator() {
         const data = await ffmpeg.readFile(outputName);
         
         // Ensure data is Uint8Array before creating Blob
-        const uint8Array = data instanceof Uint8Array ? data : new Uint8Array(data as ArrayBuffer);
+        const uint8Array = data instanceof Uint8Array ? data : new Uint8Array(data as unknown as ArrayBuffer);
         
-        const thumbnailBlob = new Blob([uint8Array.buffer], { type: "image/jpeg" });
+        const thumbnailBlob = new Blob([new Uint8Array(uint8Array.buffer as ArrayBuffer, uint8Array.byteOffset, uint8Array.byteLength)], { type: "image/jpeg" });
 
         // Cleanup virtual filesystem
         await ffmpeg.deleteFile(inputName);

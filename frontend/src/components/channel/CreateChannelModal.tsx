@@ -11,6 +11,7 @@ import { ImagePlus, Loader2 } from "lucide-react";
 import { channelApi } from "@/lib/api/channel";
 import { useChannelStore } from "@/store/channelStore";
 import { toast } from "sonner";
+import { log } from "node:console";
 
 interface CreateChannelModalProps {
   open: boolean;
@@ -30,6 +31,8 @@ export function CreateChannelModal({ open, onOpenChange }: CreateChannelModalPro
     const file = e.target.files?.[0];
     if (file) {
       setAvatar(file);
+      console.log("This for backend path ",file);
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string);
@@ -59,6 +62,7 @@ export function CreateChannelModal({ open, onOpenChange }: CreateChannelModalPro
         description: description.trim(),
         avatar: avatar || undefined,
       });
+      
 
       if (response.success) {
         addChannel(response.data);

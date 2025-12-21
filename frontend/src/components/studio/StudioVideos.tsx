@@ -209,7 +209,7 @@ export function StudioVideos({ channel }: StudioVideosProps) {
                       <div className="relative w-40 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                         {video.thumbnail && (
                           <img
-                            src={video.thumbnail}
+                            src={video.thumbnail.replace('/public', '')}
                             alt={video.title}
                             className="w-full h-full object-cover"
                           />
