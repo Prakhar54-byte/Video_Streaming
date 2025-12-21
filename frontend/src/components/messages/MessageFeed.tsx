@@ -12,7 +12,8 @@ export function MessageFeed() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const { user } = useAuthStore();
-  const { messages, setMessages, addMessage, deleteMessage } = useMessageStore();
+  const { messages, setMessages, addMessage, deleteMessage } =
+    useMessageStore();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -92,19 +93,28 @@ export function MessageFeed() {
       {/* Messages Feed */}
       <div className="space-y-4">
         {messages.map((message) => (
-          <div key={message._id} className="bg-card p-8 rounded-lg border hover:border-primary/50 transition-colors">
+          <div
+            key={message._id}
+            className="bg-card p-8 rounded-lg border hover:border-primary/50 transition-colors"
+          >
             <div className="flex items-start gap-4">
               <img
-                src={(message.owner.avatar || '/placeholder.png').replace('/public', '')}
+                src={(message.owner.avatar || "/placeholder.png").replace(
+                  "/public",
+                  "",
+                )}
                 alt={message.owner.username}
                 className="w-14 h-14 rounded-full object-cover"
               />
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-lg font-semibold">{message.owner.fullName}</h4>
+                    <h4 className="text-lg font-semibold">
+                      {message.owner.fullName}
+                    </h4>
                     <p className="text-base text-muted-foreground">
-                      @{message.owner.username} · {formatTimeAgo(message.createdAt)}
+                      @{message.owner.username} ·{" "}
+                      {formatTimeAgo(message.createdAt)}
                     </p>
                   </div>
                   {user?._id === message.owner._id && (
@@ -116,7 +126,9 @@ export function MessageFeed() {
                     </button>
                   )}
                 </div>
-                <p className="mt-4 whitespace-pre-wrap text-base leading-relaxed">{message.content}</p>
+                <p className="mt-4 whitespace-pre-wrap text-base leading-relaxed">
+                  {message.content}
+                </p>
                 <div className="flex items-center gap-6 mt-4 text-muted-foreground">
                   <button className="flex items-center gap-2 hover:text-primary transition-colors">
                     <Reply className="w-5 h-5" />
