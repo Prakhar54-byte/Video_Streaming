@@ -35,6 +35,7 @@ export function VideoCard({ video }: VideoCardProps) {
         {/* Thumbnail */}
         <div className="relative aspect-video bg-muted">
           {video.thumbnail && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={video.thumbnail.replace('/public', '')}
               alt={video.title}
@@ -54,8 +55,8 @@ export function VideoCard({ video }: VideoCardProps) {
         <CardContent className="p-4">
           <div className="flex gap-3">
             <Avatar className="w-10 h-10 flex-shrink-0">
-              <AvatarImage src={video.owner.avatar} alt={video.owner.fullName} />
-              <AvatarFallback>{video.owner.fullName[0]}</AvatarFallback>
+              <AvatarImage src={video.owner?.avatar} alt={video.owner?.fullName} />
+              <AvatarFallback>{video.owner?.fullName[0]}</AvatarFallback>
             </Avatar>
 
             <div className="flex-1 min-w-0">
@@ -63,7 +64,7 @@ export function VideoCard({ video }: VideoCardProps) {
                 {video.title}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {video.owner.fullName}
+                {video.owner?.fullName}
               </p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                 <span className="flex items-center gap-1">
