@@ -1,11 +1,10 @@
 // import {v2 as cloudinary} from "cloudinary"
 // import fs from "fs"
 
-
-// cloudinary.config({ 
-//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-//   api_key: process.env.CLOUDINARY_API_KEY, 
-//   api_secret: process.env.CLOUDINARY_API_SECRET 
+// cloudinary.config({
+//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+//   api_key: process.env.CLOUDINARY_API_KEY,
+//   api_secret: process.env.CLOUDINARY_API_SECRET
 // });
 
 // const uploadOnCloudinary = async (localFilePath) => {
@@ -19,8 +18,7 @@
 //         // //console.log("file is uploaded on cloudinary ", response.url);
 //         // console.log("file is uploaded on cloudinary ", response);
 //         // console.log("file is uploaded on cloudinary ", response.secure_url);
-        
-        
+
 //         fs.unlinkSync(localFilePath)
 //         // console.log("file is deleted from local storage ", localFilePath);
 //         // remove the locally saved temporary file
@@ -28,7 +26,7 @@
 //         //     console.log("file is not uploaded on cloudinary ", response);
 //         //     return null
 //         // }
-        
+
 //         return response // return the url of the uploaded file;
 
 //     } catch (error) {
@@ -38,84 +36,84 @@
 //     }
 // }
 
-
-
 // export {uploadOnCloudinary}
 
+import { v2 as cloudinary } from 'cloudinary'
+import fs from 'fs'
 
+const isTestEnv =
+  Boolean(process.env.JEST_WORKER_ID) || process.env.NODE_ENV === 'test'
 
-
-import { v2 as cloudinary } from "cloudinary";
-import fs from "fs";
-
-const isTestEnv = Boolean(process.env.JEST_WORKER_ID) || process.env.NODE_ENV === 'test';
-
-let configured = false;
+let configured = false
 const ensureConfigured = () => {
-  if (configured) return;
-  configured = true;
+  if (configured) return
+  configured = true
 
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET,
-    timeout: 120000,
-  });
+    timeout: 120000
+  })
 
   // Avoid async ping/log spam during tests or at import time.
   if (!isTestEnv && process.env.CLOUDINARY_PING === 'true') {
     cloudinary.api
       .ping()
       .then(() => console.log('Cloudinary connection successful'))
-      .catch((err) => console.error('Error connecting to Cloudinary:', err));
+      .catch((err) => console.error('Error connecting to Cloudinary:', err))
   }
-};
+}
 
 const uploadOnCloudinary = async (localFilePath) => {
   try {
-    if (!localFilePath) return null;
+    if (!localFilePath) return null
 
-    ensureConfigured();
+    ensureConfigured()
 
     const response = await cloudinary.uploader.upload(localFilePath, {
-      resource_type: "auto"
-    });
+      resource_type: 'auto'
+    })
 
     // Attempt to delete local file after upload
     try {
-      fs.unlinkSync(localFilePath);
+      fs.unlinkSync(localFilePath)
     } catch (unlinkErr) {
-      console.warn("Warning: Could not delete local file", localFilePath, unlinkErr.message);
+      console.warn(
+        'Warning: Could not delete local file',
+        localFilePath,
+        unlinkErr.message
+      )
     }
 
-    return response;
+    return response
   } catch (error) {
     // Attempt to delete local file even if upload fails
     try {
-      fs.unlinkSync(localFilePath);
+      fs.unlinkSync(localFilePath)
     } catch (unlinkErr) {
       // ignore
     }
-    console.error("Error while uploading file on cloudinary", error);
-    return null;
+    console.error('Error while uploading file on cloudinary', error)
+    return null
   }
-};
+}
 
 const deleteFromCloudinary = async (publicId) => {
   try {
     if (!publicId) {
-      console.warn("No publicId provided for deletion");
-      return false;
+      console.warn('No publicId provided for deletion')
+      return false
     }
 
-    ensureConfigured();
+    ensureConfigured()
 
-    await cloudinary.uploader.destroy(publicId);
-    return true;
+    await cloudinary.uploader.destroy(publicId)
+    return true
   } catch (error) {
-    console.error("Error while deleting file from cloudinary", error);
-    return false;
+    console.error('Error while deleting file from cloudinary', error)
+    return false
   }
-};
+}
 
-export { uploadOnCloudinary ,deleteFromCloudinary};
+export { uploadOnCloudinary, deleteFromCloudinary }

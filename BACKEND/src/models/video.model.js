@@ -1,90 +1,94 @@
-import mongoose, { Schema } from "mongoose";
-import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+import mongoose, { Schema } from 'mongoose'
+import mongooseAggregatePaginate from 'mongoose-aggregate-paginate-v2'
 
 const videoSchema = new Schema(
   {
     videoFiles: {
       type: String, // cloudinary url (original)
-      required: true,
+      required: true
     },
     thumbnail: {
       type: String, // cloudinary url
-      required: true,
+      required: true
     },
     title: {
       type: String,
-      required: true,
+      required: true
     },
     description: {
       type: String,
-      required: true,
+      required: true
     },
     duration: {
       type: Number,
-      required: true,
+      required: true
     },
     views: {
       type: Number,
-      default: 0,
+      default: 0
     },
     isPublished: {
       type: Boolean,
-      default: true,
+      default: true
     },
     owner: {
       type: Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User'
     },
     // Video processing fields
     processingStatus: {
       type: String,
-      enum: ["pending", "processing", "completed", "failed"],
-      default: "pending",
+      enum: ['pending', 'processing', 'completed', 'failed'],
+      default: 'pending'
     },
     // HLS streaming support
     hlsMasterPlaylist: {
-      type: String, // URL to master.m3u8
+      type: String // URL to master.m3u8
     },
     // Animated WebP preview for homepage hover
     previewAnimationUrl: {
-      type: String,
+      type: String
     },
     // Visual audio waveform image URL
     waveformUrl: {
-      type: String,
+      type: String
     },
     // Seeking previews (sprite sheet)
     spriteSheetUrl: {
-      type: String,
+      type: String
     },
     spriteSheetVttUrl: {
-      type: String,
+      type: String
     },
     // Auto-detected intro/outro times
     introStartTime: {
-      type: Number,
+      type: Number
     },
     introEndTime: {
-      type: Number,
+      type: Number
     },
     // Multiple quality variants
-    variants: [{
-      quality: {
-        type: String,
-        enum: ["240p", "480p", "720p", "1080p", "4k"],
-      },
-      url: String,
-      resolution: String,
-      bitrate: String,
-      size: Number,
-      // List of public URLs to .ts HLS segments for this variant
-      segments: [String],
-    }],
+    variants: [
+      {
+        quality: {
+          type: String,
+          enum: ['240p', '480p', '720p', '1080p', '4k']
+        },
+        url: String,
+        resolution: String,
+        bitrate: String,
+        size: Number,
+        // List of public URLs to .ts HLS segments for this variant
+        segments: [String]
+      }
+    ],
     // Thumbnail strip for video scrubbing
-    thumbnailStrip: [{
-      timestamp: Number,
-      url: String,
-    }],
+    thumbnailStrip: [
+      {
+        timestamp: Number,
+        url: String
+      }
+    ],
     // Video metadata
     metadata: {
       codec: String,
@@ -96,15 +100,15 @@ const videoSchema = new Schema(
       originalWidth: Number,
       originalHeight: Number,
       originalSize: Number,
-      originalBitrate: Number,
-    },
+      originalBitrate: Number
+    }
   },
 
   {
-    timestamps: true,
+    timestamps: true
   }
-);
+)
 
-videoSchema.plugin(mongooseAggregatePaginate);
+videoSchema.plugin(mongooseAggregatePaginate)
 
-export const Video = mongoose.model("Video", videoSchema);
+export const Video = mongoose.model('Video', videoSchema)
