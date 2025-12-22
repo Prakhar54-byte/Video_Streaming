@@ -6,7 +6,7 @@ const config = {
   // Indicates that the project is using ES Modules
   // and Jest should respect that.
   moduleFileExtensions: ['js', 'mjs'],
-  testEnvironment: 'node',
-};
+  testEnvironment: 'node'
+}
 
-module.exports = config;
+module.exports = config

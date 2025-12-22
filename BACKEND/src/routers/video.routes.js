@@ -1,56 +1,51 @@
-
-import { Router } from 'express';
+import { Router } from 'express'
 import {
-    deleteVideo,
-    getAllVideos,
-    homepageVideos,
-    getVideoById,
-    publishAVideo,
-    togglePublishStatus,
-    updateVideo,
-    addToWatchHistory,
-    // checkVideoTitle
-} from "../controllers/video.controllers.js"
-import {verifyJWT} from "../middlewares/authMiddleware.js"
-import {upload} from "../middlewares/multer.middleware.js"
-import { triggerVideoWebhook } from '../../ingestion/webhook-handlers/videoWebhook.js';
+  deleteVideo,
+  getAllVideos,
+  homepageVideos,
+  getVideoById,
+  publishAVideo,
+  togglePublishStatus,
+  updateVideo,
+  addToWatchHistory
+  // checkVideoTitle
+} from '../controllers/video.controllers.js'
+import { verifyJWT } from '../middlewares/authMiddleware.js'
+import { upload } from '../middlewares/multer.middleware.js'
+import { triggerVideoWebhook } from '../../ingestion/webhook-handlers/videoWebhook.js'
 
-const router = Router();
-router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
+const router = Router()
+router.use(verifyJWT) // Apply verifyJWT middleware to all routes in this file
 
 router
-    .route("/")
-    .get(homepageVideos)
-    .post(
-        upload.fields([
-            {
-                name: "videoFile",
-                maxCount: 1,
-            },
-            {
-                name: "thumbnail",
-                maxCount: 1,
-            },
-            
-        ]),
-        publishAVideo
-    );
+  .route('/')
+  .get(homepageVideos)
+  .post(
+    upload.fields([
+      {
+        name: 'videoFile',
+        maxCount: 1
+      },
+      {
+        name: 'thumbnail',
+        maxCount: 1
+      }
+    ]),
+    publishAVideo
+  )
 
-router.route("/search").get(getAllVideos)
+router.route('/search').get(getAllVideos)
 
 // router.route("/check-title").get(checkVideoTitle)
 
-router.route("/watchhis/:videoId").post(addToWatchHistory)
+router.route('/watchhis/:videoId').post(addToWatchHistory)
 
 router
-    .route("/:videoId")
-    .get(getVideoById)
-    .delete(deleteVideo)
-    .patch(upload.single("thumbnail"), updateVideo);
+  .route('/:videoId')
+  .get(getVideoById)
+  .delete(deleteVideo)
+  .patch(upload.single('thumbnail'), updateVideo)
 
-    
-
-router.route("/toggle/publish/:videoId").patch(togglePublishStatus);
-
+router.route('/toggle/publish/:videoId').patch(togglePublishStatus)
 
 export default router

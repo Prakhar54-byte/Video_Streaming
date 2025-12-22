@@ -1,54 +1,56 @@
-import mongoose from "mongoose";
-import { User } from "../models/user.model.js";
-import { Subscription } from "../models/subscription.model.js";
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { triggerAutoWelcome } from "./tweet.controllers.js";
+import mongoose from 'mongoose'
+import { User } from '../models/user.model.js'
+import { Subscription } from '../models/subscription.model.js'
+import { ApiError } from '../utils/ApiError.js'
+import { ApiResponse } from '../utils/ApiResponse.js'
+import { asyncHandler } from '../utils/asyncHandler.js'
+import { triggerAutoWelcome } from './tweet.controllers.js'
 
 // Renamed 'Subscrption' to 'Subscription' for clarity, assuming model export is 'Subscription'
 // Make sure this matches your model file. I'll use 'Subscrption' to match your code.
 
 const toggleSubscription = asyncHandler(async (req, res) => {
-  const { channelId } = req.params;
-  const userId = req.user._id; // Corrected: req.user._id is standard
+  const { channelId } = req.params
+  const userId = req.user._id // Corrected: req.user._id is standard
 
   if (!mongoose.Types.ObjectId.isValid(channelId)) {
-    throw new ApiError(400, "Invalid channel ID");
+    throw new ApiError(400, 'Invalid channel ID')
   }
 
   // Check if channel exists
-  const channel = await User.findById(channelId);
+  const channel = await User.findById(channelId)
   if (!channel) {
-    throw new ApiError(404, "Channel does not exist");
+    throw new ApiError(404, 'Channel does not exist')
   }
 
   // Check if subscription already exists
   // *** FIX: Using 'subscriber' field name ***
   const existingSubscription = await Subscription.findOne({
     subscriber: userId,
-    channel: channelId,
-  });
+    channel: channelId
+  })
 
   if (existingSubscription) {
     // Already subscribed, so remove it
-    await Subscription.findByIdAndDelete(existingSubscription._id);
+    await Subscription.findByIdAndDelete(existingSubscription._id)
 
     return res
       .status(200)
-      .json(new ApiResponse(200, { subscribed: false }, "Unsubscribed successfully"));
+      .json(
+        new ApiResponse(200, { subscribed: false }, 'Unsubscribed successfully')
+      )
   } else {
     // Not subscribed, so create it
     // *** FIX: Using 'subscriber' field name ***
     await Subscription.create({
       subscriber: userId,
-      channel: channelId,
-    });
+      channel: channelId
+    })
 
     // Trigger auto-welcome message
-    triggerAutoWelcome(userId, channelId).catch(err => 
-      console.error("Auto-welcome trigger error:", err)
-    );
+    triggerAutoWelcome(userId, channelId).catch((err) =>
+      console.error('Auto-welcome trigger error:', err)
+    )
 
     return res
       .status(200)
@@ -58,16 +60,16 @@ const toggleSubscription = asyncHandler(async (req, res) => {
           { subscribed: true },
           `Successfully subscribed to ${channel.username}`
         )
-      );
+      )
   }
-});
+})
 
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
+  const { userId } = req.params
 
   if (!mongoose.Types.ObjectId.isValid(userId)) {
-    throw new ApiError(400, "Not a valid user ID");
+    throw new ApiError(400, 'Not a valid user ID')
   }
 
   // *** FIX: This is the correct logic for this route ***
@@ -76,38 +78,38 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     {
       $match: {
         // *** FIX: Using 'subscriber' field name ***
-        subscriber: new mongoose.Types.ObjectId(userId),
-      },
+        subscriber: new mongoose.Types.ObjectId(userId)
+      }
     },
     {
       $lookup: {
-        from: "users",
-        localField: "channel",
-        foreignField: "_id",
-        as: "channelDetails",
-      },
+        from: 'users',
+        localField: 'channel',
+        foreignField: '_id',
+        as: 'channelDetails'
+      }
     },
     {
-      $unwind: "$channelDetails",
+      $unwind: '$channelDetails'
     },
     {
       $project: {
         _id: 1,
         channel: {
-          _id: "$channelDetails._id",
-          username: "$channelDetails.username",
-          fullName: "$channelDetails.fullName",
-          avatar: "$channelDetails.avatar",
-          coverImage: "$channelDetails.coverImage",
-        },
-      },
-    },
-  ]);
+          _id: '$channelDetails._id',
+          username: '$channelDetails.username',
+          fullName: '$channelDetails.fullName',
+          avatar: '$channelDetails.avatar',
+          coverImage: '$channelDetails.coverImage'
+        }
+      }
+    }
+  ])
 
   if (subscribedChannels.length === 0) {
     return res
       .status(200)
-      .json(new ApiResponse(200, [], "User is not subscribed to any channels"));
+      .json(new ApiResponse(200, [], 'User is not subscribed to any channels'))
   }
 
   return res
@@ -116,23 +118,23 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         subscribedChannels,
-        "Subscribed channels fetched successfully"
+        'Subscribed channels fetched successfully'
       )
-    );
-});
+    )
+})
 
 // controller to return subscriber list of a channel
 const getUserChannelSubscribers = asyncHandler(async (req, res) => {
-  const { channelId } = req.params;
+  const { channelId } = req.params
 
   if (!mongoose.Types.ObjectId.isValid(channelId)) {
-    throw new ApiError(400, "Invalid channel ID");
+    throw new ApiError(400, 'Invalid channel ID')
   }
 
   // Check if channel exists
-  const channel = await User.findById(channelId);
+  const channel = await User.findById(channelId)
   if (!channel) {
-    throw new ApiError(404, "Channel does not exist");
+    throw new ApiError(404, 'Channel does not exist')
   }
 
   // *** FIX: This is the correct logic for this function's name ***
@@ -140,19 +142,19 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
   const subscribers = await Subscription.aggregate([
     {
       $match: {
-        channel: new mongoose.Types.ObjectId(channelId),
-      },
+        channel: new mongoose.Types.ObjectId(channelId)
+      }
     },
     {
       $lookup: {
-        from: "users",
-        localField: "subscriber", // field in Subscription model
-        foreignField: "_id",     // field in User model
-        as: "subscriberDetails",
-      },
+        from: 'users',
+        localField: 'subscriber', // field in Subscription model
+        foreignField: '_id', // field in User model
+        as: 'subscriberDetails'
+      }
     },
     {
-      $unwind: "$subscriberDetails",
+      $unwind: '$subscriberDetails'
     },
     {
       $project: {
@@ -161,20 +163,20 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
           _id: 1,
           username: 1,
           fullName: 1,
-          avatar: 1,
-        },
-      },
-    },
-  ]);
+          avatar: 1
+        }
+      }
+    }
+  ])
 
   if (subscribers.length === 0) {
     return res
       .status(200)
-      .json(new ApiResponse(200, [], "This channel has no subscribers"));
+      .json(new ApiResponse(200, [], 'This channel has no subscribers'))
   }
-  
+
   // Extract just the user details
-  const subscriberList = subscribers.map(sub => sub.subscriber);
+  const subscriberList = subscribers.map((sub) => sub.subscriber)
 
   return res
     .status(200)
@@ -182,9 +184,9 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
       new ApiResponse(
         200,
         subscriberList,
-        "Channel subscribers fetched successfully"
+        'Channel subscribers fetched successfully'
       )
-    );
-});
+    )
+})
 
-export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels };
+export { toggleSubscription, getUserChannelSubscribers, getSubscribedChannels }
