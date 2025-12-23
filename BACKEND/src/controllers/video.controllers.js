@@ -80,19 +80,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
         const pageNum = parseInt(page, 10);
         const limitNum = parseInt(limit, 10);
 
-        const matchStage = {
-            $match:{
-                ownerL:new mongoose.Types.ObjectId(userId)
-            }
-        }
-        if (query) {
-            matchStage.$match.$or = [
-                { title: { $regex: query, $options: "i" } },
-                { description: { $regex: query, $options: "i" } }
-            ];
-        }
-
-
         // Determine the sort order
         const sortOrder = sortType.toLowerCase() === "asc" ? 1 : -1;
 

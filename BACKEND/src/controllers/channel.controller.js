@@ -3,22 +3,26 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
+import { Subscription } from "../models/subscription.model.js";
+import { Video } from "../models/video.model.js";
 
 // import { upload } from "../middlewares/multer.middleware";
 
 import mongoose from "mongoose";
 // import { log } from "node:console";
 
-const createChannel= asyncHandler(async(req = requestAnimationFrame,res)=>{
-    const {name,description} = requestAnimationFrame.body;
-    const userId = requestAnimationFrame.user._id;
+const createChannel= asyncHandler(async(req,res)=>{
+    // console.log("Check ",req);
+    
+    const {name,description} = req.body;
+    const userId = req.user._id;
 
-    console.log("Headers:", requestAnimationFrame.headers);
-  console.log("Body:", requestAnimationFrame.body);
-  console.log("File:", requestAnimationFrame.file); 
+    console.log("Headers:", req.headers);
+  console.log("Body:", req.body);
+  console.log("File:", req.file); 
 
     console.log("Creating channel with data:", );
-    console.log("Request body:", requestAnimationFrame.body);
+    console.log("Request body:", req.body);
     
 
     if(!name || !description){
@@ -33,8 +37,8 @@ const createChannel= asyncHandler(async(req = requestAnimationFrame,res)=>{
     if(existingChannel){
         throw new ApiError(400,"Channel with this name already exists for this user");
     }
-    const avatarPath = requestAnimationFrame.file ? requestAnimationFrame.file.path : user.avatar;
-    const bannerPath = requestAnimationFrame.banner ? requestAnimationFrame.banner.path : "";
+    const avatarPath = req.file ? req.file.path : user.avatar;
+    const bannerPath = req.banner ? req.banner.path : "";
     //  if(!bannerPath){
     // //     // channel.banner = bannerPath;
     // //     user.coverImage = bannerPath;
@@ -47,13 +51,13 @@ const createChannel= asyncHandler(async(req = requestAnimationFrame,res)=>{
         throw new ApiError(400,"At least one of avatar or banner must be provided");
     }
 
-    // console.log("RequestAnimation",requestAnimationFrame.path);
+    // console.log("RequestAnimation",req.path);
     const channel = await Channel.create({
         name,
         description,
         owner: userId,
-        avatar: requestAnimationFrame.file ? requestAnimationFrame.file.path : "",
-        // banner: requestAnimationFrame.file ? requestAnimationFrame.file.path : ""
+        avatar: req.file ? req.file.path : "",
+        // banner: req.file ? req.file.path : ""
     });
     
     
@@ -216,6 +220,45 @@ const createChannel= asyncHandler(async(req = requestAnimationFrame,res)=>{
     return res.status(200).json(new ApiResponse(200,channel,"User channel fetched successfully"));
 })
 
+const getChannelStats = asyncHandler(async(req, res) => {
+    const userId = req.user._id;
+
+    const channel = await Channel.findOne({ owner: userId });
+    
+    if (!channel) {
+        return res.status(200).json(new ApiResponse(200, {
+            totalVideos: 0,
+            totalViews: 0,
+            totalSubscribers: 0
+        }, "User has no channel"));
+    }
+
+    const stats = await Video.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                totalVideos: { $sum: 1 },
+                totalViews: { $sum: "$views" }
+            }
+        }
+    ]);
+
+    const subscribersCount = await Subscription.countDocuments({ channel: channel._id });
+
+    const result = {
+        totalVideos: stats[0]?.totalVideos || 0,
+        totalViews: stats[0]?.totalViews || 0,
+        totalSubscribers: subscribersCount
+    };
+
+    return res.status(200).json(new ApiResponse(200, result, "Channel stats fetched successfully"));
+});
+
 export {
     createChannel,
     updateChannel,
@@ -226,5 +269,6 @@ export {
     getUserChannels,
     getUserChannel,
     uploadChannelAvatar,
-    uploadChannelBanner
+    uploadChannelBanner,
+    getChannelStats
 };

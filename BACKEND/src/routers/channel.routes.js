@@ -10,12 +10,16 @@ import {
   getUserChannels,
   getUserChannel,
   uploadChannelAvatar,
-  uploadChannelBanner
+  uploadChannelBanner,
+  getChannelStats
 } from "../controllers/channel.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 
 const router = Router();
+
+// Get channel stats for the authenticated user
+router.get("/stats/current", verifyJWT, getChannelStats);
 
 // Create a new channel (authenticated)
 router.post("/create", verifyJWT,upload.single("avatar"), createChannel);
