@@ -13,11 +13,11 @@ import apiClient from "@/lib/api";
 import {
   Play, Eye, Clock, MoreVertical, Trash2, Edit, Globe,
   Lock, Upload, Video as VideoIcon, TrendingUp, Users, 
-  Settings, Scissors, Sparkles, Download, Share2
+  Settings, Scissors, Sparkles, Download, Share2, Image as LucideImage
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { formatViewCount, formatTimeAgo, formatDuration } from "@/lib/utils";
+import { formatViewCount, formatTimeAgo, formatDuration, toBackendAssetUrl } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,6 +87,17 @@ export default function MyChannelPage() {
   const [editForm, setEditForm] = useState({ title: "", description: "", isPublished: true });
   const [activeTab, setActiveTab] = useState("all");
 
+  const fetchChannelStats = useCallback(async () => {
+    try {
+      const response = await apiClient.get("/channels/stats/current");
+      if (response.data.success) {
+        setStats(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching channel stats:", error);
+    }
+  }, []);
+
   const fetchMyVideos = useCallback(async () => {
     try {
       setLoading(true);
@@ -94,23 +105,16 @@ export default function MyChannelPage() {
         params: { userId: user?._id }
       });
       const videoData = response.data.data;
-      // Ensure videos is always an array
-      const videoArray = Array.isArray(videoData) ? videoData : [];
-      setVideos(videoArray);
       
-      // Fetch stats after getting videos
-      try {
-        const userResponse = await apiClient.get("/users/current-user");
-        const userData = userResponse.data.data;
-        
-        setStats({
-          totalVideos: videoArray.length,
-          totalViews: videoArray.reduce((acc, v) => acc + v.views, 0),
-          totalSubscribers: userData.subscribersCount || 0,
-        });
-      } catch (statsError) {
-        console.error("Error fetching stats:", statsError);
+      // Handle both array and object response structures
+      let videoArray: Video[] = [];
+      if (Array.isArray(videoData)) {
+        videoArray = videoData;
+      } else if (videoData && Array.isArray(videoData.videos)) {
+        videoArray = videoData.videos;
       }
+      
+      setVideos(videoArray);
     } catch (error) {
       console.error("Error fetching videos:", error);
       setVideos([]); // Set to empty array on error
@@ -129,8 +133,16 @@ export default function MyChannelPage() {
       router.push("/auth/login");
     } else if (isAuthenticated && user) {
       fetchMyVideos();
+      fetchChannelStats();
+      
+      // Poll stats and videos every 5 seconds for real-time updates
+      const intervalId = setInterval(() => {
+        fetchChannelStats();
+        fetchMyVideos();
+      }, 5000);
+      return () => clearInterval(intervalId);
     }
-  }, [isAuthenticated, isLoading, user, router, fetchMyVideos]);
+  }, [isAuthenticated, isLoading, user, router, fetchMyVideos, fetchChannelStats]);
 
   // Refresh on route change (when coming back from upload)
   useEffect(() => {
@@ -138,12 +150,13 @@ export default function MyChannelPage() {
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible') {
           fetchMyVideos();
+          fetchChannelStats();
         }
       };
       document.addEventListener('visibilitychange', handleVisibilityChange);
       return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }
-  }, [isAuthenticated, user, fetchMyVideos]);
+  }, [isAuthenticated, user, fetchMyVideos, fetchChannelStats]);
 
   const handleEditClick = (video: Video) => {
     setSelectedVideo(video);
@@ -356,10 +369,10 @@ export default function MyChannelPage() {
                   <Card key={video._id} className="overflow-hidden">
                     <div className="flex flex-col md:flex-row gap-4 p-4">
                       {/* Thumbnail */}
-                      <Link href={`/video/${video._id}`} className="relative w-full md:w-64 aspect-video shrink-0">
+                      <Link href={`/video/${video?._id}`} className="relative w-full md:w-64 aspect-video shrink-0">
                         <Image
-                          src={video.thumbnail}
-                          alt={video.title}
+                          src={video?.thumbnail ? toBackendAssetUrl(video.thumbnail) : "/placeholder/images.svg"}
+                          alt={video?.title || "Video thumbnail"}
                           fill
                           className="object-cover rounded-lg"
                         />
@@ -588,7 +601,7 @@ export default function MyChannelPage() {
                 className="h-24 flex-col gap-2"
                 onClick={() => handleStartProcessing("thumbnail")}
               >
-                <Image className="w-8 h-8" alt="thumbnail" src={""} />
+                <LucideImage className="w-8 h-8" />
                 <span>Generate Thumbnails</span>
               </Button>
               <Button

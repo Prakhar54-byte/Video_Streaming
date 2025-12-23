@@ -497,7 +497,7 @@ const handleSubscribe = async () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-base">{comment.owner?.fullName || 'Unknown User'}</span>
+                        <span className="font-semibold text-base">{comment?.owner?.fullName || 'Unknown User'}</span>
                         <span className="text-sm text-muted-foreground">
                           {formatTimeAgo(comment.createdAt)}
                         </span>

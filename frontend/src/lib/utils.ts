@@ -43,3 +43,19 @@ export function formatTimeAgo(date: string | Date): string {
   if (diffInSeconds < 31536000) return `${Math.floor(diffInSeconds / 2592000)}mo ago`
   return `${Math.floor(diffInSeconds / 31536000)}y ago`
 }
+
+export function getBackendBaseUrl(): string {
+  const url = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+  return url.replace(/\/api\/v1\/?$/, '');
+}
+
+export function toBackendAssetUrl(path?: string): string {
+  if (!path) return '';
+  if (/^https?:\/\//i.test(path)) return path;
+  
+  const baseUrl = getBackendBaseUrl();
+  const normalized = path.replace(/\\/g, '/').replace(/^\//, '');
+  const cleanPath = normalized.startsWith('public/') ? normalized.slice('public/'.length) : normalized;
+  
+  return `${baseUrl}/${cleanPath}`;
+}
