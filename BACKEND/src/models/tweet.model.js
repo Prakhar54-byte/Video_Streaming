@@ -10,6 +10,11 @@ const tweetSchema = new Schema({
         ref: "User",
         index: true
     },
+    parentTweet: {
+        type: Schema.Types.ObjectId,
+        ref: "Tweet",
+        default: null
+    },
     // Message-specific fields
     receiver: {
         type: Schema.Types.ObjectId,

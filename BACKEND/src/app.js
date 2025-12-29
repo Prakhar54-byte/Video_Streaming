@@ -161,9 +161,6 @@ app.use("/api/v1/comments", commentRouter);
 import channelRouter from "./routers/channel.routes.js";  
 app.use("/api/v1/channels", channelRouter);
 
-// Message routes
-import messageRouter from "./routers/message.routes.js";
-app.use("/api/v1/messages", messageRouter);
 
 // Export app for server initialization
 export { app };

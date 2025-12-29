@@ -10,28 +10,209 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const createTweet = asyncHandler(async (req, res) => {
   
-  const { content } = req.body;
+  const { content, parentTweetId } = req.body;
   console.log("test", req.body);
   
-  
-  
-
   if (!content) {
     throw new ApiError(400, "Their is nothing to tweet");
   }
-  const tweet = await Tweet.create({
+  
+  const tweetData = {
     content,
     owner: req.user._id,
-  });
+  };
+
+  if (parentTweetId && isValidObjectId(parentTweetId)) {
+    tweetData.parentTweet = parentTweetId;
+  }
+
+  const tweet = await Tweet.create(tweetData);
+
+  const createdTweet = await Tweet.aggregate([
+    {
+      $match: {
+        _id: tweet._id
+      }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerDetails"
+      }
+    },
+    { $unwind: "$ownerDetails" },
+    {
+      $lookup: {
+        from: "tweets",
+        localField: "parentTweet",
+        foreignField: "_id",
+        as: "parentTweetDetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$parentTweetDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "parentTweetDetails.owner",
+        foreignField: "_id",
+        as: "parentTweetOwner"
+      }
+    },
+    {
+      $unwind: {
+        path: "$parentTweetOwner",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $project: {
+        content: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        likesCount: { $literal: 0 },
+        isLiked: { $literal: false },
+        owner:{
+          _id: "$ownerDetails._id",
+          username: "$ownerDetails.username",
+          fullName: "$ownerDetails.fullName",
+          avatar: "$ownerDetails.avatar",
+        },
+        parentTweet: {
+          $cond: {
+            if: { $ifNull: ["$parentTweetDetails", false] },
+            then: {
+              _id: "$parentTweetDetails._id",
+              content: "$parentTweetDetails.content",
+              owner: {
+                username: "$parentTweetOwner.username",
+                fullName: "$parentTweetOwner.fullName"
+              }
+            },
+            else: null
+          }
+        }
+      },
+    }
+  ]);
 
   return res
     .status(200)
-    .json(new ApiResponse(200, tweet, "Tweet created successfully"));
+    .json(new ApiResponse(200, createdTweet[0], "Tweet created successfully"));
+});
+
+const getAllTweets = asyncHandler(async (req, res) => {
+  const tweets = await Tweet.aggregate([
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerDetails",
+      },
+    },
+    { $unwind: "$ownerDetails" },
+    {
+      $lookup: {
+        from: "tweets",
+        localField: "parentTweet",
+        foreignField: "_id",
+        as: "parentTweetDetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$parentTweetDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "parentTweetDetails.owner",
+        foreignField: "_id",
+        as: "parentTweetOwner"
+      }
+    },
+    {
+      $unwind: {
+        path: "$parentTweetOwner",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "tweet",
+        as: "likes"
+      }
+    },
+    {
+      $addFields: {
+        likesCount: { $size: "$likes" },
+        isLiked: {
+          $cond: {
+            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            then: true,
+            else: false
+          }
+        }
+      }
+    },
+    {
+      $sort: {
+        createdAt: -1
+      }
+    },
+    {
+      $project: {
+        content: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        likesCount: 1,
+        isLiked: 1,
+        owner:{
+          _id: "$ownerDetails._id",
+          username: "$ownerDetails.username",
+          fullName: "$ownerDetails.fullName",
+          avatar: "$ownerDetails.avatar",
+        },
+        parentTweet: {
+          $cond: {
+            if: { $ifNull: ["$parentTweetDetails", false] },
+            then: {
+              _id: "$parentTweetDetails._id",
+              content: "$parentTweetDetails.content",
+              owner: {
+                username: "$parentTweetOwner.username",
+                fullName: "$parentTweetOwner.fullName"
+              }
+            },
+            else: null
+          }
+        }
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, tweets, "All tweets fetched successfully"));
 });
 
 const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
   const userId = req.user._id ? req.user._id : req.params.userId;
+
+  console.log("Check msg",userId);
+  
 
   
 
@@ -54,13 +235,80 @@ const getUserTweets = asyncHandler(async (req, res) => {
     },
     { $unwind: "$ownerDetails" },
     {
+      $lookup: {
+        from: "tweets",
+        localField: "parentTweet",
+        foreignField: "_id",
+        as: "parentTweetDetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$parentTweetDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "parentTweetDetails.owner",
+        foreignField: "_id",
+        as: "parentTweetOwner"
+      }
+    },
+    {
+      $unwind: {
+        path: "$parentTweetOwner",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: "likes",
+        localField: "_id",
+        foreignField: "tweet",
+        as: "likes"
+      }
+    },
+    {
+      $addFields: {
+        likesCount: { $size: "$likes" },
+        isLiked: {
+          $cond: {
+            if: { $in: [req.user?._id, "$likes.likedBy"] },
+            then: true,
+            else: false
+          }
+        }
+      }
+    },
+    {
       $project: {
         content: 1,
         createdAt: 1,
         updatedAt: 1,
-        "ownerDetails.username": 1,
-        "ownerDetails.avatar": 1,
-        
+        likesCount: 1,
+        isLiked: 1,
+        owner:{
+          _id: "$ownerDetails._id",
+          username: "$ownerDetails.username",
+          fullName: "$ownerDetails.fullName",
+          avatar: "$ownerDetails.avatar",
+        },
+        parentTweet: {
+          $cond: {
+            if: { $ifNull: ["$parentTweetDetails", false] },
+            then: {
+              _id: "$parentTweetDetails._id",
+              content: "$parentTweetDetails.content",
+              owner: {
+                username: "$parentTweetOwner.username",
+                fullName: "$parentTweetOwner.fullName"
+              }
+            },
+            else: null
+          }
+        }
       },
     },
   ]);
@@ -93,11 +341,19 @@ const updateTweet = asyncHandler(async (req, res) => {
       new: true,
     }
   );
+  const tweetData = tweet.toObject();
+  
+  tweetData.owner = {
+    _id: req.user._id,
+    username: req.user.username,
+    fullName: req.user.fullName,
+    avatar: req.user.avatar,
+  }
   if (!tweet) {
     throw new ApiError(400, "Tweet not found or you are not owner");
   }
 
-  return res.status(200).json(new ApiResponse(200, tweet, "Tweet added"));
+  return res.status(200).json(new ApiResponse(200, tweetData, "Tweet added"));
 });
 
 const deleteTweet = asyncHandler(async (req, res) => {
@@ -494,6 +750,7 @@ const triggerAutoWelcome = async (subscriberId, channelId) => {
 
 export { 
   createTweet, 
+  getAllTweets,
   getUserTweets, 
   updateTweet, 
   deleteTweet,
@@ -504,41 +761,3 @@ export {
   getAutoWelcomeConfig,
   triggerAutoWelcome
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

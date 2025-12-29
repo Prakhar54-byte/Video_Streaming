@@ -50,7 +50,11 @@ export const getLikedVideos = asyncHandler(async (req, res) => {
   const likes = await Like.find({ likedBy: userId, video: { $exists: true } })
     .populate({
       path: "video",
-      select: "title url description" // Adjust fields as needed
+      select: "title description thumbnail duration views isPublished createdAt owner",
+      populate: {
+        path: "owner",
+        select: "username fullName avatar"
+      }
     })
     .select("video createdAt");
 

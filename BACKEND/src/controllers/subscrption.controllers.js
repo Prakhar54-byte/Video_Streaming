@@ -34,9 +34,12 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     // Already subscribed, so remove it
     await Subscription.findByIdAndDelete(existingSubscription._id);
 
+    // Get updated count
+    const subscribersCount = await Subscription.countDocuments({ channel: channelId });
+
     return res
       .status(200)
-      .json(new ApiResponse(200, { subscribed: false }, "Unsubscribed successfully"));
+      .json(new ApiResponse(200, { subscribed: false, subscribersCount }, "Unsubscribed successfully"));
   } else {
     // Not subscribed, so create it
     // *** FIX: Using 'subscriber' field name ***
@@ -50,12 +53,15 @@ const toggleSubscription = asyncHandler(async (req, res) => {
       console.error("Auto-welcome trigger error:", err)
     );
 
+    // Get updated count
+    const subscribersCount = await Subscription.countDocuments({ channel: channelId });
+
     return res
       .status(200)
       .json(
         new ApiResponse(
           200,
-          { subscribed: true },
+          { subscribed: true, subscribersCount },
           `Successfully subscribed to ${channel.username}`
         )
       );
@@ -91,6 +97,19 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
       $unwind: "$channelDetails",
     },
     {
+      $lookup: {
+        from: "subscriptions",
+        localField: "channel",
+        foreignField: "channel",
+        as: "subscribers"
+      }
+    },
+    {
+      $addFields: {
+        subscribersCount: { $size: "$subscribers" }
+      }
+    },
+    {
       $project: {
         _id: 1,
         channel: {
@@ -99,6 +118,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
           fullName: "$channelDetails.fullName",
           avatar: "$channelDetails.avatar",
           coverImage: "$channelDetails.coverImage",
+          subscribersCount: "$subscribersCount"
         },
       },
     },

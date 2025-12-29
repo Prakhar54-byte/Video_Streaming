@@ -124,6 +124,28 @@ const getAllVideos = asyncHandler(async (req, res) => {
             {$skip:(pageNum - 1)*limitNum},
             {$limit:limitNum},
             {
+                $lookup: {
+                    from: "likes",
+                    localField: "_id",
+                    foreignField: "video",
+                    as: "likes"
+                }
+            },
+            {
+                $lookup: {
+                    from: "comments",
+                    localField: "_id",
+                    foreignField: "video",
+                    as: "comments"
+                }
+            },
+            {
+                $addFields: {
+                    likesCount: { $size: "$likes" },
+                    commentsCount: { $size: "$comments" }
+                }
+            },
+            {
                 $project:{
                     _id:1,
                     title:1,
@@ -132,6 +154,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     views:1,
                     duration:1,
                     createdAt:1,
+                    likesCount: 1,
+                    commentsCount: 1,
                     owner:{
                         _id:"$ownerDetails._id",
                         username:"$ownerDetails.username",
@@ -139,7 +163,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     }
                 }
             }
-
         )
     
         const videos = await Video.aggregate(aggregationPipeline)

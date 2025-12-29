@@ -8,8 +8,8 @@ const isTestEnv = Boolean(process.env.JEST_WORKER_ID) || process.env.NODE_ENV ==
 export const verifyJWT = asyncHandler(async(req, _, next) => {
     try {
 
-        
-        let token = req.cookies?.accessToken || req.header("Authorization")?.replace(/^Bearer\s+/i, "");
+        // Prioritize Authorization header over cookies for multi-account support
+        let token = req.header("Authorization")?.replace(/^Bearer\s+/i, "") || req.cookies?.accessToken;
     
     // Special handling for Next.js development
     if (!token && req.headers.cookie) {
