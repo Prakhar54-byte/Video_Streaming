@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,16 +38,16 @@ export function SubscribedChannels() {
 
   const fetchSubscribedChannels = useCallback(async () => {
     if (!user?._id) return;
-    
+
     setLoading(true);
     try {
       // Correct endpoint: /subscriptions/u/:userId
       const response = await apiClient.get(`/subscriptions/u/${user._id}`);
       const subscribedData = response.data.data || [];
-      
+
       // Backend returns array of subscription objects with channel details
       // Extract the channel information from the response
-      const channelsList = Array.isArray(subscribedData) 
+      const channelsList = Array.isArray(subscribedData)
         ? subscribedData.map((sub: any) => {
             const channelData = sub.channel || sub.channelDetails || sub;
             return {
@@ -53,13 +59,13 @@ export function SubscribedChannels() {
               owner: {
                 _id: channelData._id,
                 username: channelData.username,
-                fullName: channelData.fullName
+                fullName: channelData.fullName,
               },
-              subscribersCount: channelData.subscribersCount || 0
+              subscribersCount: channelData.subscribersCount || 0,
             };
-        })
+          })
         : [];
-      
+
       setChannels(channelsList);
     } catch (error: any) {
       console.error("Error fetching subscribed channels:", error);
@@ -102,7 +108,8 @@ export function SubscribedChannels() {
           <div className="text-center space-y-2">
             <h3 className="text-2xl font-semibold">No Subscriptions Yet</h3>
             <p className="text-muted-foreground max-w-md">
-              Channels you subscribe to will appear here. Start exploring and subscribing!
+              Channels you subscribe to will appear here. Start exploring and
+              subscribing!
             </p>
           </div>
         </CardContent>
@@ -110,7 +117,6 @@ export function SubscribedChannels() {
     );
   }
 
-  
   channels.forEach((c) => {
     console.log("Check channel has name ", c?.name);
     console.log("Check channel has", c);
@@ -121,12 +127,17 @@ export function SubscribedChannels() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold">Subscribed Channels</h2>
-        <p className="text-muted-foreground">{channels.length} channel{channels.length !== 1 ? 's' : ''}</p>
+        <p className="text-muted-foreground">
+          {channels.length} channel{channels.length !== 1 ? "s" : ""}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {channels.map((channel) => (
-          <Card key={channel._id} className="overflow-hidden hover:shadow-lg transition-shadow">
+          <Card
+            key={channel._id}
+            className="overflow-hidden hover:shadow-lg transition-shadow"
+          >
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <Avatar className="w-16 h-16">

@@ -2,7 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -25,9 +31,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
-  Video, Eye, Clock, MoreVertical, Trash2, Edit, 
-  Globe, Lock, Upload, Search, Filter 
+import {
+  Video,
+  Eye,
+  Clock,
+  MoreVertical,
+  Trash2,
+  Edit,
+  Globe,
+  Lock,
+  Upload,
+  Search,
+  Filter,
 } from "lucide-react";
 import apiClient from "@/lib/api";
 import { toast } from "sonner";
@@ -36,9 +51,11 @@ import { formatViewCount, formatTimeAgo } from "@/lib/utils";
 interface Channel {
   _id: string;
   name: string;
-  owner: string | {
-    _id: string;
-  };
+  owner:
+    | string
+    | {
+        _id: string;
+      };
 }
 
 interface StudioVideosProps {
@@ -68,14 +85,15 @@ export function StudioVideos({ channel }: StudioVideosProps) {
   const fetchVideos = useCallback(async () => {
     setLoading(true);
     try {
-      const userId = typeof channel.owner === 'string' ? channel.owner : channel.owner._id;
+      const userId =
+        typeof channel.owner === "string" ? channel.owner : channel.owner._id;
       const response = await apiClient.get("/videos/search", {
-        params: { userId }
+        params: { userId },
       });
       const data = response.data.data;
-      console.log("Data",data);
-      
-      const videoData = Array.isArray(data) ? data : (data.videos || []);
+      console.log("Data", data);
+
+      const videoData = Array.isArray(data) ? data : data.videos || [];
       setVideos(videoData);
     } catch (error: any) {
       console.error("Error fetching videos:", error);
@@ -111,7 +129,9 @@ export function StudioVideos({ channel }: StudioVideosProps) {
   const handleTogglePublish = async (video: VideoItem) => {
     try {
       await apiClient.patch(`/videos/toggle/publish/${video._id}`);
-      toast.success(video.isPublished ? "Video unpublished" : "Video published");
+      toast.success(
+        video.isPublished ? "Video unpublished" : "Video published",
+      );
       fetchVideos();
     } catch (error: any) {
       toast.error("Failed to toggle publish status");
@@ -120,7 +140,9 @@ export function StudioVideos({ channel }: StudioVideosProps) {
 
   const filteredVideos = Array.isArray(videos)
     ? videos.filter((video) => {
-        const matchesSearch = video.title.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesSearch = video.title
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
         const matchesTab =
           activeTab === "all" ||
           (activeTab === "published" && video.isPublished) ||
@@ -145,7 +167,11 @@ export function StudioVideos({ channel }: StudioVideosProps) {
           <h2 className="text-3xl font-bold">Content</h2>
           <p className="text-muted-foreground">Manage your videos</p>
         </div>
-        <Button onClick={() => router.push("/upload")} size="lg" className="gap-2">
+        <Button
+          onClick={() => router.push("/upload")}
+          size="lg"
+          className="gap-2"
+        >
           <Upload className="w-5 h-5" />
           Upload Video
         </Button>
@@ -209,20 +235,24 @@ export function StudioVideos({ channel }: StudioVideosProps) {
           ) : (
             <div className="space-y-4">
               {filteredVideos.map((video) => (
-                <Card key={video._id} className="hover:shadow-md transition-shadow">
+                <Card
+                  key={video._id}
+                  className="hover:shadow-md transition-shadow"
+                >
                   <CardContent className="p-6">
                     <div className="flex items-start gap-6">
                       {/* Thumbnail */}
                       <div className="relative w-40 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                         {video.thumbnail && (
                           <img
-                            src={video.thumbnail.replace('/public', '')}
+                            src={video.thumbnail.replace("/public", "")}
                             alt={video.title}
                             className="w-full h-full object-cover"
                           />
                         )}
                         <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
-                          {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
+                          {Math.floor(video.duration / 60)}:
+                          {String(video.duration % 60).padStart(2, "0")}
                         </div>
                       </div>
 
@@ -230,7 +260,9 @@ export function StudioVideos({ channel }: StudioVideosProps) {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1">
-                            <h3 className="font-semibold text-lg line-clamp-1">{video.title}</h3>
+                            <h3 className="font-semibold text-lg line-clamp-1">
+                              {video.title}
+                            </h3>
                             <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                               {video.description}
                             </p>
@@ -249,7 +281,9 @@ export function StudioVideos({ channel }: StudioVideosProps) {
                           {/* Status and Actions */}
                           <div className="flex items-center gap-2">
                             <Badge
-                              variant={video.isPublished ? "default" : "secondary"}
+                              variant={
+                                video.isPublished ? "default" : "secondary"
+                              }
                               className="gap-1"
                             >
                               {video.isPublished ? (
@@ -275,18 +309,24 @@ export function StudioVideos({ channel }: StudioVideosProps) {
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
-                                  onClick={() => router.push(`/video/${video._id}`)}
+                                  onClick={() =>
+                                    router.push(`/video/${video._id}`)
+                                  }
                                 >
                                   <Eye className="w-4 h-4 mr-2" />
                                   View
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
-                                  onClick={() => router.push(`/video/${video._id}/edit`)}
+                                  onClick={() =>
+                                    router.push(`/video/${video._id}/edit`)
+                                  }
                                 >
                                   <Edit className="w-4 h-4 mr-2" />
                                   Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleTogglePublish(video)}>
+                                <DropdownMenuItem
+                                  onClick={() => handleTogglePublish(video)}
+                                >
                                   {video.isPublished ? (
                                     <>
                                       <Lock className="w-4 h-4 mr-2" />
@@ -327,12 +367,16 @@ export function StudioVideos({ channel }: StudioVideosProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Video</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{selectedVideo?.title}&quot;? This action cannot be undone.
+              Are you sure you want to delete &quot;{selectedVideo?.title}
+              &quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive">
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

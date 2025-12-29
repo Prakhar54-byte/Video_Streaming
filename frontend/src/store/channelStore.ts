@@ -1,14 +1,16 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface Channel {
   _id: string;
   name: string;
   description: string;
-  owner: string | {
-    _id: string;
-    username: string;
-    avatar: string;
-  };
+  owner:
+    | string
+    | {
+        _id: string;
+        username: string;
+        avatar: string;
+      };
   avatar?: string;
   banner?: string;
   subscribers?: string[];
@@ -40,20 +42,23 @@ export const useChannelStore = create<ChannelStore>((set) => ({
   setCurrentChannel: (channel) => set({ currentChannel: channel }),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
-  addChannel: (channel) => set((state) => ({ channels: [...state.channels, channel] })),
-  updateChannel: (channelId, updates) => 
+  addChannel: (channel) =>
+    set((state) => ({ channels: [...state.channels, channel] })),
+  updateChannel: (channelId, updates) =>
     set((state) => ({
-      channels: state.channels.map((ch) => 
-        ch._id === channelId ? { ...ch, ...updates } : ch
+      channels: state.channels.map((ch) =>
+        ch._id === channelId ? { ...ch, ...updates } : ch,
       ),
-      currentChannel: state.currentChannel?._id === channelId 
-        ? { ...state.currentChannel, ...updates } 
-        : state.currentChannel
+      currentChannel:
+        state.currentChannel?._id === channelId
+          ? { ...state.currentChannel, ...updates }
+          : state.currentChannel,
     })),
-  removeChannel: (channelId) => 
+  removeChannel: (channelId) =>
     set((state) => ({
       channels: state.channels.filter((ch) => ch._id !== channelId),
-      currentChannel: state.currentChannel?._id === channelId ? null : state.currentChannel
+      currentChannel:
+        state.currentChannel?._id === channelId ? null : state.currentChannel,
     })),
   clearChannels: () => set({ channels: [], currentChannel: null, error: null }),
 }));

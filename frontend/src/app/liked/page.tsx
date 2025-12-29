@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { VideoCard } from '@/components/video/VideoCard';
-import apiClient from '@/lib/api';
-import { useAuthStore } from '@/store/authStore';
-import { useRouter } from 'next/navigation';
-import { Loader2, ThumbsUp } from 'lucide-react';
-import { LikedVideos } from '@/components/profile/LikedVideos';
+import { useState, useEffect } from "react";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { VideoCard } from "@/components/video/VideoCard";
+import apiClient from "@/lib/api";
+import { useAuthStore } from "@/store/authStore";
+import { useRouter } from "next/navigation";
+import { Loader2, ThumbsUp } from "lucide-react";
+import { LikedVideos } from "@/components/profile/LikedVideos";
 
 interface Video {
   _id: string;
@@ -34,20 +34,21 @@ export default function LikedVideosPage() {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/auth/login');
+      router.push("/auth/login");
       return;
     }
 
     const fetchLikedVideos = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get('/likes/videos');
-        
+        const response = await apiClient.get("/likes/videos");
+
         // Handle nested response structure
-        const likedData = response.data?.data?.videos || response.data?.data || [];
+        const likedData =
+          response.data?.data?.videos || response.data?.data || [];
         setVideos(Array.isArray(likedData) ? likedData : []);
       } catch (error) {
-        console.error('Error fetching liked videos:', error);
+        console.error("Error fetching liked videos:", error);
         setVideos([]);
       } finally {
         setLoading(false);
@@ -99,7 +100,7 @@ export default function LikedVideosPage() {
             ))}
           </div>
         )}
-      </div>  
+      </div>
     </MainLayout>
   );
 }

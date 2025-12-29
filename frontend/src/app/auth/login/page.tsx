@@ -7,7 +7,7 @@ import apiClient from "@/lib/api";
 import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import {  Mail, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 // import { log } from "console";
 
 export default function LoginPage() {
@@ -25,10 +25,13 @@ export default function LoginPage() {
     try {
       // Determine if identifier is email or username
 
-      console.log("This dumb fuck has identifier lets see what info it has in identifier",identifier);
-      
-      const isEmail = identifier.includes('@');
-      const loginData = isEmail 
+      console.log(
+        "This dumb fuck has identifier lets see what info it has in identifier",
+        identifier,
+      );
+
+      const isEmail = identifier.includes("@");
+      const loginData = isEmail
         ? { email: identifier, password }
         : { username: identifier, password };
 
@@ -38,18 +41,20 @@ export default function LoginPage() {
 
       const data = response.data.data;
       const userData = data.user || data; // Handle potential structure variations
-      
+
       // Store tokens in localStorage for seamless switching
       if (data.accessToken) {
         localStorage.setItem("accessToken", data.accessToken);
-        
+
         // Store tokens in a map for multi-account support
         try {
           const accountTokensStr = localStorage.getItem("account_tokens");
-          const accountTokens = accountTokensStr ? JSON.parse(accountTokensStr) : {};
+          const accountTokens = accountTokensStr
+            ? JSON.parse(accountTokensStr)
+            : {};
           accountTokens[userData._id || userData.id] = {
             accessToken: data.accessToken,
-            refreshToken: data.refreshToken
+            refreshToken: data.refreshToken,
           };
           localStorage.setItem("account_tokens", JSON.stringify(accountTokens));
         } catch (err) {
@@ -63,28 +68,32 @@ export default function LoginPage() {
       // Save to known accounts in localStorage
       try {
         const knownAccountsStr = localStorage.getItem("known_accounts");
-        let knownAccounts: any[] = knownAccountsStr ? JSON.parse(knownAccountsStr) : [];
-        
+        let knownAccounts: any[] = knownAccountsStr
+          ? JSON.parse(knownAccountsStr)
+          : [];
+
         const userId = userData._id || userData.id;
-        
+
         if (userId) {
           // Remove existing entry for this user if exists (to update it)
-          knownAccounts = knownAccounts.filter(acc => (acc._id || acc.id) !== userId);
-          
+          knownAccounts = knownAccounts.filter(
+            (acc) => (acc._id || acc.id) !== userId,
+          );
+
           // Add current user to the top
           knownAccounts.unshift({
             _id: userId,
             username: userData.username,
             fullName: userData.fullName,
             email: userData.email,
-            avatar: userData.avatar
+            avatar: userData.avatar,
           });
-          
+
           // Limit to last 5 accounts to prevent bloat
           if (knownAccounts.length > 5) {
             knownAccounts = knownAccounts.slice(0, 5);
           }
-          
+
           localStorage.setItem("known_accounts", JSON.stringify(knownAccounts));
         }
       } catch (err) {
@@ -119,7 +128,9 @@ export default function LoginPage() {
         <div className="bg-card p-10 rounded-xl border shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-8">
             <div>
-              <label className="block text-base font-semibold mb-3">Email or Username</label>
+              <label className="block text-base font-semibold mb-3">
+                Email or Username
+              </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
@@ -134,7 +145,9 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-base font-semibold mb-3">Password</label>
+              <label className="block text-base font-semibold mb-3">
+                Password
+              </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
@@ -168,7 +181,10 @@ export default function LoginPage() {
           <div className="mt-8 text-center">
             <p className="text-base text-muted-foreground">
               Don&apos;t have an account?{" "}
-              <Link href="/auth/register" className="text-primary hover:underline font-semibold text-lg transition-colors">
+              <Link
+                href="/auth/register"
+                className="text-primary hover:underline font-semibold text-lg transition-colors"
+              >
                 Create Account
               </Link>
             </p>

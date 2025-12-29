@@ -25,7 +25,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-6">
           {/* Tabs Skeleton */}
           <div className="w-full max-w-md mx-auto h-14 mb-8 bg-muted/50 animate-pulse rounded-lg" />
-          
+
           {/* Content Skeleton (Grid of videos) */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -57,20 +57,26 @@ export default function HomePage() {
       <div className="container mx-auto px-4 py-6">
         <Tabs defaultValue="videos" className="w-full">
           <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8 h-14">
-            <TabsTrigger value="videos" className="flex items-center gap-2 text-base py-3">
+            <TabsTrigger
+              value="videos"
+              className="flex items-center gap-2 text-base py-3"
+            >
               <Video className="w-5 h-5" />
               Videos
             </TabsTrigger>
-            <TabsTrigger value="messages" className="flex items-center gap-2 text-base py-3">
+            <TabsTrigger
+              value="messages"
+              className="flex items-center gap-2 text-base py-3"
+            >
               <MessageSquare className="w-5 h-5" />
               Messages
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="videos" className="space-y-6">
             <VideoGrid />
           </TabsContent>
-          
+
           <TabsContent value="messages" className="space-y-6">
             <MessageFeed />
           </TabsContent>

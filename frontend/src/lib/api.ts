@@ -1,10 +1,11 @@
-import axios from 'axios';
+import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api/v1',
+  baseURL:
+    process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api/v1",
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -12,8 +13,8 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Add token from localStorage if available
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('accessToken');
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("accessToken");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -22,7 +23,7 @@ apiClient.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor
@@ -39,21 +40,22 @@ apiClient.interceptors.response.use(
 
       try {
         // Try to refresh token
-        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshToken = localStorage.getItem("refreshToken");
         if (refreshToken) {
           const response = await axios.post(
-            `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api/v1'}/users/refresh-token`,
+            `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000/api/v1"}/users/refresh-token`,
             { refreshToken },
-            { withCredentials: true }
+            { withCredentials: true },
           );
 
           if (response.data.success) {
-            const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-            
+            const { accessToken, refreshToken: newRefreshToken } =
+              response.data.data;
+
             // Update tokens
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', newRefreshToken);
-            
+            localStorage.setItem("accessToken", accessToken);
+            localStorage.setItem("refreshToken", newRefreshToken);
+
             // Update header and retry request
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
             return apiClient(originalRequest);
@@ -65,12 +67,15 @@ apiClient.interceptors.response.use(
       }
 
       // Redirect to login if unauthorized and not already on auth pages
-      if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
-        window.location.href = '/auth/login';
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/auth")
+      ) {
+        window.location.href = "/auth/login";
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;

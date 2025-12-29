@@ -6,14 +6,30 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { useAuthStore } from "@/store/authStore";
 import { useChannelStore } from "@/store/channelStore";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
-  User, Video, Heart, Users, Settings, Plus, 
-  TrendingUp, Upload, Edit, BarChart3, Film, Tv
+  User,
+  Video,
+  Heart,
+  Users,
+  Settings,
+  Plus,
+  TrendingUp,
+  Upload,
+  Edit,
+  BarChart3,
+  Film,
+  Tv,
 } from "lucide-react";
 import { channelApi } from "@/lib/api/channel";
 import { CreateChannelModal } from "@/components/channel/CreateChannelModal";
@@ -23,14 +39,18 @@ import { SubscribedChannels } from "@/components/profile/SubscribedChannels";
 import { ProfileSettings } from "@/components/profile/ProfileSettings";
 import { StudioDashboard } from "@/components/studio/StudioDashboard";
 import { StudioVideos } from "@/components/studio/StudioVideos";
-import {StudioAnalytics} from "@/components/studio/StudioAnalytics";
+import { StudioAnalytics } from "@/components/studio/StudioAnalytics";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuthStore();
-  const { channels, setChannels, setLoading: setChannelLoading } = useChannelStore();
+  const {
+    channels,
+    setChannels,
+    setLoading: setChannelLoading,
+  } = useChannelStore();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [showEmail, setShowEmail] = useState(false);
@@ -94,31 +114,31 @@ export default function ProfilePage() {
                   {user.fullName?.[0]?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1 space-y-2">
                 <div>
                   <h1 className="text-3xl font-bold">{user.fullName}</h1>
                   <p className="text-muted-foreground">@{user.username}</p>
                 </div>
-                
+
                 <div className="flex items-center gap-4 flex-wrap">
-                  {showEmail?user.email : maskEmail(user.email) && (
-                    <Badge variant="secondary" className="text-sm">
-                      {user.email}
-                    </Badge>
-                  )}
+                  {showEmail
+                    ? user.email
+                    : maskEmail(user.email) && (
+                        <Badge variant="secondary" className="text-sm">
+                          {user.email}
+                        </Badge>
+                      )}
                   {user.isVerified && (
-                    <Badge className="text-sm">
-                      ✓ Verified
-                    </Badge>
+                    <Badge className="text-sm">✓ Verified</Badge>
                   )}
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
                 {!hasChannel && (
-                  <Button 
-                    size="lg" 
+                  <Button
+                    size="lg"
                     onClick={() => setIsCreateModalOpen(true)}
                     className="gap-2"
                   >
@@ -145,9 +165,12 @@ export default function ProfilePage() {
                 <Tv className="w-12 h-12 text-primary" />
               </div>
               <div className="text-center space-y-2">
-                <h3 className="text-2xl font-semibold">Start Your Creator Journey</h3>
+                <h3 className="text-2xl font-semibold">
+                  Start Your Creator Journey
+                </h3>
                 <p className="text-muted-foreground max-w-md">
-                  Create your channel to upload videos, build an audience, and share your content with the world.
+                  Create your channel to upload videos, build an audience, and
+                  share your content with the world.
                 </p>
               </div>
               <Button
@@ -164,11 +187,16 @@ export default function ProfilePage() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={cn(
-            "grid w-full max-w-4xl mx-auto mb-8 h-auto",
-            hasChannel ? "grid-cols-7" : "grid-cols-4"
-          )}>
-            <TabsTrigger value="overview" className="flex items-center gap-2 py-3">
+          <TabsList
+            className={cn(
+              "grid w-full max-w-4xl mx-auto mb-8 h-auto",
+              hasChannel ? "grid-cols-7" : "grid-cols-4",
+            )}
+          >
+            <TabsTrigger
+              value="overview"
+              className="flex items-center gap-2 py-3"
+            >
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Overview</span>
             </TabsTrigger>
@@ -176,34 +204,48 @@ export default function ProfilePage() {
               <Heart className="w-4 h-4" />
               <span className="hidden sm:inline">Liked</span>
             </TabsTrigger>
-            <TabsTrigger value="subscribed" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="subscribed"
+              className="flex items-center gap-2 py-3"
+            >
               <Users className="w-4 h-4" />
               <span className="hidden sm:inline">Subscribed</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="settings"
+              className="flex items-center gap-2 py-3"
+            >
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Settings</span>
             </TabsTrigger>
-            
+
             {/* Studio Tabs - Only show if user has channel */}
             {hasChannel && (
               <>
-                <TabsTrigger value="studio" className="flex items-center gap-2 py-3">
+                <TabsTrigger
+                  value="studio"
+                  className="flex items-center gap-2 py-3"
+                >
                   <BarChart3 className="w-4 h-4" />
                   <span className="hidden sm:inline">Studio</span>
                 </TabsTrigger>
-                <TabsTrigger value="content" className="flex items-center gap-2 py-3">
+                <TabsTrigger
+                  value="content"
+                  className="flex items-center gap-2 py-3"
+                >
                   <Video className="w-4 h-4" />
                   <span className="hidden sm:inline">Content</span>
                 </TabsTrigger>
-                <TabsTrigger value="analytics" className="flex items-center gap-2 py-3">
+                <TabsTrigger
+                  value="analytics"
+                  className="flex items-center gap-2 py-3"
+                >
                   <TrendingUp className="w-4 h-4" />
                   <span className="hidden sm:inline">Analytics</span>
                 </TabsTrigger>
               </>
             )}
           </TabsList>
-
 
           {/* Profile Tabs */}
           <TabsContent value="overview" className="space-y-6">

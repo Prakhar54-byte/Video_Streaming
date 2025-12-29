@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  LogOut, Plus, Settings, 
-  Check, MoreVertical
-} from "lucide-react";
+import { LogOut, Plus, Settings, Check, MoreVertical } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,14 +19,14 @@ import { TiltCard } from "@/components/ui/tilt-card";
 // Mock other accounts for demonstration
 // const MOCK_ACCOUNTS: any[] = [];
 
-export function UserAccountMenu({ 
-  user, 
-  sidebarOpen, 
-  logout 
-}: { 
-  user: any, 
-  sidebarOpen: boolean, 
-  logout: () => void 
+export function UserAccountMenu({
+  user,
+  sidebarOpen,
+  logout,
+}: {
+  user: any;
+  sidebarOpen: boolean;
+  logout: () => void;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -42,12 +39,14 @@ export function UserAccountMenu({
       if (knownAccountsStr) {
         const accounts = JSON.parse(knownAccountsStr);
         const currentUserId = user._id || user.id;
-        
+
         // Filter out current user
-        setOtherAccounts(accounts.filter((acc: any) => {
-          const accId = acc._id || acc.id;
-          return accId && accId !== currentUserId;
-        }));
+        setOtherAccounts(
+          accounts.filter((acc: any) => {
+            const accId = acc._id || acc.id;
+            return accId && accId !== currentUserId;
+          }),
+        );
       }
     } catch (err) {
       console.error("Failed to load known accounts", err);
@@ -60,21 +59,21 @@ export function UserAccountMenu({
       if (accountTokensStr) {
         const accountTokens = JSON.parse(accountTokensStr);
         const tokens = accountTokens[account._id || account.id];
-        
+
         if (tokens && tokens.accessToken) {
           // Set as active token
           localStorage.setItem("accessToken", tokens.accessToken);
           if (tokens.refreshToken) {
             localStorage.setItem("refreshToken", tokens.refreshToken);
           }
-          
+
           // Reload to apply changes
           toast({ title: `Switched to @${account.username}` });
           window.location.reload();
           return;
         }
       }
-      
+
       // Fallback if no tokens found
       toast({ title: `Please log in as @${account.username}` });
       router.push("/auth/login");
@@ -105,9 +104,22 @@ export function UserAccountMenu({
   const renderAccountContent = (accountUser: any, isActive: boolean) => (
     <div className="relative flex items-center gap-3">
       <div className="relative">
-        <Avatar className={cn("w-10 h-10 ring-2 transition-all", isActive ? "ring-orange-500" : "ring-transparent group-hover:ring-primary/20")}>
+        <Avatar
+          className={cn(
+            "w-10 h-10 ring-2 transition-all",
+            isActive
+              ? "ring-orange-500"
+              : "ring-transparent group-hover:ring-primary/20",
+          )}
+        >
           <AvatarImage src={accountUser.avatar} alt={accountUser.username} />
-          <AvatarFallback className={cn(isActive ? "bg-gradient-to-br from-orange-500 to-red-500 text-white" : "")}>
+          <AvatarFallback
+            className={cn(
+              isActive
+                ? "bg-gradient-to-br from-orange-500 to-red-500 text-white"
+                : "",
+            )}
+          >
             {accountUser.username?.[0]?.toUpperCase() || "U"}
           </AvatarFallback>
         </Avatar>
@@ -115,9 +127,16 @@ export function UserAccountMenu({
           <div className="absolute -bottom-1 -right-1 bg-green-500 w-3 h-3 rounded-full border-2 border-background" />
         )}
       </div>
-      
+
       <div className="flex-1 min-w-0 text-left">
-        <p className={cn("font-semibold text-sm truncate transition-colors", isActive ? "text-orange-600 dark:text-orange-400" : "group-hover:text-primary")}>
+        <p
+          className={cn(
+            "font-semibold text-sm truncate transition-colors",
+            isActive
+              ? "text-orange-600 dark:text-orange-400"
+              : "group-hover:text-primary",
+          )}
+        >
           {accountUser.fullName || accountUser.username}
         </p>
         <p className="text-xs text-muted-foreground truncate">
@@ -133,11 +152,11 @@ export function UserAccountMenu({
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <div className="w-full">
-          <TiltCard 
+          <TiltCard
             isActive={isOpen}
             className={cn(
               "p-4 w-full transition-all duration-200",
-              !sidebarOpen && "p-2 justify-center"
+              !sidebarOpen && "p-2 justify-center",
             )}
           >
             <div className="flex items-center gap-3 group">
@@ -157,21 +176,30 @@ export function UserAccountMenu({
                   </p>
                 </div>
               )}
-              {sidebarOpen && <MoreVertical className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />}
+              {sidebarOpen && (
+                <MoreVertical className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              )}
             </div>
           </TiltCard>
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-2" align="start" side="right" sideOffset={20}>
+      <PopoverContent
+        className="w-80 p-2"
+        align="start"
+        side="right"
+        sideOffset={20}
+      >
         <div className="space-y-4">
           {/* Header */}
           <div className="px-2 py-1.5">
-            <h3 className="font-semibold text-sm text-muted-foreground">Accounts</h3>
+            <h3 className="font-semibold text-sm text-muted-foreground">
+              Accounts
+            </h3>
           </div>
 
           {/* Active Account */}
-          <TiltCard 
-            isActive={true} 
+          <TiltCard
+            isActive={true}
             onClick={() => {
               router.push("/profile");
               setIsOpen(false);
@@ -184,8 +212,8 @@ export function UserAccountMenu({
           {/* Other Accounts */}
           <div className="space-y-1">
             {otherAccounts.map((account) => (
-              <TiltCard 
-                key={account._id} 
+              <TiltCard
+                key={account._id}
                 onClick={() => handleSwitchAccount(account)}
                 className="p-4"
               >
@@ -195,8 +223,8 @@ export function UserAccountMenu({
           </div>
 
           {/* Add Account */}
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="w-full justify-start gap-2 h-auto py-3"
             onClick={handleAddAccount}
           >
@@ -210,8 +238,8 @@ export function UserAccountMenu({
 
           {/* Settings & Logout */}
           <div className="space-y-1">
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full justify-start gap-2 h-9 text-sm"
               onClick={() => {
                 router.push("/profile");
@@ -226,16 +254,16 @@ export function UserAccountMenu({
               </Avatar>
               Profile
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full justify-start gap-2 h-9 text-sm"
               onClick={() => router.push("/settings")}
             >
               <Settings className="w-4 h-4" />
               Settings
             </Button>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full justify-start gap-2 h-9 text-sm text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={handleSignOutAll}
             >

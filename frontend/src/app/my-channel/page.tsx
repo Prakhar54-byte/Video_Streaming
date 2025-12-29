@@ -69,7 +69,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { StudioDashboard } from "@/components/studio/StudioDashboard";
 import { StudioVideos } from "@/components/studio/StudioVideos";
-import { StudioAnalytics } from "@/components/studio/StudioAnalytics"
+import { StudioAnalytics } from "@/components/studio/StudioAnalytics";
 
 interface Video {
   _id: string;
@@ -162,35 +162,38 @@ export default function MyChannel() {
     }
   }, []);
 
-  const fetchMyVideos = useCallback(async (isBackground = false) => {
-    try {
-      if (!isBackground) setLoading(true);
-      const response = await apiClient.get("/videos/search", {
-        params: { userId: user?._id },
-      });
-      const videoData = response.data.data;
+  const fetchMyVideos = useCallback(
+    async (isBackground = false) => {
+      try {
+        if (!isBackground) setLoading(true);
+        const response = await apiClient.get("/videos/search", {
+          params: { userId: user?._id },
+        });
+        const videoData = response.data.data;
 
-      // Handle both array and object response structures
-      let videoArray: Video[] = [];
-      if (Array.isArray(videoData)) {
-        videoArray = videoData;
-      } else if (videoData && Array.isArray(videoData.videos)) {
-        videoArray = videoData.videos;
+        // Handle both array and object response structures
+        let videoArray: Video[] = [];
+        if (Array.isArray(videoData)) {
+          videoArray = videoData;
+        } else if (videoData && Array.isArray(videoData.videos)) {
+          videoArray = videoData.videos;
+        }
+
+        setVideos(videoArray);
+      } catch (error) {
+        console.error("Error fetching videos:", error);
+        setVideos([]); // Set to empty array on error
+        toast({
+          title: "Error",
+          description: "Failed to fetch your videos",
+          variant: "destructive",
+        });
+      } finally {
+        if (!isBackground) setLoading(false);
       }
-
-      setVideos(videoArray);
-    } catch (error) {
-      console.error("Error fetching videos:", error);
-      setVideos([]); // Set to empty array on error
-      toast({
-        title: "Error",
-        description: "Failed to fetch your videos",
-        variant: "destructive",
-      });
-    } finally {
-      if (!isBackground) setLoading(false);
-    }
-  }, [user?._id, toast]);
+    },
+    [user?._id, toast],
+  );
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -229,7 +232,7 @@ export default function MyChannel() {
       return () =>
         document.removeEventListener(
           "visibilitychange",
-          handleVisibilityChange
+          handleVisibilityChange,
         );
     }
   }, [isAuthenticated, user, fetchMyVideos, fetchChannelStats]);

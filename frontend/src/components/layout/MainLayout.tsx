@@ -4,9 +4,18 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
-import { 
-  Home, Video, MessageSquare, Upload,
-  User, Menu, X, Bell, Sparkles, History, ThumbsUp 
+import {
+  Home,
+  Video,
+  MessageSquare,
+  Upload,
+  User,
+  Menu,
+  X,
+  Bell,
+  Sparkles,
+  History,
+  ThumbsUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -31,7 +40,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           // Check if user has any videos (which means they have a channel)
           const response = await apiClient.get(`/videos?page=1&limit=1`);
           const videos = response.data.data || [];
-          const userVideos = videos.filter((v: any) => v.owner?._id === user._id);
+          const userVideos = videos.filter(
+            (v: any) => v.owner?._id === user._id,
+          );
           setHasChannel(userVideos.length > 0);
         } catch (error) {
           console.error("Error checking user channel:", error);
@@ -63,13 +74,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { href: "/messages", icon: MessageSquare, label: "Messages" },
   ];
 
-  const channelNavItem = { href: "/my-channel", icon: User, label: "My Channel" };
+  const channelNavItem = {
+    href: "/my-channel",
+    icon: User,
+    label: "My Channel",
+  };
 
   // Only show "My Channel" if user has uploaded videos
-  const navItems = [
-    ...baseNavItems,
-    ...(hasChannel ? [channelNavItem] : []),
-  ];
+  const navItems = [...baseNavItems, ...(hasChannel ? [channelNavItem] : [])];
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -79,10 +91,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar */}
-      <aside 
+      <aside
         className={cn(
           "fixed left-0 top-0 h-screen bg-card border-r transition-all duration-300 flex flex-col z-50",
-          sidebarOpen ? "w-64" : "w-20"
+          sidebarOpen ? "w-64" : "w-20",
         )}
       >
         {/* Header */}
@@ -104,7 +116,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="hover:bg-primary/10"
           >
-            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {sidebarOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </Button>
         </div>
 
@@ -113,16 +129,16 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
-            
+
             return (
               <Link key={item.href} href={item.href}>
-                <Button 
+                <Button
                   variant={active ? "default" : "ghost"}
                   className={cn(
                     "w-full justify-start text-base py-6 transition-all duration-200",
                     active && "bg-primary text-primary-foreground shadow-md",
                     !active && "hover:bg-accent hover:translate-x-1",
-                    !sidebarOpen && "justify-center px-0"
+                    !sidebarOpen && "justify-center px-0",
                   )}
                 >
                   <Icon className={cn("w-6 h-6", active && "animate-pulse")} />
@@ -142,10 +158,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <div className="mt-auto border-t bg-card/95 backdrop-blur-sm">
           {user && (
             <>
-              <UserAccountMenu 
-                user={user} 
-                sidebarOpen={sidebarOpen} 
-                logout={handleLogout} 
+              <UserAccountMenu
+                user={user}
+                sidebarOpen={sidebarOpen}
+                logout={handleLogout}
               />
             </>
           )}
@@ -153,10 +169,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <main className={cn(
-        "flex-1 transition-all duration-300",
-        sidebarOpen ? "ml-64" : "ml-20"
-      )}>
+      <main
+        className={cn(
+          "flex-1 transition-all duration-300",
+          sidebarOpen ? "ml-64" : "ml-20",
+        )}
+      >
         {children}
       </main>
 
