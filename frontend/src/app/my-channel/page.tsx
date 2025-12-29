@@ -11,13 +11,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import apiClient from "@/lib/api";
 import {
-  Play, Eye, Clock, MoreVertical, Trash2, Edit, Globe,
-  Lock, Upload, Video as VideoIcon, TrendingUp, Users, 
-  Settings, Scissors, Sparkles, Download, Share2, Image as LucideImage
+  Play,
+  Eye,
+  Clock,
+  MoreVertical,
+  Trash2,
+  Edit,
+  Globe,
+  Lock,
+  Upload,
+  Video as VideoIcon,
+  TrendingUp,
+  Users,
+  Settings,
+  Scissors,
+  Sparkles,
+  Download,
+  Share2,
+  Image as LucideImage,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { formatViewCount, formatTimeAgo, formatDuration, toBackendAssetUrl } from "@/lib/utils";
+import {
+  formatViewCount,
+  formatTimeAgo,
+  formatDuration,
+  toBackendAssetUrl,
+} from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +67,9 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { StudioDashboard } from "@/components/studio/StudioDashboard";
+import { StudioVideos } from "@/components/studio/StudioVideos";
+import { StudioAnalytics } from "@/components/studio/StudioAnalytics"
 
 interface Video {
   _id: string;
@@ -72,19 +95,43 @@ interface Stats {
   totalSubscribers: number;
 }
 
-export default function MyChannelPage() {
+interface Channel {
+  _id: string;
+  name: string;
+  description: string;
+  avatar?: string;
+  banner?: string;
+  subscribers?: string[];
+  owner: {
+    _id: string;
+    username: string;
+    avatar: string;
+  };
+  createdAt: string;
+}
+
+export default function MyChannel() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const { toast } = useToast();
 
   const [videos, setVideos] = useState<Video[]>([]);
-  const [stats, setStats] = useState<Stats>({ totalVideos: 0, totalViews: 0, totalSubscribers: 0 });
+  const [stats, setStats] = useState<Stats>({
+    totalVideos: 0,
+    totalViews: 0,
+    totalSubscribers: 0,
+  });
+  const [channel, setChannel] = useState<Channel | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [processDialogOpen, setProcessDialogOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ title: "", description: "", isPublished: true });
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    isPublished: true,
+  });
   const [activeTab, setActiveTab] = useState("all");
 
   const fetchChannelStats = useCallback(async () => {
@@ -98,14 +145,31 @@ export default function MyChannelPage() {
     }
   }, []);
 
-  const fetchMyVideos = useCallback(async () => {
+  const fetchChannel = useCallback(async () => {
     try {
-      setLoading(true);
+      const response = await apiClient.get("/channels/user/me");
+      if (response.data.success) {
+        const data = response.data.data;
+        // Handle array response from getUserChannels
+        if (Array.isArray(data)) {
+          setChannel(data[0] || null);
+        } else {
+          setChannel(data);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching channel:", error);
+    }
+  }, []);
+
+  const fetchMyVideos = useCallback(async (isBackground = false) => {
+    try {
+      if (!isBackground) setLoading(true);
       const response = await apiClient.get("/videos/search", {
-        params: { userId: user?._id }
+        params: { userId: user?._id },
       });
       const videoData = response.data.data;
-      
+
       // Handle both array and object response structures
       let videoArray: Video[] = [];
       if (Array.isArray(videoData)) {
@@ -113,7 +177,7 @@ export default function MyChannelPage() {
       } else if (videoData && Array.isArray(videoData.videos)) {
         videoArray = videoData.videos;
       }
-      
+
       setVideos(videoArray);
     } catch (error) {
       console.error("Error fetching videos:", error);
@@ -124,7 +188,7 @@ export default function MyChannelPage() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   }, [user?._id, toast]);
 
@@ -134,27 +198,39 @@ export default function MyChannelPage() {
     } else if (isAuthenticated && user) {
       fetchMyVideos();
       fetchChannelStats();
-      
+      fetchChannel();
+
       // Poll stats and videos every 5 seconds for real-time updates
       const intervalId = setInterval(() => {
         fetchChannelStats();
-        fetchMyVideos();
+        fetchMyVideos(true);
       }, 5000);
       return () => clearInterval(intervalId);
     }
-  }, [isAuthenticated, isLoading, user, router, fetchMyVideos, fetchChannelStats]);
+  }, [
+    isAuthenticated,
+    isLoading,
+    user,
+    router,
+    fetchMyVideos,
+    fetchChannelStats,
+  ]);
 
   // Refresh on route change (when coming back from upload)
   useEffect(() => {
     if (isAuthenticated && user) {
       const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible') {
+        if (document.visibilityState === "visible") {
           fetchMyVideos();
           fetchChannelStats();
         }
       };
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-      return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      return () =>
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
     }
   }, [isAuthenticated, user, fetchMyVideos, fetchChannelStats]);
 
@@ -237,7 +313,8 @@ export default function MyChannelPage() {
       });
       toast({
         title: "Processing started",
-        description: "Your video is being processed. This may take a few minutes.",
+        description:
+          "Your video is being processed. This may take a few minutes.",
       });
       setProcessDialogOpen(false);
     } catch (error) {
@@ -249,7 +326,7 @@ export default function MyChannelPage() {
     }
   };
 
-  const filteredVideos = Array.isArray(videos) 
+  const filteredVideos = Array.isArray(videos)
     ? videos.filter((video) => {
         if (activeTab === "published") return video.isPublished;
         if (activeTab === "unpublished") return !video.isPublished;
@@ -292,343 +369,329 @@ export default function MyChannelPage() {
           </Link>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Videos</CardTitle>
-              <VideoIcon className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalVideos}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {filteredVideos.filter(v => v.isPublished).length} published
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-              <Eye className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatViewCount(stats.totalViews)}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Across all videos
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Subscribers</CardTitle>
-              <Users className="w-4 h-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatViewCount(stats.totalSubscribers)}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Total followers
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Videos Section */}
+        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="all">All ({videos.length})</TabsTrigger>
-            <TabsTrigger value="published">
-              Published ({videos.filter(v => v.isPublished).length})
+          <TabsList className="grid w-full max-w-4xl grid-cols-4 mb-8">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <VideoIcon className="w-4 h-4" />
+              Overview
             </TabsTrigger>
-            <TabsTrigger value="unpublished">
-              Unpublished ({videos.filter(v => !v.isPublished).length})
+            <TabsTrigger value="studio" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Studio
+            </TabsTrigger>
+            <TabsTrigger value="content" className="flex items-center gap-2">
+              <VideoIcon className="w-4 h-4" />
+              Content
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              Analytics
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="mt-6">
-            {filteredVideos.length === 0 ? (
-              <Card className="p-12">
-                <div className="text-center">
-                  <VideoIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl font-semibold mb-2">No videos yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Upload your first video to get started!
+          {/* Overview Tab (Existing Content) */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Videos
+                  </CardTitle>
+                  <VideoIcon className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalVideos}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {filteredVideos.filter((v) => v.isPublished).length}{" "}
+                    published
                   </p>
-                  <Link href="/upload">
-                    <Button>
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Video
-                    </Button>
-                  </Link>
-                </div>
+                </CardContent>
               </Card>
-            ) : (
-              <div className="grid grid-cols-1 gap-4">
-                {filteredVideos.map((video) => (
-                  <Card key={video._id} className="overflow-hidden">
-                    <div className="flex flex-col md:flex-row gap-4 p-4">
-                      {/* Thumbnail */}
-                      <Link href={`/video/${video?._id}`} className="relative w-full md:w-64 aspect-video shrink-0">
-                        <Image
-                          src={video?.thumbnail ? toBackendAssetUrl(video.thumbnail) : "/placeholder/images.svg"}
-                          alt={video?.title || "Video thumbnail"}
-                          fill
-                          className="object-cover rounded-lg"
-                        />
-                        <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded text-xs text-white">
-                          {formatDuration(video.duration)}
-                        </div>
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/0 hover:bg-black/20 transition-colors rounded-lg">
-                          <Play className="w-12 h-12 text-white opacity-0 hover:opacity-100 transition-opacity" />
-                        </div>
-                      </Link>
 
-                      {/* Video Info */}
-                      <div className="flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-start justify-between gap-2">
-                            <Link href={`/video/${video._id}`}>
-                              <h3 className="text-lg font-semibold hover:text-primary transition-colors line-clamp-2">
-                                {video.title}
-                              </h3>
-                            </Link>
-                            
-                            {/* Actions Dropdown */}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreVertical className="w-5 h-5" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuLabel>Video Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleEditClick(video)}>
-                                  <Edit className="w-4 h-4 mr-2" />
-                                  Edit Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleTogglePublish(video)}>
-                                  {video.isPublished ? (
-                                    <>
-                                      <Lock className="w-4 h-4 mr-2" />
-                                      Unpublish
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Globe className="w-4 h-4 mr-2" />
-                                      Publish
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleProcessVideo(video)}>
-                                  <Sparkles className="w-4 h-4 mr-2" />
-                                  Process Video
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => handleDeleteClick(video)}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Delete Video
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                          
-                          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                            {video.description}
-                          </p>
-                          
-                          <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Eye className="w-4 h-4" />
-                              {formatViewCount(video.views)} views
-                            </span>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              {formatTimeAgo(video.createdAt)}
-                            </span>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                              {video.isPublished ? (
-                                <>
-                                  <Globe className="w-4 h-4 text-green-500" />
-                                  <span className="text-green-500">Published</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Lock className="w-4 h-4 text-orange-500" />
-                                  <span className="text-orange-500">Private</span>
-                                </>
-                              )}
-                            </span>
-                          </div>
-                        </div>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Views
+                  </CardTitle>
+                  <Eye className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {formatViewCount(stats.totalViews)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Across all videos
+                  </p>
+                </CardContent>
+              </Card>
 
-                        {/* Quick Actions */}
-                        <div className="flex gap-2 mt-4">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => router.push(`/video/${video._id}`)}
-                          >
-                            <Play className="w-4 h-4 mr-1" />
-                            Watch
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleEditClick(video)}
-                          >
-                            <Edit className="w-4 h-4 mr-1" />
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleProcessVideo(video)}
-                          >
-                            <Sparkles className="w-4 h-4 mr-1" />
-                            Process
-                          </Button>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Subscribers
+                  </CardTitle>
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {formatViewCount(stats.totalSubscribers)}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Total followers
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Existing Video List Logic */}
+            <div className="mt-6">
+              <h3 className="text-xl font-semibold mb-4">Recent Videos</h3>
+              {/* ... existing video list code ... */}
+              {filteredVideos.length === 0 ? (
+                <Card className="p-12">
+                  <div className="text-center">
+                    <VideoIcon className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-xl font-semibold mb-2">
+                      No videos yet
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      Upload your first video to get started!
+                    </p>
+                    <Link href="/upload">
+                      <Button>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload Video
+                      </Button>
+                    </Link>
+                  </div>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {filteredVideos.map((video) => (
+                    <Card key={video._id} className="overflow-hidden">
+                      <div className="flex flex-col md:flex-row gap-4 p-4">
+                        {/* Thumbnail */}
+                        <Link
+                          href={`/video/${video?._id}`}
+                          className="relative w-full md:w-64 aspect-video shrink-0"
+                        >
+                          <Image
+                            src={
+                              video?.thumbnail
+                                ? toBackendAssetUrl(video.thumbnail)
+                                : "/placeholder/images.svg"
+                            }
+                            alt={video?.title || "Video thumbnail"}
+                            fill
+                            className="object-cover rounded-lg"
+                          />
+                          <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded text-xs text-white">
+                            {formatDuration(video.duration)}
+                          </div>
+                        </Link>
+
+                        {/* Video Info */}
+                        <div className="flex-1 flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-start justify-between gap-2">
+                              <Link href={`/video/${video._id}`}>
+                                <h3 className="text-lg font-semibold hover:text-primary transition-colors line-clamp-2">
+                                  {video.title}
+                                </h3>
+                              </Link>
+
+                              {/* Actions Dropdown */}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon">
+                                    <MoreVertical className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => handleEditClick(video)}
+                                  >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleTogglePublish(video)}
+                                  >
+                                    {video.isPublished ? (
+                                      <>
+                                        <Lock className="w-4 h-4 mr-2" />
+                                        Unpublish
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Globe className="w-4 h-4 mr-2" />
+                                        Publish
+                                      </>
+                                    )}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-red-600"
+                                    onClick={() => handleDeleteClick(video)}
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Eye className="w-4 h-4" />
+                                {formatViewCount(video.views)} views
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                {formatTimeAgo(video.createdAt)}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-xs ${
+                                  video.isPublished
+                                    ? "bg-green-500/10 text-green-500"
+                                    : "bg-yellow-500/10 text-yellow-500"
+                                }`}
+                              >
+                                {video.isPublished ? "Published" : "Draft"}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                              {video.description}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-
-        {/* Edit Dialog */}
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Video Details</DialogTitle>
-              <DialogDescription>
-                Update your video information
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={editForm.title}
-                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                  placeholder="Enter video title"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={editForm.description}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  placeholder="Enter video description"
-                  rows={4}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label htmlFor="publish">Publish Status</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Make this video public or private
-                  </p>
+                    </Card>
+                  ))}
                 </div>
-                <Switch
-                  id="publish"
-                  checked={editForm.isPublished}
-                  onCheckedChange={(checked) => setEditForm({ ...editForm, isPublished: checked })}
-                />
-              </div>
+              )}
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleEditSubmit}>Save Changes</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </TabsContent>
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your video
-                &quot;{selectedVideo?.title}&quot; and remove it from our servers.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteConfirm}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          {/* Studio Tabs */}
+          {channel && (
+            <>
+              <TabsContent value="studio" className="space-y-6">
+                <StudioDashboard channel={channel} />
+              </TabsContent>
 
-        {/* Video Processing Dialog */}
-        <Dialog open={processDialogOpen} onOpenChange={setProcessDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Process Video</DialogTitle>
-              <DialogDescription>
-                Choose a processing action for &quot;{selectedVideo?.title}&quot;
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 py-4">
-              <Button
-                variant="outline"
-                className="h-24 flex-col gap-2"
-                onClick={() => handleStartProcessing("hls")}
-              >
-                <TrendingUp className="w-8 h-8" />
-                <span>Generate HLS</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-24 flex-col gap-2"
-                onClick={() => handleStartProcessing("thumbnail")}
-              >
-                <LucideImage className="w-8 h-8" />
-                <span>Generate Thumbnails</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-24 flex-col gap-2"
-                onClick={() => handleStartProcessing("compress")}
-              >
-                <Download className="w-8 h-8" />
-                <span>Compress</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="h-24 flex-col gap-2"
-                onClick={() => handleStartProcessing("trim")}
-              >
-                <Scissors className="w-8 h-8" />
-                <span>Trim Video</span>
-              </Button>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setProcessDialogOpen(false)}>
-                Cancel
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <TabsContent value="content" className="space-y-6">
+                <StudioVideos channel={channel} />
+              </TabsContent>
+
+              <TabsContent value="analytics" className="space-y-6">
+                <StudioAnalytics channel={channel} />
+              </TabsContent>
+            </>
+          )}
+        </Tabs>
       </div>
+
+      {/* ...existing dialogs... */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Video</DialogTitle>
+            <DialogDescription>
+              Make changes to your video details here.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={editForm.title}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, title: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={editForm.description}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, description: e.target.value })
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="publish">Publish Video</Label>
+              <Switch
+                id="publish"
+                checked={editForm.isPublished}
+                onCheckedChange={(checked) =>
+                  setEditForm({ ...editForm, isPublished: checked })
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleEditSubmit}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              video and remove it from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={processDialogOpen} onOpenChange={setProcessDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Process Video</DialogTitle>
+            <DialogDescription>
+              Choose an action to perform on this video.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-4">
+            <Button
+              variant="outline"
+              className="h-24 flex flex-col gap-2"
+              onClick={() => handleStartProcessing("transcode")}
+            >
+              <VideoIcon className="w-6 h-6" />
+              Transcode
+            </Button>
+            <Button
+              variant="outline"
+              className="h-24 flex flex-col gap-2"
+              onClick={() => handleStartProcessing("thumbnail")}
+            >
+              <LucideImage className="w-6 h-6" />
+              Generate Thumbnail
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

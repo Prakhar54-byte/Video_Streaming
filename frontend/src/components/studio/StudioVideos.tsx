@@ -36,6 +36,9 @@ import { formatViewCount, formatTimeAgo } from "@/lib/utils";
 interface Channel {
   _id: string;
   name: string;
+  owner: string | {
+    _id: string;
+  };
 }
 
 interface StudioVideosProps {
@@ -65,11 +68,15 @@ export function StudioVideos({ channel }: StudioVideosProps) {
   const fetchVideos = useCallback(async () => {
     setLoading(true);
     try {
+      const userId = typeof channel.owner === 'string' ? channel.owner : channel.owner._id;
       const response = await apiClient.get("/videos/search", {
-        params: { channelId: channel._id }
+        params: { userId }
       });
-      const videoData = response.data.data;
-      setVideos(Array.isArray(videoData) ? videoData : []);
+      const data = response.data.data;
+      console.log("Data",data);
+      
+      const videoData = Array.isArray(data) ? data : (data.videos || []);
+      setVideos(videoData);
     } catch (error: any) {
       console.error("Error fetching videos:", error);
       toast.error("Failed to load videos");

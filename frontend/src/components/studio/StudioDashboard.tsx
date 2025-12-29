@@ -19,6 +19,9 @@ interface Channel {
   avatar?: string;
   banner?: string;
   subscribers?: string[];
+  owner: string | {
+    _id: string;
+  };
 }
 
 interface StudioDashboardProps {
@@ -38,11 +41,13 @@ export function StudioDashboard({ channel }: StudioDashboardProps) {
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
+      const userId = typeof channel.owner === 'string' ? channel.owner : channel.owner?._id;
       // Fetch channel videos
       const videosResponse = await apiClient.get("/videos/search", {
-        params: { channelId: channel._id }
+        params: { userId }
       });
-      const videos = Array.isArray(videosResponse.data.data) ? videosResponse.data.data : [];
+      const data = videosResponse.data.data;
+      const videos = Array.isArray(data) ? data : (data.videos || []);
       
       // Calculate stats
       const totalViews = videos.reduce((acc: number, v: any) => acc + (v.views || 0), 0);

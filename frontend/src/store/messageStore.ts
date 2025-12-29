@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-interface Message {
+export interface Message {
   _id: string;
   content: string;
   owner: {
@@ -12,6 +12,14 @@ interface Message {
   createdAt: string;
   likes?: number;
   liked?: boolean;
+  parentTweet?: {
+    _id: string;
+    content: string;
+    owner: {
+      username: string;
+      fullName: string;
+    };
+  } | null;
 }
 
 interface MessageStore {

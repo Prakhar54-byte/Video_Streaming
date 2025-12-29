@@ -26,8 +26,12 @@ import {
 } from "recharts";
 
 interface Channel {
+  subscribers?: any;
   _id: string;
   name: string;
+  owner: string | {
+    _id: string;
+  };
 }
 
 interface StudioAnalyticsProps {
@@ -45,7 +49,6 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
       totalLikes: 0,
       totalComments: 0,
       subscribersGained: 0,
-      avgViewDuration: 0,
     },
     viewsOverTime: [] as any[],
     topVideos: [] as any[],
@@ -55,23 +58,45 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     try {
+      const userId = typeof channel.owner === 'string' ? channel.owner : channel.owner?._id;
       // Fetch channel videos
+
+      console.log("Info",channel);
+      
+      
       const videosResponse = await apiClient.get("/videos/search", {
-        params: { channelId: channel._id }
+        params: { userId }
       });
-      const videos = Array.isArray(videosResponse.data.data) ? videosResponse.data.data : [];
+      const data = videosResponse.data.data;
+      const videos = Array.isArray(data) ? data : (data.videos || []);
+
+      console.log("View",videos);
+      
 
       // Calculate analytics
-      const totalViews = videos.reduce((acc: number, v: any) => acc + (v.views || 0), 0);
-      const totalLikes = videos.reduce((acc: number, v: any) => acc + (v.likesCount || 0), 0);
-      const totalComments = videos.reduce((acc: number, v: any) => acc + (v.commentsCount || 0), 0);
+      const totalViews = videos.reduce((acc: number, v: any) => acc + (v?.views || 0), 0);
+      const totalLikes = videos.reduce((acc: number, v: any) => acc + (v?.likesCount || 0), 0);
+      const totalComments = videos.reduce((acc: number, v: any) => acc + (v?.commentsCount || 0), 0);
 
-      // Mock views over time data (in real app, this would come from backend)
-      const viewsOverTime = Array.from({ length: 7 }, (_, i) => ({
-        date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        views: Math.floor(Math.random() * 1000) + 100,
-        engagement: Math.floor(Math.random() * 100) + 20,
-      }));
+      const last7Days = Array.from({
+        length: 7
+      },(_,i)=>{
+        const d = new Date();
+        d.setDate(d.getDate()-i)
+
+        return d.toISOString().split("T")[0];
+      }).reverse();
+
+
+      // Videos published over time (Real Data)
+      const viewsOverTime = last7Days.map(date=>{
+        const count = videos.filter((v:any) => v.createdAt.startsWith(date)).length;
+
+        return {
+          date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          videos: count,
+        }
+      })
 
       // Top videos
       const topVideos = videos
@@ -89,8 +114,8 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
           totalVideos: videos.length,
           totalLikes,
           totalComments,
-          subscribersGained: Math.floor(Math.random() * 100) + 10,
-          avgViewDuration: Math.floor(Math.random() * 300) + 60,
+          subscribersGained: channel.subscribers?.length || 0,
+          // avgViewDuration: 0
         },
         viewsOverTime,
         topVideos,
@@ -115,6 +140,9 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
       </div>
     );
   }
+
+  // console.log("Chdeck", analytics.viewsOverTime);
+  
 
   return (
     <div className="space-y-6">
@@ -182,9 +210,7 @@ export function StudioAnalytics({ channel }: StudioAnalyticsProps) {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {Math.floor(analytics.overview.avgViewDuration / 60)}:{String(analytics.overview.avgViewDuration % 60).padStart(2, '0')}
-            </div>
+            
             <p className="text-xs text-muted-foreground">Minutes per view</p>
           </CardContent>
         </Card>

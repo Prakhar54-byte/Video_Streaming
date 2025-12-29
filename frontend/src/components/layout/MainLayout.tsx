@@ -6,15 +6,15 @@ import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { 
   Home, Video, MessageSquare, Upload,
-  User, Menu, X, LogOut, Bell, Sparkles, History, ThumbsUp 
+  User, Menu, X, Bell, Sparkles, History, ThumbsUp 
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import apiClient from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserAccountMenu } from "./UserAccountMenu";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -142,60 +142,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <div className="mt-auto border-t bg-card/95 backdrop-blur-sm">
           {user && (
             <>
-              {/* User Info */}
-              <div className={cn(
-                "p-4 transition-all duration-200 hover:bg-accent/50",
-                !sidebarOpen && "p-2"
-              )}>
-                <Link href="/profile" className="flex items-center gap-3 group">
-                  <Avatar className="w-10 h-10 ring-2 ring-primary/20 group-hover:ring-primary transition-all">
-                    <AvatarImage src={user.avatar} alt={user.username} />
-                    <AvatarFallback className="bg-gradient-to-br from-orange-500 to-red-500 text-white">
-                      {user.username?.[0]?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  {sidebarOpen && (
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
-                        {user.fullName || user.username}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        @{user.username}
-                      </p>
-                    </div>
-                  )}
-                </Link>
-              </div>
-
-              <Separator />
-
-              {/* Profile & Logout Buttons */}
-              <div className="p-3 space-y-1">
-                <Link href="/profile">
-                  <Button 
-                    variant={pathname === "/profile" ? "default" : "ghost"}
-                    className={cn(
-                      "w-full justify-start text-sm py-5",
-                      pathname === "/profile" && "bg-primary text-primary-foreground",
-                      !sidebarOpen && "justify-center px-0"
-                    )}
-                  >
-                    <User className="w-5 h-5" />
-                    {sidebarOpen && <span className="ml-3 font-medium">Profile</span>}
-                  </Button>
-                </Link>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start text-sm py-5 text-destructive hover:text-destructive hover:bg-destructive/10",
-                    !sidebarOpen && "justify-center px-0"
-                  )}
-                  onClick={handleLogout}
-                >
-                  <LogOut className="w-5 h-5" />
-                  {sidebarOpen && <span className="ml-3 font-medium">Logout</span>}
-                </Button>
-              </div>
+              <UserAccountMenu 
+                user={user} 
+                sidebarOpen={sidebarOpen} 
+                logout={handleLogout} 
+              />
             </>
           )}
         </div>
@@ -210,7 +161,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Floating Upload Button */}
-      {user && (
+      {user && hasChannel && (
         <Link href="/upload">
           <Button
             size="lg"

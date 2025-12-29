@@ -36,8 +36,61 @@ export default function LoginPage() {
 
       const response = await apiClient.post("/users/login", loginData);
 
-      setUser(response.data.data.user);
+      const data = response.data.data;
+      const userData = data.user || data; // Handle potential structure variations
+      
+      // Store tokens in localStorage for seamless switching
+      if (data.accessToken) {
+        localStorage.setItem("accessToken", data.accessToken);
+        
+        // Store tokens in a map for multi-account support
+        try {
+          const accountTokensStr = localStorage.getItem("account_tokens");
+          const accountTokens = accountTokensStr ? JSON.parse(accountTokensStr) : {};
+          accountTokens[userData._id || userData.id] = {
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken
+          };
+          localStorage.setItem("account_tokens", JSON.stringify(accountTokens));
+        } catch (err) {
+          console.error("Failed to save account tokens", err);
+        }
+      }
+
+      setUser(userData);
       setAuthenticated(true);
+
+      // Save to known accounts in localStorage
+      try {
+        const knownAccountsStr = localStorage.getItem("known_accounts");
+        let knownAccounts: any[] = knownAccountsStr ? JSON.parse(knownAccountsStr) : [];
+        
+        const userId = userData._id || userData.id;
+        
+        if (userId) {
+          // Remove existing entry for this user if exists (to update it)
+          knownAccounts = knownAccounts.filter(acc => (acc._id || acc.id) !== userId);
+          
+          // Add current user to the top
+          knownAccounts.unshift({
+            _id: userId,
+            username: userData.username,
+            fullName: userData.fullName,
+            email: userData.email,
+            avatar: userData.avatar
+          });
+          
+          // Limit to last 5 accounts to prevent bloat
+          if (knownAccounts.length > 5) {
+            knownAccounts = knownAccounts.slice(0, 5);
+          }
+          
+          localStorage.setItem("known_accounts", JSON.stringify(knownAccounts));
+        }
+      } catch (err) {
+        console.error("Failed to save known accounts", err);
+      }
+
       toast({ title: "Login successful!" });
       router.push("/");
     } catch (error: any) {

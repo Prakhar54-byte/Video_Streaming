@@ -21,9 +21,30 @@ export default function HomePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <MainLayout>
+        <div className="container mx-auto px-4 py-6">
+          {/* Tabs Skeleton */}
+          <div className="w-full max-w-md mx-auto h-14 mb-8 bg-muted/50 animate-pulse rounded-lg" />
+          
+          {/* Content Skeleton (Grid of videos) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="space-y-3">
+                {/* Thumbnail */}
+                <div className="aspect-video bg-muted/50 animate-pulse rounded-xl" />
+                {/* Meta */}
+                <div className="flex gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted/50 animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 bg-muted/50 animate-pulse rounded" />
+                    <div className="h-3 w-1/2 bg-muted/50 animate-pulse rounded" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </MainLayout>
     );
   }
 

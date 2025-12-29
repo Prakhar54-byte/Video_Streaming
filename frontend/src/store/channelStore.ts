@@ -4,7 +4,11 @@ interface Channel {
   _id: string;
   name: string;
   description: string;
-  owner: string;
+  owner: string | {
+    _id: string;
+    username: string;
+    avatar: string;
+  };
   avatar?: string;
   banner?: string;
   subscribers?: string[];

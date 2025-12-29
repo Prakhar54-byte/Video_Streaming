@@ -94,21 +94,23 @@ export default function ChannelPage() {
 
     try {
       const wasSubscribed = isSubscribed;
-      await apiClient.post(`/subscriptions/c/${params.id}`);
+      const response = await apiClient.post(`/subscriptions/c/${params.id}`);
       
       // Toggle subscription state
       setIsSubscribed(!wasSubscribed);
       
-      // Update count based on previous state
-      setSubscribersCount(prev => wasSubscribed ? prev - 1 : prev + 1);
+      // Update count from backend response
+      if (response.data.data.subscribersCount !== undefined) {
+        setSubscribersCount(response.data.data.subscribersCount);
+      } else {
+        // Fallback to optimistic update
+        setSubscribersCount(prev => wasSubscribed ? prev - 1 : prev + 1);
+      }
       
       toast({
         title: wasSubscribed ? 'Unsubscribed' : 'Subscribed successfully!',
         description: wasSubscribed ? 'Channel removed from subscriptions' : 'Channel added to subscriptions',
       });
-      
-      // Refresh to get accurate count from backend
-      setTimeout(() => checkSubscription(), 500);
     } catch (error) {
       toast({
         title: 'Error',

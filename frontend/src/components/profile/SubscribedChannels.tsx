@@ -42,7 +42,22 @@ export function SubscribedChannels() {
       // Backend returns array of subscription objects with channel details
       // Extract the channel information from the response
       const channelsList = Array.isArray(subscribedData) 
-        ? subscribedData.map((sub: any) => sub.channel || sub.channelDetails || sub)
+        ? subscribedData.map((sub: any) => {
+            const channelData = sub.channel || sub.channelDetails || sub;
+            return {
+              _id: channelData._id,
+              name: channelData.fullName || channelData.username, // Map fullName to name
+              description: channelData.description || "",
+              avatar: channelData.avatar,
+              banner: channelData.coverImage,
+              owner: {
+                _id: channelData._id,
+                username: channelData.username,
+                fullName: channelData.fullName
+              },
+              subscribersCount: channelData.subscribersCount || 0
+            };
+        })
         : [];
       
       setChannels(channelsList);
@@ -95,6 +110,13 @@ export function SubscribedChannels() {
     );
   }
 
+  
+  channels.forEach((c) => {
+    console.log("Check channel has name ", c?.name);
+    console.log("Check channel has", c);
+    console.log("Sub", c.subscribersCount);
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -110,7 +132,7 @@ export function SubscribedChannels() {
                 <Avatar className="w-16 h-16">
                   <AvatarImage src={channel.avatar} alt={channel.name} />
                   <AvatarFallback className="text-lg">
-                    {channel.name[0]?.toUpperCase()}
+                    {channel?.name?.toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
@@ -120,10 +142,10 @@ export function SubscribedChannels() {
                     </h3>
                   </Link>
                   <p className="text-sm text-muted-foreground">
-                    @{channel.owner.username}
+                    @{channel.owner?.username}
                   </p>
                   <Badge variant="secondary" className="text-xs mt-2">
-                    {channel.subscribersCount || 0} subscribers
+                    {channel?.subscribersCount || 0} subscribers
                   </Badge>
                 </div>
               </div>

@@ -23,7 +23,7 @@ import { SubscribedChannels } from "@/components/profile/SubscribedChannels";
 import { ProfileSettings } from "@/components/profile/ProfileSettings";
 import { StudioDashboard } from "@/components/studio/StudioDashboard";
 import { StudioVideos } from "@/components/studio/StudioVideos";
-import { StudioAnalytics } from "@/components/studio/StudioAnalytics";
+import {StudioAnalytics} from "@/components/studio/StudioAnalytics";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -204,6 +204,7 @@ export default function ProfilePage() {
             )}
           </TabsList>
 
+
           {/* Profile Tabs */}
           <TabsContent value="overview" className="space-y-6">
             <ProfileInfo />
@@ -221,6 +222,10 @@ export default function ProfilePage() {
             <ProfileSettings />
           </TabsContent>
 
+          <TabsContent value="settings" className="space-y-6">
+            <ProfileSettings />
+          </TabsContent>
+
           {/* Studio Tabs - Only accessible if user has channel */}
           {hasChannel && (
             <>
@@ -228,7 +233,7 @@ export default function ProfilePage() {
                 <StudioDashboard channel={channels[0]} />
               </TabsContent>
 
-              <TabsContent value="content" className="space-y-6">
+              <TabsContent value="videos" className="space-y-6">
                 <StudioVideos channel={channels[0]} />
               </TabsContent>
 

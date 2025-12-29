@@ -7,6 +7,7 @@ import apiClient from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { Loader2, ThumbsUp } from 'lucide-react';
+import { LikedVideos } from '@/components/profile/LikedVideos';
 
 interface Video {
   _id: string;
@@ -94,11 +95,11 @@ export default function LikedVideosPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {videos.map((video) => (
-              <VideoCard key={video._id} video={video} />
+              <VideoCard key={video?._id} video={video} />
             ))}
           </div>
         )}
-      </div>
+      </div>  
     </MainLayout>
   );
 }

@@ -23,8 +23,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuthStore } from "@/store/authStore";
 import apiClient from "@/lib/api";
 import Link from "next/link";
+import Image from "next/image";
 import { Play, Eye, Clock, Bell } from "lucide-react";
-import { formatViewCount,formatTimeAgo } from "@/lib/utils";
+import { formatViewCount, formatTimeAgo, toBackendAssetUrl } from "@/lib/utils";
 
 interface VideoGridProps {
   subscribedOnly?: boolean;
@@ -38,25 +39,6 @@ export function VideoGrid({ subscribedOnly = false, sortBy = 'recent', channelId
   const [subscribedChannels, setSubscribedChannels] = useState<Set<string>>(new Set());
   const [previousVideoCount, setPreviousVideoCount] = useState(0);
   const { user } = useAuthStore();
-
-  // Build a stable backend origin for serving static assets (thumbnails live on backend public/).
-  const backendOrigin = (() => {
-    const base = (apiClient.defaults.baseURL || '').toString();
-    if (base) return base.replace(/\/api\/v1\/?$/, '');
-    const envBase = (process.env.NEXT_PUBLIC_BACKEND_URL || '').toString();
-    if (envBase) return envBase.replace(/\/api\/v1\/?$/, '');
-    const apiUrl = (process.env.NEXT_PUBLIC_API_URL || '').toString();
-    if (apiUrl) return apiUrl.replace(/\/api\/v1\/?$/, '');
-    return 'http://localhost:8000';
-  })();
-
-  const toBackendAssetUrl = (maybePath?: string) => {
-    if (!maybePath) return '';
-    if (/^https?:\/\//i.test(maybePath)) return maybePath;
-    const normalized = maybePath.replace(/\\/g, '/').replace(/^\//, '');
-    const withoutPublic = normalized.startsWith('public/') ? normalized.slice('public/'.length) : normalized;
-    return `${backendOrigin}/${withoutPublic}`;
-  };
 
   const fetchVideosWithSubscriptions = useCallback(async () => {
     try {
@@ -205,11 +187,12 @@ export function VideoGrid({ subscribedOnly = false, sortBy = 'recent', channelId
                 isSubscribed ? 'ring-2 ring-orange-500 shadow-lg shadow-orange-500/20' : ''
               }`}>
                 {video.thumbnail ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img 
+                  <Image 
                     src={toBackendAssetUrl(video.thumbnail)}
                     alt={video.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-500">

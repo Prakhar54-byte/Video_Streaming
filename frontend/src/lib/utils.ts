@@ -49,13 +49,11 @@ export function getBackendBaseUrl(): string {
   return url.replace(/\/api\/v1\/?$/, '');
 }
 
-export function toBackendAssetUrl(path?: string): string {
-  if (!path) return '';
-  if (/^https?:\/\//i.test(path)) return path;
-  
-  const baseUrl = getBackendBaseUrl();
-  const normalized = path.replace(/\\/g, '/').replace(/^\//, '');
-  const cleanPath = normalized.startsWith('public/') ? normalized.slice('public/'.length) : normalized;
-  
-  return `${baseUrl}/${cleanPath}`;
+export function toBackendAssetUrl(maybePath?: string): string {
+  if (!maybePath) return '';
+  if (/^https?:\/\//i.test(maybePath)) return maybePath;
+  const backendOrigin = getBackendBaseUrl();
+  const normalized = maybePath.replace(/\\/g, '/').replace(/^\//, '');
+  const withoutPublic = normalized.startsWith('public/') ? normalized.slice('public/'.length) : normalized;
+  return `${backendOrigin}/${withoutPublic}`;
 }
