@@ -38,7 +38,9 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
     font-size: 16px;
   }
   h1 {
@@ -79,7 +81,8 @@
 
 /* Loading animation */
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -93,7 +96,7 @@
 
 /* Modern Video Player Styles */
 .video-js .vjs-control-bar {
-  background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0));
   height: 5rem;
   padding-bottom: 1rem;
   display: flex;
