@@ -24,6 +24,7 @@ interface Video {
     fullName: string;
     avatar: string;
   };
+  processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
 }
 
 interface VideoCardProps {
@@ -52,64 +53,71 @@ const backendOrigin = (() => {
   
 
 export function VideoCard({ video }: VideoCardProps) {
-
-
   const duration = Math.floor(video?.duration);
   const min = Math.floor(duration/60);
   const seconds = duration % 60;
   
   return (
     <Link href={`/video/${video._id}`}>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-        {/* Thumbnail */}
-        <div className="relative aspect-video bg-muted">
+      <div className="group relative flex flex-col gap-3 cursor-pointer">
+        {/* Thumbnail Container */}
+        <div className="relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
           {video?.thumbnail && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={toBackendAssetUrl(video?.thumbnail)}  
               alt={video.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           )}
-          <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
+          
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          {/* Processing Overlay */}
+          {video.processingStatus === 'processing' && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-10">
+              <div className="flex flex-col items-center gap-2">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                <span className="text-white text-xs font-medium">Processing...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Duration Badge */}
+          <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white text-[10px] font-medium px-1.5 py-0.5 rounded-md">
             {min}:{String(seconds).padStart(2, '0')}
           </div>
+
           {!video.isPublished && (
-            <Badge className="absolute top-2 right-2" variant="secondary">
+            <Badge className="absolute top-2 right-2 bg-yellow-500/90 hover:bg-yellow-500 text-black border-none backdrop-blur-sm">
               Draft
             </Badge>
           )}
         </div>
 
-        <CardContent className="p-4">
-          <div className="flex gap-3">
-            <Avatar className="w-10 h-10 flex-shrink-0">
-              <AvatarImage src={video.owner?.avatar} alt={video.owner?.fullName} />
-              <AvatarFallback>{video.owner?.fullName[0]}</AvatarFallback>
-            </Avatar>
+        {/* Info Section */}
+        <div className="flex gap-3 px-1">
+          <Avatar className="w-9 h-9 flex-shrink-0 border border-white/10">
+            <AvatarImage src={video.owner?.avatar} alt={video.owner?.fullName} />
+            <AvatarFallback>{video.owner?.fullName[0]}</AvatarFallback>
+          </Avatar>
 
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold line-clamp-2 text-sm mb-1">
-                {video?.title}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {video.owner?.fullName}
-              </p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                <span className="flex items-center gap-1">
-                  <Eye className="w-3 h-3" />
-                  {formatViewCount(video?.views)}
-                </span>
-                <span>•</span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {formatTimeAgo(video?.createdAt)}
-                </span>
+          <div className="flex-1 min-w-0 flex flex-col gap-1">
+            <h3 className="font-semibold leading-tight line-clamp-2 text-sm group-hover:text-primary transition-colors">
+              {video?.title}
+            </h3>
+            <div className="text-xs text-muted-foreground flex flex-col">
+              <span className="hover:text-foreground transition-colors">{video.owner?.fullName}</span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span>{formatViewCount(video?.views)} views</span>
+                <span className="text-[10px]">•</span>
+                <span>{formatTimeAgo(video?.createdAt)}</span>
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   );
 }

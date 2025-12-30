@@ -332,6 +332,12 @@ const handleSubscribe = async () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Video Section */}
           <div className="lg:col-span-2 space-y-6">
+            {video.processingStatus === 'processing' && (
+               <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 px-4 py-2 rounded-lg flex items-center gap-2">
+                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                 <span className="text-sm">Video is currently processing. Quality might be limited.</span>
+               </div>
+            )}
             {/* Video Player */}
             <div className="bg-black rounded-xl overflow-hidden aspect-video">
               {(video.videoFile || video.hlsMasterPlaylist) ? (

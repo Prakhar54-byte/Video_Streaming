@@ -54,6 +54,7 @@ interface VideoItem {
   views: number;
   isPublished: boolean;
   createdAt: string;
+  processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
 }
 
 export function StudioVideos({ channel }: StudioVideosProps) {
@@ -214,6 +215,11 @@ export function StudioVideos({ channel }: StudioVideosProps) {
                     <div className="flex items-start gap-6">
                       {/* Thumbnail */}
                       <div className="relative w-40 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        {video.processingStatus === 'processing' && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-10">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                          </div>
+                        )}
                         {video.thumbnail && (
                           <img
                             src={video.thumbnail.replace('/public', '')}
@@ -248,6 +254,12 @@ export function StudioVideos({ channel }: StudioVideosProps) {
 
                           {/* Status and Actions */}
                           <div className="flex items-center gap-2">
+                            {video.processingStatus === 'processing' && (
+                                <Badge variant="outline" className="gap-1 border-yellow-500 text-yellow-500">
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
+                                    Processing
+                                </Badge>
+                            )}
                             <Badge
                               variant={video.isPublished ? "default" : "secondary"}
                               className="gap-1"

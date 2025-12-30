@@ -13,6 +13,7 @@ interface Video {
   };
   createdAt: string;
   previewAnimationUrl?: string; // Added for animated WebP previews
+  processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
 }
 
 interface VideoGridProps {
@@ -186,6 +187,14 @@ export function VideoGrid({ subscribedOnly = false, sortBy = 'recent', channelId
               <div className={`relative aspect-video bg-muted rounded-lg overflow-hidden ${
                 isSubscribed ? 'ring-2 ring-orange-500 shadow-lg shadow-orange-500/20' : ''
               }`}>
+                {video.processingStatus === 'processing' && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-10">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                      <span className="text-white text-xs font-medium">Processing...</span>
+                    </div>
+                  </div>
+                )}
                 {video.thumbnail ? (
                   <Image 
                     src={toBackendAssetUrl(video.thumbnail)}

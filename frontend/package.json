@@ -46,6 +46,8 @@
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.171.0",
     "video.js": "^8.12.0",
+    "videojs-contrib-quality-levels": "^4.1.0",
+    "videojs-hls-quality-selector": "^2.0.0",
     "zustand": "^5.0.2"
   },
   "devDependencies": {

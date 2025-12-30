@@ -144,8 +144,8 @@ export default function UploadPage() {
       console.log('Upload successful:', response.data);
 
       toast({
-        title: 'Upload Complete! 🎉',
-        description: 'Your video is now live and visible on your channel.',
+        title: 'Upload Successful! 🚀',
+        description: 'Your video has been uploaded and is currently processing. It will be available shortly.',
       });
 
       // Clear form

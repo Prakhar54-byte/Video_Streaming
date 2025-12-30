@@ -50,6 +50,7 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
     const initialType = getVideoType(src);
     console.log('[VideoJS] Init with URL:', src);
     console.log('[VideoJS] Type:', initialType);
+    console.log('[VideoJS] Skip Intro Config:', JSON.stringify({ introStartTime, introEndTime }));
 
     let player: any;
     try {
@@ -65,6 +66,12 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
         fill: true,
         preload: 'auto',
         poster: poster,
+        playbackRates: [0.5, 1, 1.25, 1.5, 2],
+        controlBar: {
+          volumePanel: {
+            inline: false
+          }
+        },
         html5: {
           vhs: {
             overrideNative: true,
@@ -145,12 +152,12 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
   };
 
   return (
-    <div ref={containerRef} data-vjs-player className="relative w-full h-full bg-black rounded-xl overflow-hidden aspect-video">
+    <div ref={containerRef} data-vjs-player className="relative w-full h-full bg-black rounded-xl overflow-hidden aspect-video shadow-2xl ring-1 ring-white/10">
       {/* Video element will be injected here */}
       {showSkipIntro && (
         <button
           onClick={handleSkipIntro}
-          className="absolute bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg z-10"
+          className="absolute bottom-24 right-6 z-50 skip-intro-btn"
         >
           Skip Intro
         </button>
