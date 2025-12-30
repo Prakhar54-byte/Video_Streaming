@@ -1,0 +1,27 @@
+services:
+  backends:
+    image: backends
+    build:
+      context: ./BACKEND
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      KAFKAJS_NO_PARTITIONER_WARNING: 1
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      MONGODB_URL: ${MONGODB_URL}
+      PORT: 8000
+    depends_on:
+      - redis
+    network_mode: "host"
+
+  redis:
+    image: redis:alpine
+    network_mode: "host"
+
+  mongo:
+    image: mongo
+    network_mode: "host"
