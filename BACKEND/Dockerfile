@@ -1,7 +1,8 @@
 FROM node:lts-alpine
 ENV NODE_ENV=production
 WORKDIR /usr/src/app
-RUN apk add --no-cache ffmpeg
+# Install ffmpeg and python3 for video processing and ML scripts
+RUN apk add --no-cache ffmpeg python3
 COPY ["package.json", "package-lock.json*", "npm-shrinkwrap.json*", "./"]
 RUN npm install --production --silent && mv node_modules ../
 COPY . .
