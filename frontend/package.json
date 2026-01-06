@@ -35,7 +35,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^11.18.2",
     "hls.js": "^1.5.8",
-    "lucide-react": "^0.468.0",
+    "lucide-react": "^0.561.0",
     "next": "^15.5.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
