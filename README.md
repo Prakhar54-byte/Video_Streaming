@@ -12,24 +12,21 @@ A full-stack video streaming platform built with MERN stack (MongoDB, Express, R
 
 ```
 Video_Streaming/
-├── BACKEND/
-│ ├── src/
-│ │ ├── config/ # DB & cloud configurations
-│ │ ├── controllers/ # Business logic
-│ │ ├── models/ # MongoDB schemas
-│ │ ├── routes/ # API endpoints
-│ │ ├── middleware/ # Auth & validation
-│ │ └── utils/ # FFmpeg helpers, file processors
-├── FRONTEND/
-│ ├── public/
-│ ├── src/
-│ │ ├── components/ # React UI components
-│ │ ├── context/ # State management
-│ │ ├── hooks/ # Custom hooks
-│ │ ├── pages/ # Next.js routing
-│ │ └── styles/ # SCSS modules
-├── infrastructure/ # Docker, Nginx configs
-└── scripts/ # FFmpeg conversion scripts
+├── BACKEND/                # Node.js/Express Backend server
+│   ├── ingestion/          # Kafka producers, Webhook handlers, WASM preprocessors
+│   ├── src/                # API routes, controllers, services
+│   └── Dockerfile
+├── frontend/               # Next.js/React Frontend application
+├── processing/             # Video Processing Pipeline (Python)
+│   ├── anomaly-detection/  # Real-time inference models
+│   ├── flink-jobs/         # Apache Flink stream processing
+│   └── intro-detection/    # Video content analysis
+├── monitoring/             # System monitoring infra
+├── computation/            # Compute resource management
+├── serving/                # Content delivery services
+├── storage/                # Storage management
+├── docker-compose-BACKEND.yml
+└── docker-compose-FRONTEND.yml
 ```
 
 ## 🚀 Quick Start
@@ -43,7 +40,7 @@ npm install
 npm run dev
 
 # Frontend setup
-cd ../FRONTEND
+cd ../frontend
 npm install
 npm run dev
 
