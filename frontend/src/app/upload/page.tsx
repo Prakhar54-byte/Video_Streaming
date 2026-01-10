@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Video, Image as ImageIcon, X, CheckCircle, Sparkles } from 'lucide-react';
+import { Upload, Video, Image as ImageIcon, X, CheckCircle, Sparkles, Globe, Lock } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import apiClient from '@/lib/api';
 import { ThumbnailGeneratorModal } from '@/components/video/ThumbnailGeneratorModal';
@@ -52,11 +54,13 @@ export default function UploadPage() {
     description: string;
     videoFile: File | null;
     thumbnail: File | null;
+    isDraft: boolean;
   }>({
     title: '',
     description: '',
     videoFile: null,
     thumbnail: null,
+    isDraft: false, // Default to false (publish immediately)
   });
   
   const [previews, setPreviews] = useState<{
@@ -120,6 +124,7 @@ export default function UploadPage() {
       formDataToSend.append('description', formData.description);
       formDataToSend.append('videoFile', formData.videoFile);
       formDataToSend.append('thumbnail', formData.thumbnail);
+      formDataToSend.append('isPublished', String(!formData.isDraft)); // isDraft=true means isPublished=false
 
       console.log('Uploading to:', apiClient.defaults.baseURL + '/videos');
       console.log('Form data:', {
@@ -127,6 +132,7 @@ export default function UploadPage() {
         description: formData.description,
         videoFileName: formData.videoFile.name,
         thumbnailName: formData.thumbnail.name,
+        isDraft: formData.isDraft,
       });
 
       const response = await apiClient.post('/videos', formDataToSend, {
@@ -154,6 +160,7 @@ export default function UploadPage() {
         description: '',
         videoFile: null,
         thumbnail: null,
+        isDraft: false,
       });
       setPreviews({ video: '', thumbnail: '' });
 
@@ -328,6 +335,33 @@ export default function UploadPage() {
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 className="w-full py-4 px-4 text-base bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary min-h-[150px] resize-none"
                 placeholder="Tell viewers about your video"
+                disabled={isUploading}
+              />
+            </div>
+
+            {/* Publish/Draft Toggle */}
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
+              <div className="flex items-center gap-3">
+                {formData.isDraft ? (
+                  <Lock className="w-5 h-5 text-muted-foreground" />
+                ) : (
+                  <Globe className="w-5 h-5 text-green-500" />
+                )}
+                <div>
+                  <Label htmlFor="draft-toggle" className="text-base font-semibold cursor-pointer">
+                    {formData.isDraft ? 'Save as Draft' : 'Publish Immediately'}
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {formData.isDraft 
+                      ? 'Video will be saved as private draft. You can publish it later.'
+                      : 'Video will be publicly visible after processing.'}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="draft-toggle"
+                checked={formData.isDraft}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isDraft: checked }))}
                 disabled={isUploading}
               />
             </div>

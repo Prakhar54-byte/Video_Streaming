@@ -23,7 +23,7 @@ app.use(cors({
     origin:  "http://localhost:3000" ,  // Ensure CORS Origin is correct
     credentials: true, 
     allowedHeaders: ['Content-Type', 'Authorization','x-access-token', 'Range'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     exposedHeaders:['x-access-token', 'Content-Type', 'Authorization', 'Content-Range', 'Accept-Ranges', 'Content-Length']
 }));
 
@@ -140,6 +140,10 @@ app.use("/api/v1/tweets", tweetRouter);
 // Playlist routes
 import playlistRouter from "./routers/playlist.routes.js";  
 app.use("/api/v1/playlists", playlistRouter);
+
+// Queue routes
+import queueRouter from "./routers/queue.routes.js";  
+app.use("/api/v1/queue", queueRouter);
 
 // Video routes
 import videoRouter from "./routers/video.routes.js";

@@ -347,7 +347,7 @@ const loggedOut = asyncHandler(async (req, res) => {
 const refreshAccessToken = asyncHandler(async (req, res) => {
   try {
     const incomingrefreshToken =
-      req.cookies.refreshToken || req.body.refreshToken;
+      req.body.refreshToken || req.cookies.refreshToken;
 
     if (!incomingrefreshToken) {
       throw new ApiError(401, "Token is taken");
@@ -356,8 +356,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       incomingrefreshToken,
       process.env.REFRESH_TOKEN_SECRET
     );
-    console.log("Decoded Token:", decodedToken);
-    
 
     const user = await User.findById(decodedToken?._id);
     if (!user) {
@@ -370,7 +368,11 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
     const options = {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      domain: "localhost", // Match login cookie domain
+      path: "/",
     };
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
@@ -389,7 +391,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         )
       );
   } catch (error) {
-    throw new ApiError(400, error?.message || "Some error");
+    throw new ApiError(400, error?.message || "Some error refreshAccessToken");
   }
 });
 

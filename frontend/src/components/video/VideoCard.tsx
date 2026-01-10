@@ -4,10 +4,23 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Clock } from "lucide-react";
+import { Eye, Clock, MoreVertical, ListPlus, Radio, ListVideo } from "lucide-react";
 import { formatViewCount, formatTimeAgo } from "@/lib/utils";
 import apiClient from "@/lib/api";
 import video from "video.js";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { useQueueStore } from "@/store/queueStore";
+import { toast } from "sonner";
+import { useState } from "react";
+import { AddToPlaylistModal } from "../playlist/AddToPlaylistModal";
+import { useAuthStore } from "@/store/authStore";
 
 interface Video {
   _id: string;
@@ -29,6 +42,8 @@ interface Video {
 
 interface VideoCardProps {
   video: Video;
+  isAboveFold?: boolean; // Prop to hints LCP optimization (omitted implementation for brevity)
+  isSubscribed?: boolean; // Optional prop if needed
 }
 
 const backendOrigin = (() => {
@@ -57,11 +72,35 @@ export function VideoCard({ video }: VideoCardProps) {
   const min = Math.floor(duration/60);
   const seconds = duration % 60;
   
+  const { addToQueue } = useQueueStore();
+  const { isAuthenticated } = useAuthStore();
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+
+  const handleAddToQueue = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) return toast.error("Login required");
+    addToQueue(video._id);
+    toast.success("Added to queue");
+  };
+
+  const handleAddToPlaylist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) return toast.error("Login required");
+    setShowPlaylistModal(true);
+  };
+
   return (
-    <Link href={`/video/${video._id}`}>
-      <div className="group relative flex flex-col gap-3 cursor-pointer">
+    <>
+    <AddToPlaylistModal 
+        videoId={video._id} 
+        isOpen={showPlaylistModal} 
+        onClose={() => setShowPlaylistModal(false)} 
+    />
+    <div className="group flex flex-col gap-3">
         {/* Thumbnail Container */}
-        <div className="relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
+        <Link href={`/video/${video._id}`} className="block relative aspect-video rounded-xl overflow-hidden bg-muted shadow-sm transition-all duration-300 group-hover:shadow-md group-hover:ring-2 group-hover:ring-primary/20">
           {video?.thumbnail && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -94,19 +133,21 @@ export function VideoCard({ video }: VideoCardProps) {
               Draft
             </Badge>
           )}
-        </div>
+        </Link>
 
         {/* Info Section */}
-        <div className="flex gap-3 px-1">
+        <div className="flex gap-3 px-1 items-start">
           <Avatar className="w-9 h-9 flex-shrink-0 border border-white/10">
             <AvatarImage src={video.owner?.avatar} alt={video.owner?.fullName} />
             <AvatarFallback>{video.owner?.fullName[0]}</AvatarFallback>
           </Avatar>
 
           <div className="flex-1 min-w-0 flex flex-col gap-1">
-            <h3 className="font-semibold leading-tight line-clamp-2 text-sm group-hover:text-primary transition-colors">
-              {video?.title}
-            </h3>
+            <Link href={`/video/${video._id}`}>
+                <h3 className="font-semibold leading-tight line-clamp-2 text-sm group-hover:text-primary transition-colors">
+                {video?.title}
+                </h3>
+            </Link>
             <div className="text-xs text-muted-foreground flex flex-col">
               <span className="hover:text-foreground transition-colors">{video.owner?.fullName}</span>
               <div className="flex items-center gap-1 mt-0.5">
@@ -116,8 +157,26 @@ export function VideoCard({ video }: VideoCardProps) {
               </div>
             </div>
           </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">Menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleAddToQueue}>
+                  <ListPlus className="mr-2 h-4 w-4" /> Add to queue
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleAddToPlaylist}>
+                  <ListVideo className="mr-2 h-4 w-4" /> Save to playlist
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
         </div>
       </div>
-    </Link>
+    </>
   );
 }

@@ -6,7 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { 
   Home, Video, MessageSquare, Upload,
-  User, Menu, X, Bell, Sparkles, History, ThumbsUp 
+  User, Menu, X, Bell, Sparkles, History, ThumbsUp, ListVideo 
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -59,6 +59,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { href: "/videos", icon: Video, label: "Videos" },
     { href: "/subscribed", icon: Bell, label: "Subscribed" },
     { href: "/liked", icon: ThumbsUp, label: "Liked Videos" },
+    { href: "/playlists", icon: ListVideo, label: "Playlists" }, // Added Playlists
     { href: "/history", icon: History, label: "History" },
     { href: "/messages", icon: MessageSquare, label: "Messages" },
   ];

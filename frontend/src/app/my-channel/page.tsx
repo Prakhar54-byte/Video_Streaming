@@ -284,16 +284,20 @@ export default function MyChannel() {
   };
 
   const handleTogglePublish = async (video: Video) => {
+    console.log("[Toggle] Starting toggle for video:", video._id);
     try {
-      await apiClient.patch(`/videos/toggle/publish/${video._id}`);
+      const res = await apiClient.patch(`/videos/toggle/publish/${video._id}`);
+      console.log("[Toggle] Response:", video._id, res.data);
+      
       toast({
         title: video.isPublished ? "Video unpublished" : "Video published",
       });
       fetchMyVideos();
-    } catch (error) {
+    } catch (error: any) {
+      console.error("[Toggle] Error:", error.response?.data || error.message);
       toast({
         title: "Error",
-        description: "Failed to toggle publish status",
+        description: error.response?.data?.message || "Failed to toggle publish status",
         variant: "destructive",
       });
     }
@@ -485,6 +489,7 @@ export default function MyChannel() {
                             }
                             alt={video?.title || "Video thumbnail"}
                             fill
+                            sizes="(max-width: 768px) 100vw, 256px"
                             className="object-cover rounded-lg"
                           />
                           <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded text-xs text-white">

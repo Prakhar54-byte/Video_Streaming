@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import apiClient from "@/lib/api";
 import { toast } from "sonner";
-import { formatViewCount, formatTimeAgo } from "@/lib/utils";
+import { formatViewCount, formatTimeAgo, toBackendAssetUrl } from "@/lib/utils";
 
 interface Channel {
   _id: string;
@@ -222,13 +222,13 @@ export function StudioVideos({ channel }: StudioVideosProps) {
                         )}
                         {video.thumbnail && (
                           <img
-                            src={video.thumbnail.replace('/public', '')}
+                            src={toBackendAssetUrl(video.thumbnail)}
                             alt={video.title}
                             className="w-full h-full object-cover"
                           />
                         )}
                         <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
-                          {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
+                          {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
                         </div>
                       </div>
 

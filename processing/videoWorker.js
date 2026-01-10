@@ -9,6 +9,10 @@ import ffmpeg from 'fluent-ffmpeg';
 import fs from "fs-extra"; // Using fs-extra for recursive directory operations
 import path from "path";
 import { fileURLToPath } from "url";
+import {exec} from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
 
 // ES module __dirname workaround
 const __filename = fileURLToPath(import.meta.url);
@@ -22,24 +26,63 @@ const generateHLS = (filePath, outputDir) => {
     const watermarkPath = path.join(projectRoot, 'BACKEND', 'public', 'watermark.svg');
     
     return new Promise((resolve, reject) => {
-        ffmpeg(filePath)
-            .input(watermarkPath)
+        const command = ffmpeg(filePath)
+            .output(path.join(outputDir,'720p.m3u8'))
             .outputOptions([
-                '-c:v libx264',
-                '-c:a aac',
+                '-map 0:v:0','-map 0:a:0',
+                '-vf scale=-2:720',
+                '-c:v libx264','-b:v 2500k','-maxrate 2675k','-bufsize 3750k',
+                '-c:a aac','-b:a 128k',
                 '-preset veryfast',
-                '-start_number 0',
                 '-hls_time 10',
-                '-hls_list_size 0',
-                '-f hls'
+                '-hls_playlist_type vod',
+                '-hls_segment_filename', path.join(outputDir, '720p_%03d.ts'),
             ])
-            .complexFilter('[1:v]scale=150:-1[wm];[0:v][wm]overlay=W-w-10:H-h-10')
-            .output(path.join(outputDir, 'playlist.m3u8'))
-            .on('end', () => resolve("HLS generation completed."))
-            .on('error', (err) => reject(new ApiError(500, `HLS generation failed: ${err.message}`)))
-            .run();
-    });
-};
+            //480p Stream
+            .output(path.join(outputDir,'480p.m3u8'))
+            .outputOptions([
+                '-map 0:v:0','-map 0:a:0',
+                '-vf scale=-2:480',
+                '-c:v libx264','-b:v 1000k','-maxrate 1075k','-bufsize 1500k',
+                '-c:a aac','-b:a 96k',
+                '-preset veryfast',
+                '-hls_time 10',
+                '-hls_playlist_type vod',
+                '-hls_segment_filename', path.join(outputDir, '480p_%03d.ts'),
+            ])
+            //360p Stream
+            .output(path.join(outputDir,'360p.m3u8'))
+            .outputOptions([
+                '-map 0:v:0','-map 0:a:0',
+                '-vf scale=-2:360',
+                '-c:v libx264','-b:v 600k','-maxrate 645k','-bufsize 900k',
+                '-c:a aac','-b:a 64k',
+                '-preset veryfast',
+                '-hls_time 10',
+                '-hls_playlist_type vod',
+                '-hls_segment_filename', path.join(outputDir, '360p_%03d.ts'),
+            ])
+            .on('end',async()=>{
+                const masterPlaylist = `#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-STREAM-INF:BANDWIDTH=2800000,RESOLUTION=1280x720
+720p.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=1200000,RESOLUTION=854x480
+480p.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=700000,RESOLUTION=640x360
+360p.m3u8`;
+                try {
+                    await fs.watchFile(path.join(outputDir, 'master.m3u8'), masterPlaylist);
+                    resolve("HLS generation completed.");
+                } catch (e) {
+                    reject(e);
+                }
+            })
+            .on('error',(err)=>reject(new ApiError(500,`HLS generation failed: ${err.message}`)))
+        
+            command.run();
+        })
+}
 
 
 const uploadHLSFiles = async (hlsDir, videoId) => {
@@ -56,6 +99,9 @@ const uploadHLSFiles = async (hlsDir, videoId) => {
     const masterPlaylistUrl = results.find(res => res.public_id.endsWith('playlist'))?.secure_url;
 
     if (!masterPlaylistUrl) {
+        console.warn("Master playlist URL not found in upload results:", results);
+        const anyPlaylist = results.find(res=> res.secure_url.endsWith('.m3u8'))?.secure_url;
+        if(anyPlaylist) return anyPlaylist;
         throw new ApiError(500, "Master playlist URL not found after upload.");
     }
     
@@ -148,23 +194,30 @@ const generateSpriteSheetAndVtt = (filePath, outputDir, duration) => {
 };
 
 
-const detectIntro = (filePath, outputTxtPath) => {
-    return new Promise((resolve, reject) => {
-        ffmpeg(filePath)
-            .outputOptions([
-                '-filter_complex', 'select=\'gt(scene,0.4)\',metadata=print:file=-',
-                '-f', 'null'
-            ])
-            .on('end', () => resolve("Scene detection completed."))
-            .on('error', (err) => reject(new ApiError(500, `Scene detection failed: ${err.message}`)))
-            .on('data', (chunk) => {
-                // This is a workaround to capture the metadata output directly
-                // since writing to a file with fluent-ffmpeg can be tricky with this filter.
-                fs.appendFileSync(outputTxtPath, chunk.toString());
-            })
-            .run();
-    });
-};
+const detectIntroML = async (filePath)=>{
+    try {
+        const pythonScript = path.join(projectRoot,'processing','intro-detection','detect_intro.py');
+        console.log(`Running inteo detection ML on ${filePath}..`);
+        const { stdout } = await execAsync(`python3 "${pythonScript}" "${filePath}"`);
+
+        const jsonMatch = stdout.match(/\{.*\}/s);
+        const result = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
+
+        if(result && result.introStartTime !== undefined && result.introEndTime !== undefined){
+            console.log("Intro Found",result);
+            return {
+                introStartTime: Math.floor(result.introStartTime),
+                introEndTime: Math.floor(result.introEndTime)
+            };
+        } 
+        return null
+        
+    } catch (e) {
+        console.error("ML Intro detection failed",e);
+        return null;
+    }
+}
+
 
 const parseIntroTimestamps = async (filePath) => {
     const content = await fs.readFile(filePath, 'utf-8');
@@ -199,7 +252,6 @@ const processVideo = async () => {
     let webpTempPath = null;
     let waveformTempPath = null;
     let spriteSheetDir = null;
-    let sceneChangesPath = null;
 
     try {
         console.log("Searching for a video to process...");

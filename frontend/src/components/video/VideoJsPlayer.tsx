@@ -1,8 +1,12 @@
 "use client";
 
+import { get } from 'http';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import videojs from 'video.js';
+import { set } from 'video.js/dist/types/tech/middleware';
 import 'video.js/dist/video-js.css'; // Import Video.js CSS
+import 'videojs-contrib-quality-levels';
+import 'videojs-hls-quality-selector'
 
 // Handle ESM/CJS interop differences safely.
 const videojsLib: any = (videojs as any)?.default ?? (videojs as any);
@@ -15,12 +19,15 @@ interface VideoJsPlayerProps {
   spriteSheetVttUrl?: string; // New prop for VTT thumbnails
   introStartTime?: number; // New prop for skip intro
   introEndTime?: number; // New prop for skip intro
+  onEnded?:() => void;
 }
 
-export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, spriteSheetVttUrl, introStartTime, introEndTime }: VideoJsPlayerProps) {
+export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, spriteSheetVttUrl, introStartTime, introEndTime, onEnded }: VideoJsPlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null); // video.js player instance
   const [showSkipIntro, setShowSkipIntro] = useState(false);
+  const [isPrivacyProtected,setIsPrivacyProtected] = useState(false);
+  const [showEndScreemn,setShowEndScreen] = useState(false);
   const didFallbackRef = useRef(false);
 
   const getVideoType = useCallback((url: string) => {
@@ -29,6 +36,33 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
     if (url.includes('.webm')) return 'video/webm';
     return 'video/mp4';
   }, []);
+
+  useEffect(()=>{
+
+    const handleVisibilityChange=()=>{
+      if(document.hidden){
+        setIsPrivacyProtected(true);
+        if(playerRef.current && !playerRef.current.paused()){
+          playerRef.current.pause();
+        }
+      }else{
+        setIsPrivacyProtected(false);
+      }
+    }
+
+    const handleBlur = () => setIsPrivacyProtected(true);
+    const handelFocus = () => setIsPrivacyProtected(false);
+
+    document.addEventListener('visibilitychange',handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+    window.addEventListener('focus', handelFocus);
+
+    return ()=>{
+      document.removeEventListener('visibilitychange',handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+      window.removeEventListener('focus', handelFocus);
+    }
+  },[])
 
   useEffect(() => {
     const container = containerRef.current;
@@ -84,8 +118,21 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
       }));
 
       player.ready(() => {
-        console.log('[VideoJS] Player ready, tech:', player.tech({ IWillNotUseThisInPlugins: true })?.name);
+        console.log('[VideoJS] Player ready, tech:')
+        if ((player as any).hlsQualitySelector){
+            (player as any).hlsQualitySelector({
+              displayCurrentQuality: true,
+            })
+          }
+
       });
+
+      player.on('encoded',()=>{
+        setShowEndScreen(true);
+        if(onEnded)onEnded();
+      })
+
+      player.on('play',()=>setShowEndScreen(false));
 
       player.on('error', () => {
         const err = player.error();
@@ -142,7 +189,7 @@ export function VideoJsPlayer({ src, fallbackSrc, poster, autoPlay = true, sprit
         playerRef.current = null;
       }
     };
-  }, [src, fallbackSrc, poster, autoPlay, spriteSheetVttUrl, introStartTime, introEndTime, getVideoType]);
+  }, [src, fallbackSrc, poster, autoPlay, spriteSheetVttUrl, introStartTime, introEndTime, getVideoType,onEnded]);
 
   const handleSkipIntro = () => {
     if (playerRef.current && introEndTime !== undefined) {

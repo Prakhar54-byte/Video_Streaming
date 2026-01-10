@@ -15,8 +15,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      console.log("[AuthProvider] Checking authentication...");
       try {
         const response = await apiClient.get("/users/current-user");
+        console.log("[AuthProvider] Auth check successful for user:", response.data.data.username);
         setUser(response.data.data);
         setAuthenticated(true);
       } catch (error) {

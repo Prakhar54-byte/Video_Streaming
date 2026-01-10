@@ -25,7 +25,7 @@ export default function LoginPage() {
     try {
       // Determine if identifier is email or username
 
-      console.log("This dumb fuck has identifier lets see what info it has in identifier",identifier);
+      console.log("[Login] Starting login for:", identifier);
       
       const isEmail = identifier.includes('@');
       const loginData = isEmail 
@@ -34,24 +34,54 @@ export default function LoginPage() {
 
       console.log("Sending login data:", { ...loginData, password: "***" });
 
-      const response = await apiClient.post("/users/login", loginData);
+      // Use axios directly to bypass any interceptors that might interfere
+      const axios = (await import('axios')).default;
+      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api/v1';
+      
+      const response = await axios.post(`${BACKEND_URL}/users/login`, loginData, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' }
+      });
 
       const data = response.data.data;
       const userData = data.user || data; // Handle potential structure variations
       
-      // Store tokens in localStorage for seamless switching
+      // Verify the token matches the user we're logging in as
+      const userId = userData._id || userData.id;
+      
       if (data.accessToken) {
+        // Decode and verify the token belongs to the correct user
+        try {
+          const payloadPart = data.accessToken.split('.')[1];
+          const decoded = JSON.parse(atob(payloadPart));
+          console.log("[Login] Token user ID:", decoded._id, "Expected:", userId);
+          
+          if (decoded._id !== userId) {
+            console.error("[Login] TOKEN MISMATCH! Backend returned wrong token!");
+            toast({ title: "Login error - please try again", variant: "destructive" });
+            setLoading(false);
+            return;
+          }
+        } catch (decodeErr) {
+          console.error("[Login] Could not verify token:", decodeErr);
+        }
+        
+        console.log("[Login] Storing verified tokens for user:", userData.username, userId);
         localStorage.setItem("accessToken", data.accessToken);
+        if (data.refreshToken) {
+            localStorage.setItem("refreshToken", data.refreshToken);
+        }
         
         // Store tokens in a map for multi-account support
         try {
           const accountTokensStr = localStorage.getItem("account_tokens");
           const accountTokens = accountTokensStr ? JSON.parse(accountTokensStr) : {};
-          accountTokens[userData._id || userData.id] = {
+          accountTokens[userId] = {
             accessToken: data.accessToken,
             refreshToken: data.refreshToken
           };
           localStorage.setItem("account_tokens", JSON.stringify(accountTokens));
+          console.log("[Login] Updated account_tokens for:", userId);
         } catch (err) {
           console.error("Failed to save account tokens", err);
         }

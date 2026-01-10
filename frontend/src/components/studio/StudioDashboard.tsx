@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import apiClient from "@/lib/api";
 import { toast } from "sonner";
+import { toBackendAssetUrl } from "@/lib/utils";
 
 interface Channel {
   _id: string;
@@ -186,7 +187,7 @@ export function StudioDashboard({ channel }: StudioDashboardProps) {
                   <div className="relative w-32 h-20 rounded-md overflow-hidden bg-muted">
                     {video.thumbnail && (
                       <img
-                        src={video.thumbnail.replace('/public', '')}
+                        src={toBackendAssetUrl(video.thumbnail)}
                         alt={video.title}
                         className="w-full h-full object-cover"
                       />

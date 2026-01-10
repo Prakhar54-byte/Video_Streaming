@@ -154,6 +154,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     views:1,
                     duration:1,
                     createdAt:1,
+                    isPublished:1,
+                    processingStatus:1,
                     likesCount: 1,
                     commentsCount: 1,
                     owner:{
@@ -194,7 +196,10 @@ import { addVideoToQueue } from "../queues/videoProcessing.queue.js";
 import { log } from "console"
 
 const publishAVideo = asyncHandler(async (req, res) => {
-    const { title, description } = req.body;
+    const { title, description, isPublished } = req.body;
+    
+    // Parse isPublished - default to true (published) if not specified
+    const shouldPublish = isPublished === undefined ? true : (isPublished === 'true' || isPublished === true);
 
     if (!title || !description) {
         throw new ApiError(400, "Title and description are required.");
@@ -222,7 +227,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
         owner: req.user._id,
         duration: 0, // Will be updated by the worker
         views: 0,
-        isPublished: true, // Published immediately so it shows on frontend
+        isPublished: shouldPublish, // Use value from request body, defaults to true
         processingStatus: "processing", // Matches API/tests; worker will finalize to completed/failed
     });
 
@@ -444,25 +449,24 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         }
     
         const video = await Video.findById(videoId);
-    
-        if(video){
-            if(!video.isPublished){
-                video.isPublished = true;
-            }else{
-                video.isPublished = false;
-            }
-        }else{
+        
+        console.log("Check video",video);
+        
+        if(!video){
             throw new ApiError(404, "Video not found")
-    
         }
+        
+        // Toggle the publish status
+        video.isPublished = !video.isPublished;
+        await video.save();
     
         return res
         .status(200)
         .json
             (new ApiResponse(
                 200,
-                { videoId, video },
-                "Video publish status toggled"
+                { videoId, isPublished: video.isPublished },
+                video.isPublished ? "Video published" : "Video unpublished"
             ))
     } catch (e) {
         throw new ApiError(400, e?.message || "Some error in togglePublishStatus")

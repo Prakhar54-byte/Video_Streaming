@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import apiClient from "@/lib/api";
+import axios from "axios";
 import { TiltCard } from "@/components/ui/tilt-card";
 
 // Mock other accounts for demonstration
@@ -54,28 +55,101 @@ export function UserAccountMenu({
     }
   }, [user._id, user.id]);
 
-  const handleSwitchAccount = (account: any) => {
+  const handleSwitchAccount = async (account: any) => {
+    const targetUserId = account._id || account.id;
+    console.log("[Switch] Switching to:", account.username, targetUserId);
+    
     try {
       const accountTokensStr = localStorage.getItem("account_tokens");
+
       if (accountTokensStr) {
         const accountTokens = JSON.parse(accountTokensStr);
-        const tokens = accountTokens[account._id || account.id];
+        const tokens = accountTokens[targetUserId];
         
-        if (tokens && tokens.accessToken) {
-          // Set as active token
-          localStorage.setItem("accessToken", tokens.accessToken);
-          if (tokens.refreshToken) {
-            localStorage.setItem("refreshToken", tokens.refreshToken);
+        if (tokens && tokens.refreshToken) {
+          // Verify the stored token actually belongs to the target user
+          try {
+            const payloadPart = tokens.refreshToken.split('.')[1];
+            const decoded = JSON.parse(atob(payloadPart));
+            console.log("Devoe",decoded._id);
+            console.log("target",targetUserId);
+            
+            
+            if (decoded._id !== targetUserId) {
+              console.error("[Switch] Stored token is corrupt! Belongs to:", decoded._id);
+              toast({ 
+                title: `Session for @${account.username} is invalid`, 
+                description: "Please log in again",
+                variant: "destructive" 
+              });
+              router.push("/auth/login");
+              setIsOpen(false);
+              return;
+            }
+          } catch (decodeErr) {
+            console.error("[Switch] Could not verify token:", decodeErr);
           }
           
-          // Reload to apply changes
-          toast({ title: `Switched to @${account.username}` });
-          window.location.reload();
-          return;
+          const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api/v1';
+
+          try {
+            // We intentionally force a refresh to ensure:
+            // 1. The token is valid
+            // 2. The httpOnly cookies are updated to match the target user
+            const refreshRes = await axios.post(
+                `${BACKEND_URL}/users/refresh-token`,
+                { refreshToken: tokens.refreshToken },
+                { withCredentials: true }
+            );
+
+            if (refreshRes.data.success) {
+                const { accessToken, refreshToken: newRefreshToken } = refreshRes.data.data;
+                
+                // Verify we got the correct user back
+                try {
+                  const newPayload = accessToken.split('.')[1];
+                  const newDecoded = JSON.parse(atob(newPayload));
+                  if (newDecoded._id !== targetUserId) {
+                    console.error("[Switch] Backend returned wrong user:", newDecoded._id);
+                    toast({ 
+                      title: "Switch failed", 
+                      description: "Session mismatch. Please log in again.",
+                      variant: "destructive" 
+                    });
+                    router.push("/auth/login");
+                    setIsOpen(false);
+                    return;
+                  }
+                } catch (e) {
+                  console.error("[Switch] Could not verify result:", e);
+                }
+                
+                console.log("[Switch] Success! Updating storage...");
+                localStorage.setItem("accessToken", accessToken);
+                if (newRefreshToken) {
+                    localStorage.setItem("refreshToken", newRefreshToken);
+                }
+                
+                // Update the account tokens map
+                const currentMap = JSON.parse(localStorage.getItem("account_tokens") || "{}");
+                currentMap[targetUserId] = {
+                    accessToken: accessToken,
+                    refreshToken: newRefreshToken || tokens.refreshToken
+                };
+                localStorage.setItem("account_tokens", JSON.stringify(currentMap));
+
+                toast({ title: `Switched to @${account.username}` });
+                window.location.reload();
+                return;
+            }
+          } catch (refreshErr) {
+            console.error("Session refresh failed for target account:", refreshErr);
+            // Fall through to login redirect
+          }
         }
       }
       
-      // Fallback if no tokens found
+      console.log("Switch fallback: Redirecting to login");
       toast({ title: `Please log in as @${account.username}` });
       router.push("/auth/login");
     } catch (err) {
@@ -142,7 +216,7 @@ export function UserAccountMenu({
           >
             <div className="flex items-center gap-3 group">
               <Avatar className="w-10 h-10 ring-2 ring-primary/20 group-hover:ring-primary transition-all">
-                <AvatarImage src={user.avatar} alt={user.username} />
+                <AvatarImage src={user.avatar} alt={user.username}  className="w-10 h-10" />
                 <AvatarFallback className="bg-gradient-to-br from-orange-500 to-red-500 text-white">
                   {user.username?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
