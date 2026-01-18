@@ -165,6 +165,10 @@ app.use("/api/v1/comments", commentRouter);
 import channelRouter from "./routers/channel.routes.js";  
 app.use("/api/v1/channels", channelRouter);
 
+// Video Analysis routes (WASM-powered analysis, duplicate detection, quality assessment)
+import videoAnalysisRouter from "./routers/videoAnalysis.route.js";
+app.use("/api/v1/analysis", videoAnalysisRouter);
+
 
 // Export app for server initialization
 export { app };

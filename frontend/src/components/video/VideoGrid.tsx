@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Play, Eye, Clock, Bell, MoreVertical, CheckCircle2 } from "lucide-react";
 import { formatViewCount, formatTimeAgo, toBackendAssetUrl } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProcessingOverlay } from "@/components/video/VideoProcessingStatus";
 
 interface Video {
   _id: string;
@@ -89,12 +90,9 @@ const VideoCard = ({ video, isSubscribed, isAboveFold }: { video: Video, isSubsc
                          </div>
                      )}
                      
-                     {/* Processing Overlay */}
-                     {video.processingStatus === 'processing' && (
-                         <div className="absolute inset-0 z-20 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center">
-                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2" />
-                             <span className="text-white text-xs font-medium">Processing</span>
-                         </div>
+                     {/* Processing Overlay - Using component for consistent UI */}
+                     {video.processingStatus && video.processingStatus !== 'completed' && (
+                         <ProcessingOverlay status={video.processingStatus} />
                      )}
 
                      {/* Duration Badge */}

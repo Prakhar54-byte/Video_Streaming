@@ -520,6 +520,240 @@ export const generateGif = (inputPath, outputPath, startTime = 0, duration = 3, 
   });
 };
 
+/**
+ * Detect scene changes in video
+ */
+export const detectSceneChanges = (filePath, threshold = 0.4) => {
+  return new Promise((resolve, reject) => {
+    const scenes = [];
+    
+    ffmpeg(filePath)
+      .outputOptions([
+        `-vf select='gt(scene\\,${threshold})',showinfo`,
+        "-f null",
+      ])
+      .output("-")
+      .on("stderr", (line) => {
+        const match = line.match(/pts_time:(\d+\.?\d*)/);
+        if (match) {
+          scenes.push({ timestamp: parseFloat(match[1]) });
+        }
+      })
+      .on("end", () => resolve(scenes))
+      .on("error", (err) => reject(err))
+      .run();
+  });
+};
+
+/**
+ * Detect black frames in video
+ */
+export const detectBlackFrames = (filePath, threshold = 0.98) => {
+  return new Promise((resolve, reject) => {
+    const blackFrames = [];
+
+    ffmpeg(filePath)
+      .outputOptions([
+        `-vf blackdetect=d=0.1:pix_th=${threshold}`,
+        "-f null",
+      ])
+      .output("-")
+      .on("stderr", (line) => {
+        const match = line.match(/black_start:(\d+\.?\d*)\s+black_end:(\d+\.?\d*)/);
+        if (match) {
+          blackFrames.push({
+            start: parseFloat(match[1]),
+            end: parseFloat(match[2]),
+          });
+        }
+      })
+      .on("end", () => resolve(blackFrames))
+      .on("error", (err) => reject(err))
+      .run();
+  });
+};
+
+/**
+ * Analyze audio loudness (LUFS)
+ */
+export const analyzeAudioLoudness = (filePath) => {
+  return new Promise((resolve, reject) => {
+    let output = "";
+
+    ffmpeg(filePath)
+      .outputOptions(["-af loudnorm=print_format=json", "-f null"])
+      .output("-")
+      .on("stderr", (line) => {
+        output += line;
+      })
+      .on("end", () => {
+        try {
+          const jsonMatch = output.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            resolve(JSON.parse(jsonMatch[0]));
+          } else {
+            resolve({});
+          }
+        } catch {
+          resolve({});
+        }
+      })
+      .on("error", (err) => reject(err))
+      .run();
+  });
+};
+
+/**
+ * Detect silence in audio
+ */
+export const detectSilence = (filePath, noiseDb = -50, duration = 1) => {
+  return new Promise((resolve, reject) => {
+    const silenceRanges = [];
+
+    ffmpeg(filePath)
+      .outputOptions([
+        `-af silencedetect=noise=${noiseDb}dB:d=${duration}`,
+        "-f null",
+      ])
+      .output("-")
+      .on("stderr", (line) => {
+        const startMatch = line.match(/silence_start:\s*(\d+\.?\d*)/);
+        const endMatch = line.match(/silence_end:\s*(\d+\.?\d*)/);
+        
+        if (startMatch) {
+          silenceRanges.push({ start: parseFloat(startMatch[1]), end: 0 });
+        }
+        if (endMatch && silenceRanges.length > 0) {
+          silenceRanges[silenceRanges.length - 1].end = parseFloat(endMatch[1]);
+        }
+      })
+      .on("end", () => resolve(silenceRanges))
+      .on("error", (err) => reject(err))
+      .run();
+  });
+};
+
+/**
+ * Extract keyframes from video
+ */
+export const extractKeyframes = (filePath, outputDir, count = 10, quality = 85) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      await fs.mkdir(outputDir, { recursive: true });
+      
+      const metadata = await extractVideoMetadata(filePath);
+      const interval = metadata.duration / count;
+      const keyframes = [];
+
+      for (let i = 0; i < count; i++) {
+        const timestamp = i * interval;
+        const outputPath = path.join(outputDir, `keyframe_${i}.jpg`);
+
+        await new Promise((res, rej) => {
+          ffmpeg(filePath)
+            .seekInput(timestamp)
+            .outputOptions(["-frames:v 1", `-q:v ${Math.floor((100 - quality) / 3)}`])
+            .output(outputPath)
+            .on("end", () => {
+              keyframes.push({ timestamp, path: outputPath });
+              res();
+            })
+            .on("error", rej)
+            .run();
+        });
+      }
+
+      resolve(keyframes);
+    } catch (err) {
+      reject(err);
+    }
+  });
+};
+
+/**
+ * Generate animated thumbnail (GIF) - alias for generateGif with different defaults
+ */
+export const generateAnimatedThumbnail = (
+  filePath,
+  outputPath,
+  startTime = 0,
+  duration = 3,
+  width = 320,
+  fps = 10
+) => {
+  return generateGif(filePath, outputPath, startTime, duration, fps, width);
+};
+
+/**
+ * Generate sprite sheet (simpler version)
+ */
+export const generateSpriteSheet = (
+  filePath,
+  outputPath,
+  interval = 5,
+  width = 160,
+  columns = 10
+) => {
+  return new Promise((resolve, reject) => {
+    ffmpeg(filePath)
+      .outputOptions([
+        `-vf fps=1/${interval},scale=${width}:-1,tile=${columns}x0`,
+        "-frames:v 1",
+      ])
+      .output(outputPath)
+      .on("end", () => resolve(outputPath))
+      .on("error", reject)
+      .run();
+  });
+};
+
+/**
+ * Generate audio waveform image
+ */
+export const generateWaveform = (
+  filePath,
+  outputPath,
+  width = 1920,
+  height = 200,
+  color = "#2196F3"
+) => {
+  return new Promise((resolve, reject) => {
+    ffmpeg(filePath)
+      .outputOptions([
+        `-filter_complex showwavespic=s=${width}x${height}:colors=${color}`,
+        "-frames:v 1",
+      ])
+      .output(outputPath)
+      .on("end", () => resolve(outputPath))
+      .on("error", reject)
+      .run();
+  });
+};
+
+/**
+ * Extract frame at specific timestamp
+ */
+export const extractFrameAtTime = (
+  filePath,
+  outputPath,
+  timestamp,
+  width = 320,
+  height = 180
+) => {
+  return new Promise((resolve, reject) => {
+    ffmpeg(filePath)
+      .seekInput(timestamp)
+      .outputOptions([
+        "-frames:v 1",
+        `-vf scale=${width}:${height}`,
+      ])
+      .output(outputPath)
+      .on("end", () => resolve(outputPath))
+      .on("error", reject)
+      .run();
+  });
+};
+
 export default {
   extractVideoMetadata,
   generateThumbnail,
@@ -534,4 +768,13 @@ export default {
   trimVideo,
   mergeVideos,
   generateGif,
+  detectSceneChanges,
+  detectBlackFrames,
+  analyzeAudioLoudness,
+  detectSilence,
+  extractKeyframes,
+  generateAnimatedThumbnail,
+  generateSpriteSheet,
+  generateWaveform,
+  extractFrameAtTime,
 };

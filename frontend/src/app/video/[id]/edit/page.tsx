@@ -164,6 +164,7 @@ export default function VideoEditPage() {
     title: '',
     description: '',
     isPublished: true,
+    category: 'all',
   });
   const [newThumbnail, setNewThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string>('');
@@ -178,6 +179,7 @@ export default function VideoEditPage() {
           title: videoData.title || '',
           description: videoData.description || '',
           isPublished: videoData.isPublished ?? true,
+          category: videoData.category || 'all',
         });
         if (videoData.thumbnail) {
           setThumbnailPreview(toBackendAssetUrl(videoData.thumbnail));
@@ -215,6 +217,7 @@ export default function VideoEditPage() {
         title: formData.title,
         description: formData.description,
         isPublished: formData.isPublished,
+        category: formData.category,
       });
 
       // If there's a new thumbnail, upload it separately
@@ -451,6 +454,31 @@ export default function VideoEditPage() {
                   <p className="text-xs text-muted-foreground">
                     {formData.description.length}/5000 characters
                   </p>
+                </div>
+
+                {/* Category Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-base font-medium">
+                    Category <span className="text-destructive">*</span>
+                  </Label>
+                  <select
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                    className="w-full py-2 px-3 text-base bg-background/50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="all">General</option>
+                    <option value="music">Music</option>
+                    <option value="gaming">Gaming</option>
+                    <option value="education">Education</option>
+                    <option value="fitness">Fitness</option>
+                    <option value="cooking">Cooking</option>
+                    <option value="movies">Movies</option>
+                    <option value="news">News</option>
+                    <option value="programming">Coding</option>
+                    <option value="art">Art & Design</option>
+                    <option value="photography">Photography</option>
+                  </select>
                 </div>
               </CardContent>
             </Card>

@@ -21,6 +21,7 @@
     "backend-in-js": "file:",
     "bcrypt": "^5.1.1",
     "bullmq": "^5.66.0",
+    "cloudinary": "^2.6.1",
     "cookie": "^1.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -40,8 +41,7 @@
     "stream": "^0.0.3",
     "sudo": "^1.0.3",
     "tmp-promise": "^3.0.3",
-    "uuid": "^13.0.0",
-    "cloudinary": "^2.6.1"
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/ffmpeg": "^1.0.7",

@@ -1,16 +1,18 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/authStore';
+import { usePlaylistQueueStore } from '@/store/playlistQueueStore';
 import apiClient from '@/lib/api';
 import { formatViewCount, formatTimeAgo } from '@/lib/utils';
 import Image from 'next/image';
 import { VideoJsPlayer } from '@/components/video/VideoJsPlayer';
-import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye, Video, Trash2 } from 'lucide-react';
+import { AddToPlaylistModal } from '@/components/playlist/AddToPlaylistModal';
+import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye, Video, Trash2, ListVideo, SkipForward, SkipBack, Shuffle } from 'lucide-react';
 // Removed server-only import
 
 interface Video {
@@ -23,12 +25,25 @@ interface Video {
   views: number;
   isPublished: boolean;
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
-  hlsMasterPlaylist?: string; // Added for HLS support
-  waveformUrl?: string; // Added for audio waveform display
-  spriteSheetUrl?: string; // Added for seeking previews
-  spriteSheetVttUrl?: string; // Added for seeking previews
-  introStartTime?: number; // Added for skip intro
-  introEndTime?: number; // Added for skip intro
+  hlsMasterPlaylist?: string;
+  waveformUrl?: string;
+  spriteSheetUrl?: string;
+  spriteSheetVttUrl?: string;
+  introStartTime?: number;
+  introEndTime?: number;
+  category?: string;
+  metadata?: {
+    codec?: string;
+    format?: string;
+    fps?: number;
+    aspectRatio?: string;
+    audioCodec?: string;
+    audioChannels?: number;
+    originalWidth?: number;
+    originalHeight?: number;
+    originalSize?: number;
+    originalBitrate?: number;
+  };
   owner: {
     _id: string;
     username: string;
@@ -54,8 +69,30 @@ interface Comment {
 export default function VideoPlayerPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuthStore();
+  
+  // Playlist queue store
+  const { 
+    playlistId: queuePlaylistId, 
+    playlistName,
+    queue, 
+    currentIndex, 
+    isShuffled,
+    setCurrentIndex,
+    nextVideo: getNextVideo,
+    previousVideo: getPreviousVideo,
+    toggleShuffle,
+    hasNext,
+    hasPrevious,
+    clearQueue,
+  } = usePlaylistQueueStore();
+  
+  // Check if we're in playlist mode - only when ?playlist= query param is present
+  // This ensures playlist UI only shows when coming from playlist page, not on direct video navigation
+  const playlistParam = searchParams.get('playlist');
+  const isPlaylistMode = playlistParam !== null && queuePlaylistId !== null && playlistParam === queuePlaylistId;
   
   const [video, setVideo] = useState<Video | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -65,6 +102,7 @@ export default function VideoPlayerPage() {
   const [likesCount, setLikesCount] = useState(0);
   const [newComment, setNewComment] = useState('');
   const [postingComment, setPostingComment] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [relatedVideos, setRelatedVideos] = useState<Video[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
 
@@ -162,21 +200,44 @@ export default function VideoPlayerPage() {
 
       let allVideos: Video[] = (videosResponse.data.data || videosResponse.data || []) as Video[];
       allVideos = Array.isArray(allVideos) ? allVideos : [];
-      allVideos = allVideos.filter((v) => v?._id && v._id !== video._id);
-
-      const checking =  (video.hlsMasterPlaylist);
-
-      console.log("URL: ", toUrl(checking));
       
+      // Exclude current video
+      allVideos = allVideos.filter((v) => v?._id && v._id !== video._id);
+      
+      // If in playlist mode, exclude all playlist videos and filter by majority category
+      if (isPlaylistMode && queue.length > 0) {
+        const playlistVideoIds = new Set(queue.map(v => v._id));
+        allVideos = allVideos.filter((v) => !playlistVideoIds.has(v._id));
+        
+        // Find majority category from playlist
+        const categoryCounts: Record<string, number> = {};
+        queue.forEach(v => {
+          const cat = v.category || 'all';
+          categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+        });
+        
+        // Get the most common category (excluding 'all' if there are other categories)
+        const sortedCategories = Object.entries(categoryCounts)
+          .filter(([cat]) => cat !== 'all')
+          .sort((a, b) => b[1] - a[1]);
+        
+        const majorityCategory = sortedCategories[0]?.[0] || 'all';
+        
+        // Filter by majority category if it's not 'all'
+        if (majorityCategory !== 'all') {
+          const categoryVideos = allVideos.filter(v => v.category === majorityCategory);
+          if (categoryVideos.length >= 3) {
+            allVideos = categoryVideos;
+          }
+        }
+      }
+
       const subscriptions = subsResponse?.data?.data || [];
       const subscribedChannelIds = new Set(
         Array.isArray(subscriptions)
           ? subscriptions.map((sub: any) => sub?.channel?._id).filter(Boolean)
           : []
       );
-
-      const thum = toUrl(video.thumbnail);
-      console.log("Thumbnail URL: ", thum);
 
       const subscribedVideos = allVideos.filter((v) => subscribedChannelIds.has(v.owner?._id));
       const sameChannelVideos = allVideos.filter(
@@ -199,7 +260,46 @@ export default function VideoPlayerPage() {
     } finally {
       setLoadingRelated(false);
     }
-  }, [user?._id, video?._id, video?.hlsMasterPlaylist, video?.owner?._id]);
+  }, [user?._id, video?._id, video?.owner?._id, isPlaylistMode, queue]);
+
+  // Update current index when video changes (for playlist mode)
+  useEffect(() => {
+    if (isPlaylistMode && queue.length > 0) {
+      const idx = queue.findIndex(v => v._id === params.id);
+      if (idx >= 0 && idx !== currentIndex) {
+        setCurrentIndex(idx);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.id, queue, isPlaylistMode]);
+
+  // Handle video end - auto-play next in playlist
+  const handleVideoEnd = useCallback(() => {
+    if (isPlaylistMode && hasNext()) {
+      const nextVid = getNextVideo();
+      if (nextVid) {
+        router.push(`/video/${nextVid._id}?playlist=${queuePlaylistId}`);
+      }
+    }
+  }, [isPlaylistMode, hasNext, getNextVideo, router, queuePlaylistId]);
+
+  const handleNextVideo = () => {
+    if (hasNext()) {
+      const nextVid = getNextVideo();
+      if (nextVid) {
+        router.push(`/video/${nextVid._id}?playlist=${queuePlaylistId}`);
+      }
+    }
+  };
+
+  const handlePreviousVideo = () => {
+    if (hasPrevious()) {
+      const prevVid = getPreviousVideo();
+      if (prevVid) {
+        router.push(`/video/${prevVid._id}?playlist=${queuePlaylistId}`);
+      }
+    }
+  };
 
 const handleSubscribe = async () => {
     if (!video) return;
@@ -339,7 +439,7 @@ const handleSubscribe = async () => {
                </div>
             )}
             {/* Video Player */}
-            <div className="bg-black rounded-xl overflow-hidden aspect-video">
+            <div className="bg-black rounded-xl overflow-hidden">
               {(video.videoFile || video.hlsMasterPlaylist) ? (
                 <VideoJsPlayer
                   src={toUrl(video.hlsMasterPlaylist || video.videoFile)}
@@ -349,6 +449,9 @@ const handleSubscribe = async () => {
                   spriteSheetVttUrl={video.spriteSheetVttUrl ? toUrl(video.spriteSheetVttUrl) : undefined}
                   introStartTime={video.introStartTime}
                   introEndTime={video.introEndTime}
+                  videoWidth={video?.metadata?.originalWidth}
+                  videoHeight={video?.metadata?.originalHeight}
+                  aspectRatioMode="auto"
                 />
               ) : (
                 <div className="flex items-center justify-center h-full bg-muted">
@@ -406,9 +509,27 @@ const handleSubscribe = async () => {
                     <Share2 className="w-5 h-5" />
                     Share
                   </Button>
+
+                  <Button
+                    onClick={() => setShowPlaylistModal(true)}
+                    variant="outline"
+                    className="flex items-center gap-2 text-base py-5"
+                  >
+                    <ListVideo className="w-5 h-5" />
+                    Save
+                  </Button>
                 </div>
               </div>
             </div>
+
+            {/* Add to Playlist Modal */}
+            {video._id && (
+              <AddToPlaylistModal
+                videoId={video._id}
+                isOpen={showPlaylistModal}
+                onClose={() => setShowPlaylistModal(false)}
+              />
+            )}
 
             {/* Channel Info */}
             <div className="bg-card border rounded-xl p-6">
@@ -521,60 +642,157 @@ const handleSubscribe = async () => {
             </div>
           </div>
 
-          {/* Sidebar - Related Videos */}
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">Related Videos</h2>
-
-            {loadingRelated ? (
-              <div className="space-y-3">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="flex gap-3 animate-pulse">
-                    <div className="w-40 aspect-video bg-muted rounded-lg" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-muted rounded" />
-                      <div className="h-3 bg-muted rounded w-2/3" />
+          {/* Sidebar - Playlist Queue & Related Videos */}
+          <div className="space-y-6">
+            {/* Playlist Queue Box */}
+            {isPlaylistMode && queue.length > 0 && (
+              <div className="bg-zinc-900/90 rounded-xl border border-zinc-800 overflow-hidden">
+                {/* Playlist Header */}
+                <div className="p-4 border-b border-zinc-800 bg-zinc-950/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <ListVideo className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold text-white truncate">{playlistName || 'Playlist'}</h3>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={toggleShuffle}
+                      className={`h-8 px-2 ${isShuffled ? 'text-primary' : 'text-zinc-400'}`}
+                    >
+                      <Shuffle className="w-4 h-4" />
+                    </Button>
                   </div>
-                ))}
-              </div>
-            ) : relatedVideos.length === 0 ? (
-              <p className="text-base text-muted-foreground">No related videos found.</p>
-            ) : (
-              <div className="space-y-4">
-                {relatedVideos.map((v) => (
-                  <a
-                    key={v._id}
-                    href={`/video/${v._id}`}
-                    className="flex gap-3 group"
-                  >
-                    <div className="w-40 rounded-lg overflow-hidden bg-muted aspect-video flex-shrink-0">
-                      {v.thumbnail ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={toUrl(v.thumbnail)}
-                          alt={v.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Eye className="w-6 h-6 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                        {v.title}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1 truncate">{v.owner?.fullName}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {formatViewCount(v.views)} views • {formatTimeAgo(v.createdAt)}
-                      </p>
-                    </div>
-                  </a>
-                ))}
+                  <p className="text-sm text-zinc-400">
+                    {currentIndex + 1} / {queue.length} videos
+                  </p>
+                  {/* Navigation Controls */}
+                  <div className="flex items-center gap-2 mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePreviousVideo}
+                      disabled={!hasPrevious()}
+                      className="flex-1 bg-zinc-800 border-zinc-700 hover:bg-zinc-700"
+                    >
+                      <SkipBack className="w-4 h-4 mr-1" />
+                      Prev
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleNextVideo}
+                      disabled={!hasNext()}
+                      className="flex-1 bg-zinc-800 border-zinc-700 hover:bg-zinc-700"
+                    >
+                      Next
+                      <SkipForward className="w-4 h-4 ml-1" />
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Playlist Videos List */}
+                <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700">
+                  {queue.map((v, idx) => (
+                    <a
+                      key={v._id}
+                      href={`/video/${v._id}?playlist=${queuePlaylistId}`}
+                      className={`flex items-center gap-3 p-3 hover:bg-zinc-800/50 transition-colors ${
+                        idx === currentIndex ? 'bg-primary/10 border-l-2 border-primary' : ''
+                      }`}
+                    >
+                      <span className={`w-6 text-center text-sm font-medium ${
+                        idx === currentIndex ? 'text-primary' : 'text-zinc-500'
+                      }`}>
+                        {idx + 1}
+                      </span>
+                      <div className="w-24 aspect-video rounded overflow-hidden bg-zinc-800 flex-shrink-0">
+                        {v.thumbnail ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={toUrl(v.thumbnail)}
+                            alt={v.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Video className="w-4 h-4 text-zinc-600" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium line-clamp-2 ${
+                          idx === currentIndex ? 'text-white' : 'text-zinc-300'
+                        }`}>
+                          {v.title}
+                        </p>
+                        <p className="text-xs text-zinc-500 mt-1">
+                          {Math.floor((v.duration || 0) / 60)}:{String(Math.floor((v.duration || 0) % 60)).padStart(2, '0')}
+                        </p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
+
+            {/* Related Videos Section */}
+            <div>
+              <h2 className="text-xl font-bold mb-4">
+                {isPlaylistMode ? 'More Videos' : 'Related Videos'}
+              </h2>
+
+              {loadingRelated ? (
+                <div className="space-y-3">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="flex gap-3 animate-pulse">
+                      <div className="w-40 aspect-video bg-muted rounded-lg" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-muted rounded" />
+                        <div className="h-3 bg-muted rounded w-2/3" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : relatedVideos.length === 0 ? (
+                <p className="text-base text-muted-foreground">No related videos found.</p>
+              ) : (
+                <div className="space-y-4">
+                  {relatedVideos.map((v) => (
+                    <a
+                      key={v._id}
+                      href={`/video/${v._id}`}
+                      className="flex gap-3 group"
+                    >
+                      <div className="w-40 rounded-lg overflow-hidden bg-muted aspect-video flex-shrink-0">
+                        {v.thumbnail ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={toUrl(v.thumbnail)}
+                            alt={v.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Eye className="w-6 h-6 text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                          {v.title}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1 truncate">{v.owner?.fullName}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatViewCount(v.views)} views • {formatTimeAgo(v.createdAt)}
+                        </p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

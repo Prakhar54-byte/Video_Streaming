@@ -3,6 +3,7 @@ import { Playlist } from "../models/playlist.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { log } from "node:console";
 
 
 const createPlaylist = asyncHandler(async (req, res) => {
@@ -82,6 +83,8 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 const getPlaylistById = asyncHandler(async (req, res) => {
   try {
     const { playlistId } = req.params;
+    console.log("Plag",playlistId);
+    
     
     if(!playlistId || !mongoose.Types.ObjectId.isValid(playlistId)){
       throw new ApiError(400, "Invalid Playlist ID");
@@ -96,6 +99,8 @@ const getPlaylistById = asyncHandler(async (req, res) => {
           from: "users", 
           localField: "owner",
           foreignField: "_id",
+          // foreignField: "username",
+          // foreignField: "avatar",
           as: "ownerDetails",
         },
       },
@@ -107,6 +112,8 @@ const getPlaylistById = asyncHandler(async (req, res) => {
           from: "videos", 
           localField: "videos",
           foreignField: "_id",
+          // foreignField: "username",
+          // foreignField: "avatar",
           as: "videoDetails",
         },
       },
@@ -114,8 +121,8 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         $addFields: {
            ownerDetails: {
                _id: "$ownerDetails._id",
-               username: "$ownerDetails.username",
-               fullName: "$ownerDetails.fullName",
+    username: { $ifNull: ["$ownerDetails.username", null] },
+               fullName: { $ifNull: ["$ownerDetails.fullName", null] },
                avatar: "$ownerDetails.avatar"
            }
         }
@@ -124,7 +131,10 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         $project: {
           name: 1,
           description: 1,
-          ownerDetails: 1,
+          "ownerDetails._id": 1,
+    "ownerDetails.username": 1,
+    "ownerDetails.fullName": 1,
+    "ownerDetails.avatar": 1,
           videoDetails: 1, // Keep full video details if needed
           createdAt: 1,
           updatedAt: 1
@@ -135,6 +145,9 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     if (!playlist?.length) {
         throw new ApiError(404, "Playlist not found");
     }
+
+    // console.log("Fuck pla",playlist);
+    
   
     return res
     .status(200)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -11,14 +11,48 @@ import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import apiClient from '@/lib/api';
 import { ThumbnailGeneratorModal } from '@/components/video/ThumbnailGeneratorModal';
+import { UploadProgress } from '@/components/upload/UploadProgress';
+import { useVideoProcessingStatus, useUploadProgress } from '@/hooks/useVideoProcessing';
 
 export default function UploadPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadedVideoId, setUploadedVideoId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [checkingChannel, setCheckingChannel] = useState(true);
+
+  // Use custom hooks for upload progress tracking
+  const uploadProgressHook = useUploadProgress();
+  
+  // Memoize callbacks to prevent unnecessary re-renders
+  const handleProcessingComplete = useCallback((status: any) => {
+    uploadProgressHook.setComplete();
+    toast({
+      title: "Video Ready! 🎉",
+      description: "Your video has been processed and is now available.",
+    });
+    setTimeout(() => {
+      router.push('/my-channel');
+    }, 2000);
+  }, [uploadProgressHook, toast, router]);
+
+  const handleProcessingError = useCallback((error: string) => {
+    uploadProgressHook.setError(error);
+    toast({
+      title: "Processing Failed",
+      description: error,
+      variant: "destructive",
+    });
+  }, [uploadProgressHook, toast]);
+  
+  // Poll for processing status after upload
+  const { status: processingStatus } = useVideoProcessingStatus({
+    videoId: uploadedVideoId,
+    pollInterval: 3000,
+    onComplete: handleProcessingComplete,
+    onError: handleProcessingError,
+  });
 
   useEffect(() => {
     const checkChannel = async () => {
@@ -30,18 +64,16 @@ export default function UploadPage() {
             description: "You need to create a channel before uploading videos.",
             variant: "destructive",
           });
-          // Redirect to home or channel creation page if it exists
           router.push('/'); 
         }
       } catch (error) {
         console.error("Error checking channel:", error);
-        // If 404 or other error, assume no channel or auth issue
-         toast({
-            title: "Error",
-            description: "Could not verify channel status.",
-            variant: "destructive",
-          });
-          router.push('/');
+        toast({
+          title: "Error",
+          description: "Could not verify channel status.",
+          variant: "destructive",
+        });
+        router.push('/');
       } finally {
         setCheckingChannel(false);
       }
@@ -55,12 +87,14 @@ export default function UploadPage() {
     videoFile: File | null;
     thumbnail: File | null;
     isDraft: boolean;
+    category: string;
   }>({
     title: '',
     description: '',
     videoFile: null,
     thumbnail: null,
-    isDraft: false, // Default to false (publish immediately)
+    isDraft: false,
+    category: 'all',
   });
   
   const [previews, setPreviews] = useState<{
@@ -116,24 +150,16 @@ export default function UploadPage() {
     }
 
     setIsUploading(true);
-    setUploadProgress(0);
+    uploadProgressHook.setUploading(0, formData.videoFile.name);
 
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
       formDataToSend.append('description', formData.description);
+      formDataToSend.append('category', formData.category);
       formDataToSend.append('videoFile', formData.videoFile);
       formDataToSend.append('thumbnail', formData.thumbnail);
-      formDataToSend.append('isPublished', String(!formData.isDraft)); // isDraft=true means isPublished=false
-
-      console.log('Uploading to:', apiClient.defaults.baseURL + '/videos');
-      console.log('Form data:', {
-        title: formData.title,
-        description: formData.description,
-        videoFileName: formData.videoFile.name,
-        thumbnailName: formData.thumbnail.name,
-        isDraft: formData.isDraft,
-      });
+      formDataToSend.append('isPublished', String(!formData.isDraft));
 
       const response = await apiClient.post('/videos', formDataToSend, {
         headers: {
@@ -143,41 +169,32 @@ export default function UploadPage() {
           const percentCompleted = Math.round(
             (progressEvent.loaded * 100) / (progressEvent.total || 1)
           );
-          setUploadProgress(percentCompleted);
+          uploadProgressHook.setUploading(percentCompleted, formData.videoFile?.name);
         },
       });
 
-      console.log('Upload successful:', response.data);
+      // Get the video ID from response and start polling for processing status
+      const videoId = response.data.data?._id || response.data.data?.video?._id;
+      if (videoId) {
+        setUploadedVideoId(videoId);
+        uploadProgressHook.setProcessing();
+      }
 
       toast({
         title: 'Upload Successful! 🚀',
-        description: 'Your video has been uploaded and is currently processing. It will be available shortly.',
+        description: 'Your video has been uploaded and is currently processing.',
       });
 
-      // Clear form
-      setFormData({
-        title: '',
-        description: '',
-        videoFile: null,
-        thumbnail: null,
-        isDraft: false,
-      });
-      setPreviews({ video: '', thumbnail: '' });
-
-      // Redirect to my-channel with refresh
-      setTimeout(() => {
-        router.push('/my-channel');
-        router.refresh();
-      }, 1500);
+      // Don't clear form until processing is complete - the hook will handle redirect
     } catch (error: any) {
       console.error('Upload error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Something went wrong';
+      uploadProgressHook.setError(errorMessage);
       toast({
         title: 'Upload Failed',
         description: errorMessage,
         variant: 'destructive',
       });
-      setUploadProgress(0);
     } finally {
       setIsUploading(false);
     }
@@ -191,6 +208,20 @@ export default function UploadPage() {
   const clearThumbnail = () => {
     setFormData(prev => ({ ...prev, thumbnail: null }));
     setPreviews(prev => ({ ...prev, thumbnail: '' }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      videoFile: null,
+      thumbnail: null,
+      isDraft: false,
+      category: 'all',
+    });
+    setPreviews({ video: '', thumbnail: '' });
+    setUploadedVideoId(null);
+    uploadProgressHook.reset();
   };
 
   if (checkingChannel) {
@@ -339,6 +370,32 @@ export default function UploadPage() {
               />
             </div>
 
+            {/* Category Selection */}
+            <div>
+              <label className="block text-lg font-semibold mb-3">
+                Category <span className="text-destructive">*</span>
+              </label>
+              <select
+                required
+                value={formData.category}
+                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                className="w-full py-4 px-4 text-base bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={isUploading}
+              >
+                <option value="all">General</option>
+                <option value="music">Music</option>
+                <option value="gaming">Gaming</option>
+                <option value="education">Education</option>
+                <option value="fitness">Fitness</option>
+                <option value="cooking">Cooking</option>
+                <option value="movies">Movies</option>
+                <option value="news">News</option>
+                <option value="programming">Coding</option>
+                <option value="art">Art & Design</option>
+                <option value="photography">Photography</option>
+              </select>
+            </div>
+
             {/* Publish/Draft Toggle */}
             <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/20">
               <div className="flex items-center gap-3">
@@ -362,31 +419,19 @@ export default function UploadPage() {
                 id="draft-toggle"
                 checked={formData.isDraft}
                 onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isDraft: checked }))}
-                disabled={isUploading}
+                disabled={isUploading || uploadProgressHook.stage !== 'idle'}
               />
             </div>
           </div>
 
-          {/* Upload Progress */}
-          {isUploading && (
-            <div className="bg-card border rounded-xl p-8">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-lg font-semibold">Uploading...</span>
-                <span className="text-base text-muted-foreground">{uploadProgress}%</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
-                <div
-                  className="bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 h-full transition-all duration-300"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-              {uploadProgress === 100 && (
-                <div className="flex items-center gap-2 mt-4 text-green-500">
-                  <CheckCircle className="w-5 h-5" />
-                  <span className="text-base font-semibold">Upload complete!</span>
-                </div>
-              )}
-            </div>
+          {/* Upload Progress - Using UploadProgress component */}
+          {uploadProgressHook.stage !== 'idle' && (
+            <UploadProgress
+              progress={uploadProgressHook.progress}
+              status={uploadProgressHook.stage}
+              fileName={formData.videoFile?.name}
+              errorMessage={uploadProgressHook.stage === 'error' ? uploadProgressHook.message : undefined}
+            />
           )}
 
           {/* Submit Button */}
@@ -394,15 +439,21 @@ export default function UploadPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.back()}
+              onClick={() => {
+                if (uploadProgressHook.stage !== 'idle') {
+                  resetForm();
+                } else {
+                  router.back();
+                }
+              }}
               disabled={isUploading}
               className="flex-1 py-6 text-lg"
             >
-              Cancel
+              {uploadProgressHook.stage !== 'idle' ? 'Upload Another' : 'Cancel'}
             </Button>
             <Button
               type="submit"
-              disabled={isUploading || !formData.videoFile || !formData.thumbnail}
+              disabled={isUploading || !formData.videoFile || !formData.thumbnail || uploadProgressHook.stage === 'processing'}
               className="flex-1 py-6 text-lg font-semibold bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 hover:opacity-90"
             >
               {isUploading ? 'Uploading...' : (

@@ -102,6 +102,9 @@ const videoProcessingWorker = redisConnection
         }
 
         // 5. Update video document with processed data
+        // NOTE: introStartTime and introEndTime are NOT set here because intro detection
+        // requires ML processing which is done in videoProcessing.controller.js.
+        // When processing via this queue, intro detection is skipped.
         await Video.findByIdAndUpdate(videoId, {
             videoFiles: outputPath,
             hlsMasterPlaylist: toPublicRel(hlsPlaylist.masterPlaylist),
@@ -110,9 +113,8 @@ const videoProcessingWorker = redisConnection
             ...(waveformUrl ? { waveformUrl } : {}),
             ...(spriteSheetUrl ? { spriteSheetUrl } : {}),
             ...(spriteSheetVttUrl ? { spriteSheetVttUrl } : {}),
-            // Safe defaults so frontend doesn't see undefined.
-            introStartTime: 0,
-            introEndTime: 0,
+            // NOTE: Intro times are left as undefined/null when processed via queue
+            // The controller-based processing handles intro detection with fallbacks
             // ... update other metadata fields
         });
 

@@ -156,6 +156,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     createdAt:1,
                     isPublished:1,
                     processingStatus:1,
+                    category:1,
                     likesCount: 1,
                     commentsCount: 1,
                     owner:{
@@ -196,7 +197,7 @@ import { addVideoToQueue } from "../queues/videoProcessing.queue.js";
 import { log } from "console"
 
 const publishAVideo = asyncHandler(async (req, res) => {
-    const { title, description, isPublished } = req.body;
+    const { title, description, isPublished, category } = req.body;
     
     // Parse isPublished - default to true (published) if not specified
     const shouldPublish = isPublished === undefined ? true : (isPublished === 'true' || isPublished === true);
@@ -204,6 +205,10 @@ const publishAVideo = asyncHandler(async (req, res) => {
     if (!title || !description) {
         throw new ApiError(400, "Title and description are required.");
     }
+
+    // Validate category
+    const validCategories = ["all", "trending", "music", "gaming", "education", "fitness", "cooking", "movies", "news", "programming", "art", "photography"];
+    const videoCategory = category && validCategories.includes(category) ? category : "all";
 
     // Check if user has a channel
     const channel = await Channel.findOne({ owner: req.user._id });
@@ -222,6 +227,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const video = await Video.create({
         title,
         description,
+        category: videoCategory,
         videoFiles: toPublicDbPath(videoFileLocalPath), // Store under public/ so API can expose a URL path
         thumbnail: thumbnailLocalPath ? toPublicDbPath(thumbnailLocalPath) : "",
         owner: req.user._id,
@@ -295,6 +301,7 @@ const getVideoById = asyncHandler(async (req, res) => {
                     _id: 1,
                     title: 1,
                     description: 1,
+                    category: 1,
                     videoFiles: 1,
                     thumbnail: 1,
                     processingStatus: 1,
@@ -377,16 +384,28 @@ const updateVideo = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Video Id is incorrect to update video")
         }
     
-        const { title, description, thumbnail } = req.body;
+        const { title, description, thumbnail, category, isPublished } = req.body;
+        
+        // Build update object with only provided fields
+        const updateFields = {};
+        if (title !== undefined) updateFields.title = title;
+        if (description !== undefined) updateFields.description = description;
+        if (thumbnail !== undefined) updateFields.thumbnail = thumbnail;
+        if (isPublished !== undefined) updateFields.isPublished = isPublished;
+        
+        // Validate and add category if provided
+        if (category !== undefined) {
+            const validCategories = ["all", "trending", "music", "gaming", "education", "fitness", "cooking", "movies", "news", "programming", "art", "photography"];
+            if (validCategories.includes(category)) {
+                updateFields.category = category;
+            }
+        }
+        
         const updatedVideo = await Video.findOneAndUpdate(
             {
                 _id: videoId
             },
-            {
-                title,
-                description,
-                thumbnail
-            },
+            updateFields,
             {
                 new: true
             }
@@ -502,6 +521,7 @@ const homepageVideos = asyncHandler(async (req, res) => {
                 _id: 1,
                 title: 1,
                 description: 1,
+                category: 1,
                 thumbnail: 1,
                 videoFiles: 1,
                 duration: 1,

@@ -136,7 +136,7 @@ export default function PlaylistsPage() {
                                 <div className="relative">
                                     <ListVideo className="w-16 h-16 text-muted-foreground/50" />
                                     <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
-                                        {playlist.videos?.length || 0}
+                                        {playlist?.videos?.length || 0}
                                     </div>
                                 </div>
                             </CardContent>

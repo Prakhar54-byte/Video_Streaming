@@ -89,12 +89,14 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         {/* Header */}
         <div className="p-4 flex items-center justify-between border-b">
           {sidebarOpen && (
+              <Link href="/">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-8 h-8 text-orange-500" />
+              <Sparkles  className="w-8 h-8 text-orange-500" />
               <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 text-transparent bg-clip-text">
                 Spark
               </h1>
             </div>
+              </Link>
           )}
           {!sidebarOpen && (
             <Sparkles className="w-8 h-8 text-orange-500 mx-auto" />
