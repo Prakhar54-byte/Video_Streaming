@@ -408,7 +408,7 @@ export const getProcessingStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
 
   const video = await Video.findById(videoId).select(
-    "processingStatus variants hlsMasterPlaylist thumbnailStrip metadata"
+    "processingStatus processingStage processingProgress variants hlsMasterPlaylist thumbnailStrip metadata"
   );
 
   if (!video) {
@@ -422,6 +422,8 @@ export const getProcessingStatus = asyncHandler(async (req, res) => {
         200,
         {
           status: video.processingStatus,
+          stage: video.processingStage,
+          progress: video.processingProgress,
           variants: video.variants,
           hlsPlaylist: video.hlsMasterPlaylist,
           thumbnails: video.thumbnailStrip,

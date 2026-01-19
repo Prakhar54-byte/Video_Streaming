@@ -5,6 +5,8 @@ import apiClient from "@/lib/api";
 
 interface ProcessingStatus {
   status: "pending" | "processing" | "completed" | "failed";
+  stage?: "transcode" | "hls" | "thumbnails" | "intro" | "complete"; // Current processing stage
+  progress?: number; // Processing progress 0-100
   variants?: {
     quality: string;
     path: string;
@@ -22,7 +24,6 @@ interface ProcessingStatus {
     bitrate: number;
     fps: number;
   };
-  progress?: number;
   error?: string;
 }
 

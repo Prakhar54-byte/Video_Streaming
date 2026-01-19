@@ -19,10 +19,10 @@ const videoSchema = new Schema(
       type: String,
       required: true,
     },
-    category: {
-      type: String,
+    categories: {
+      type: [String],
       enum: ["all", "trending", "music", "gaming", "education", "fitness", "cooking", "movies", "news", "programming", "art", "photography"],
-      default: "all",
+      default: ["all"],
     },
     duration: {
       type: Number,
@@ -45,6 +45,17 @@ const videoSchema = new Schema(
       type: String,
       enum: ["pending", "processing", "completed", "failed"],
       default: "pending",
+    },
+    // Current processing stage for detailed progress UI
+    processingStage: {
+      type: String,
+      enum: ["transcode", "hls", "thumbnails", "intro", "complete"],
+      default: null,
+    },
+    // Processing progress percentage (0-100)
+    processingProgress: {
+      type: Number,
+      default: 0,
     },
     // HLS streaming support
     hlsMasterPlaylist: {

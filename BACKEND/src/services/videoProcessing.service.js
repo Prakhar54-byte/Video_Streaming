@@ -134,23 +134,40 @@ export const generateThumbnailStrip = (inputPath, outputDir, count = 10) => {
  * Generate a visual audio waveform PNG.
  *
  * Uses FFmpeg filter `showwavespic` to render a single frame image.
+ * Handles videos without audio gracefully.
  */
 export const generateWaveformImage = (inputPath, outputPath, options = {}) => {
   const width = Number(options.width || 1200);
   const height = Number(options.height || 120);
 
   return new Promise((resolve, reject) => {
-    ffmpeg(inputPath)
-      // showwavespic consumes audio and outputs a video frame
-      .complexFilter([`showwavespic=s=${width}x${height}`])
-      .outputOptions([
-        '-frames:v 1',
-        '-y',
-      ])
-      .output(outputPath)
-      .on('end', () => resolve(outputPath))
-      .on('error', reject)
-      .run();
+    // First check if video has audio stream
+    ffmpeg.ffprobe(inputPath, (err, metadata) => {
+      if (err) {
+        return reject(new Error(`Failed to probe video: ${err.message}`));
+      }
+
+      const hasAudio = metadata.streams?.some(stream => stream.codec_type === 'audio');
+      
+      if (!hasAudio) {
+        return reject(new Error('Video has no audio track - waveform generation skipped'));
+      }
+
+      ffmpeg(inputPath)
+        // Extract only the audio stream first, then generate waveform
+        .inputOptions(['-vn']) // Ignore video stream
+        .complexFilter([`showwavespic=s=${width}x${height}:colors=#00BFFF`])
+        .outputOptions([
+          '-frames:v 1',
+          '-y',
+        ])
+        .output(outputPath)
+        .on('end', () => resolve(outputPath))
+        .on('error', (ffmpegErr) => {
+          reject(new Error(`Waveform generation failed: ${ffmpegErr.message}`));
+        })
+        .run();
+    });
   });
 };
 

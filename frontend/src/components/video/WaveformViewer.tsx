@@ -9,7 +9,24 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Volume2, VolumeX, ZoomIn, ZoomOut } from "lucide-react";
+import { Volume2, VolumeX, ZoomIn, ZoomOut, Eye, EyeOff, Palette } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+// Predefined waveform color themes
+const WAVEFORM_COLORS = [
+  { name: "Blue", primary: "#3b82f6", secondary: "#60a5fa" },
+  { name: "Purple", primary: "#8b5cf6", secondary: "#a78bfa" },
+  { name: "Green", primary: "#22c55e", secondary: "#4ade80" },
+  { name: "Orange", primary: "#f97316", secondary: "#fb923c" },
+  { name: "Pink", primary: "#ec4899", secondary: "#f472b6" },
+  { name: "Cyan", primary: "#06b6d4", secondary: "#22d3ee" },
+  { name: "Red", primary: "#ef4444", secondary: "#f87171" },
+  { name: "Yellow", primary: "#eab308", secondary: "#facc15" },
+];
 
 interface WaveformViewerProps {
   audioData?: Float32Array;
@@ -20,6 +37,9 @@ interface WaveformViewerProps {
   peaks?: number[];
   sceneChanges?: { timestamp: number; confidence: number }[];
   className?: string;
+  compact?: boolean;
+  onVisibilityChange?: (visible: boolean) => void;
+  initialColor?: { primary: string; secondary: string };
 }
 
 export function WaveformViewer({
@@ -31,6 +51,9 @@ export function WaveformViewer({
   peaks,
   sceneChanges = [],
   className = "",
+  compact = false,
+  onVisibilityChange,
+  initialColor = WAVEFORM_COLORS[0],
 }: WaveformViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -38,6 +61,15 @@ export function WaveformViewer({
   const [offset, setOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [hoveredTime, setHoveredTime] = useState<number | null>(null);
+  const [isVisible, setIsVisible] = useState(true);
+  const [waveformColor, setWaveformColor] = useState(initialColor);
+
+  // Toggle visibility
+  const toggleVisibility = useCallback(() => {
+    const newVisibility = !isVisible;
+    setIsVisible(newVisibility);
+    onVisibilityChange?.(newVisibility);
+  }, [isVisible, onVisibilityChange]);
 
   // Draw waveform on canvas
   const drawWaveform = useCallback(() => {
@@ -70,7 +102,7 @@ export function WaveformViewer({
     const data = peaks || (audioData ? Array.from(audioData) : null);
     if (!data || data.length === 0) {
       // Draw placeholder
-      ctx.fillStyle = "#3b82f6";
+      ctx.fillStyle = waveformColor.primary;
       ctx.fillRect(0, midY - 2, width, 4);
       return;
     }
@@ -84,12 +116,12 @@ export function WaveformViewer({
     const endIndex = Math.ceil((endTime / duration) * data.length);
     const visibleData = data.slice(startIndex, endIndex);
 
-    // Draw waveform bars
+    // Draw waveform bars with selected color
     const barWidth = Math.max(1, width / visibleData.length);
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
-    gradient.addColorStop(0, "#3b82f6");
-    gradient.addColorStop(0.5, "#60a5fa");
-    gradient.addColorStop(1, "#3b82f6");
+    gradient.addColorStop(0, waveformColor.primary);
+    gradient.addColorStop(0.5, waveformColor.secondary);
+    gradient.addColorStop(1, waveformColor.primary);
 
     ctx.fillStyle = gradient;
 
@@ -103,7 +135,7 @@ export function WaveformViewer({
     }
 
     drawOverlays(ctx, width, height);
-  }, [audioData, waveformImageUrl, peaks, duration, zoom, offset]);
+  }, [audioData, waveformImageUrl, peaks, duration, zoom, offset, waveformColor]);
 
   // Draw overlays (playhead, scene markers, etc.)
   const drawOverlays = useCallback(
@@ -232,86 +264,141 @@ export function WaveformViewer({
         <CardTitle className="text-sm font-medium flex items-center justify-between">
           <span className="flex items-center gap-2">
             <Volume2 className="w-4 h-4" />
-            Audio Waveform
+            {!compact && "Audio Waveform"}
           </span>
           <div className="flex items-center gap-1">
+            {/* Color picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  title="Change color"
+                >
+                  <Palette className="w-3 h-3" style={{ color: waveformColor.primary }} />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-2" align="end">
+                <div className="grid grid-cols-4 gap-1">
+                  {WAVEFORM_COLORS.map((color) => (
+                    <button
+                      key={color.name}
+                      className={`w-6 h-6 rounded-full border-2 transition-all ${
+                        waveformColor.primary === color.primary
+                          ? "border-white scale-110"
+                          : "border-transparent hover:border-white/50"
+                      }`}
+                      style={{ backgroundColor: color.primary }}
+                      onClick={() => setWaveformColor(color)}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+            
+            {/* Visibility toggle */}
             <Button
               variant="ghost"
               size="icon"
               className="h-6 w-6"
-              onClick={handleZoomOut}
-              disabled={zoom <= 1}
+              onClick={toggleVisibility}
+              title={isVisible ? "Hide waveform" : "Show waveform"}
             >
-              <ZoomOut className="w-3 h-3" />
+              {isVisible ? (
+                <Eye className="w-3 h-3" />
+              ) : (
+                <EyeOff className="w-3 h-3" />
+              )}
             </Button>
-            <span className="text-xs text-muted-foreground w-10 text-center">
-              {zoom.toFixed(1)}x
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleZoomIn}
-              disabled={zoom >= 10}
-            >
-              <ZoomIn className="w-3 h-3" />
-            </Button>
+            
+            {isVisible && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={handleZoomOut}
+                  disabled={zoom <= 1}
+                >
+                  <ZoomOut className="w-3 h-3" />
+                </Button>
+                {!compact && (
+                  <span className="text-xs text-muted-foreground w-10 text-center">
+                    {zoom.toFixed(1)}x
+                  </span>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  onClick={handleZoomIn}
+                  disabled={zoom >= 10}
+                >
+                  <ZoomIn className="w-3 h-3" />
+                </Button>
+              </>
+            )}
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2">
-        {/* Waveform Canvas */}
-        <div ref={containerRef} className="relative">
-          <canvas
-            ref={canvasRef}
-            width={800}
-            height={80}
-            className="w-full h-20 rounded cursor-pointer"
-            onClick={handleCanvasClick}
-            onMouseMove={handleMouseMove}
-            onMouseDown={() => setIsDragging(true)}
-            onMouseUp={() => setIsDragging(false)}
-            onMouseLeave={() => {
-              setHoveredTime(null);
-              setIsDragging(false);
-            }}
-          />
-          
-          {/* Time labels */}
-          <div className="flex justify-between text-xs text-muted-foreground mt-1">
-            <span>{formatTime(offset)}</span>
-            <span>
-              {hoveredTime !== null ? formatTime(hoveredTime) : formatTime(currentTime)}
-            </span>
-            <span>{formatTime(Math.min(offset + duration / zoom, duration))}</span>
-          </div>
-        </div>
-
-        {/* Zoom slider for detailed control */}
-        {zoom > 1 && (
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">View Position</p>
-            <Slider
-              value={[offset]}
-              min={0}
-              max={Math.max(0, duration - duration / zoom)}
-              step={0.1}
-              onValueChange={([value]) => setOffset(value)}
-              className="w-full"
+      
+      {isVisible && (
+        <CardContent className="space-y-2">
+          {/* Waveform Canvas */}
+          <div ref={containerRef} className="relative">
+            <canvas
+              ref={canvasRef}
+              width={800}
+              height={compact ? 50 : 80}
+              className={`w-full ${compact ? "h-12" : "h-20"} rounded cursor-pointer`}
+              onClick={handleCanvasClick}
+              onMouseMove={handleMouseMove}
+              onMouseDown={() => setIsDragging(true)}
+              onMouseUp={() => setIsDragging(false)}
+              onMouseLeave={() => {
+                setHoveredTime(null);
+                setIsDragging(false);
+              }}
             />
+            
+            {/* Time labels */}
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              <span>{formatTime(offset)}</span>
+              <span>
+                {hoveredTime !== null ? formatTime(hoveredTime) : formatTime(currentTime)}
+              </span>
+              <span>{formatTime(Math.min(offset + duration / zoom, duration))}</span>
+            </div>
           </div>
-        )}
 
-        {/* Scene change markers legend */}
-        {sceneChanges.length > 0 && (
-          <div className="flex items-center gap-2 text-xs">
-            <span className="w-3 h-3 bg-red-500/70 rounded-sm" />
-            <span className="text-muted-foreground">
-              Scene Changes ({sceneChanges.length})
-            </span>
-          </div>
-        )}
-      </CardContent>
+          {/* Zoom slider for detailed control */}
+          {zoom > 1 && !compact && (
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">View Position</p>
+              <Slider
+                value={[offset]}
+                min={0}
+                max={Math.max(0, duration - duration / zoom)}
+                step={0.1}
+                onValueChange={([value]) => setOffset(value)}
+                className="w-full"
+              />
+            </div>
+          )}
+
+          {/* Scene change markers legend */}
+          {sceneChanges.length > 0 && !compact && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="w-3 h-3 bg-red-500/70 rounded-sm" />
+              <span className="text-muted-foreground">
+                Scene Changes ({sceneChanges.length})
+              </span>
+            </div>
+          )}
+        </CardContent>
+      )}
     </Card>
   );
 }

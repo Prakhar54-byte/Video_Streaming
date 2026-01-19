@@ -20,7 +20,17 @@ interface UploadProgressProps {
   fileName?: string;
   errorMessage?: string;
   className?: string;
+  processingStage?: string; // Current processing stage from backend
+  processingProgress?: number; // Processing progress 0-100
 }
+
+// Detailed processing stages for better UX feedback
+const processingStages = [
+  { id: "transcode", label: "Transcoding video", icon: Film },
+  { id: "hls", label: "Creating adaptive streams", icon: Cog },
+  { id: "thumbnails", label: "Generating thumbnails", icon: Sparkles },
+  { id: "intro", label: "Detecting intro", icon: Sparkles },
+];
 
 const stages = [
   { id: "upload", label: "Uploading", icon: CloudUpload, threshold: 0 },
@@ -35,6 +45,8 @@ export function UploadProgress({
   fileName,
   errorMessage,
   className,
+  processingStage,
+  processingProgress,
 }: UploadProgressProps) {
   const getStatusConfig = () => {
     switch (status) {
@@ -153,17 +165,62 @@ export function UploadProgress({
         </div>
       )}
 
-      {/* Processing indicator */}
+      {/* Processing indicator with detailed stages */}
       {status === "processing" && (
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <div className="flex gap-1">
-            <div className="w-2 h-2 rounded-full bg-yellow-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-            <div className="w-2 h-2 rounded-full bg-yellow-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-            <div className="w-2 h-2 rounded-full bg-yellow-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+        <div className="space-y-4">
+          {/* Processing stages timeline */}
+          <div className="space-y-3">
+            {processingStages.map((stage, index) => {
+              const StageIcon = stage.icon;
+              const isCurrentStage = processingStage === stage.id;
+              const isPastStage = processingStages.findIndex(s => s.id === processingStage) > index;
+              
+              return (
+                <div key={stage.id} className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center transition-all",
+                    isPastStage ? "bg-green-500/20" : "",
+                    isCurrentStage ? "bg-yellow-500/20" : "",
+                    !isPastStage && !isCurrentStage ? "bg-muted" : ""
+                  )}>
+                    {isPastStage ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    ) : isCurrentStage ? (
+                      <StageIcon className="w-4 h-4 text-yellow-500 animate-spin" />
+                    ) : (
+                      <StageIcon className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className={cn(
+                      "text-sm font-medium",
+                      isPastStage ? "text-green-600" : "",
+                      isCurrentStage ? "text-yellow-600" : "",
+                      !isPastStage && !isCurrentStage ? "text-muted-foreground" : ""
+                    )}>
+                      {stage.label}
+                      {isCurrentStage && processingProgress !== undefined && (
+                        <span className="ml-2 text-xs">({processingProgress}%)</span>
+                      )}
+                    </p>
+                  </div>
+                  {isCurrentStage && (
+                    <div className="flex gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <span>
-            Optimizing your video for streaming. This may take a few minutes...
-          </span>
+          
+          {/* Estimated time */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground border-t pt-3">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>This usually takes 1-3 minutes depending on video length</span>
+          </div>
         </div>
       )}
 

@@ -31,6 +31,9 @@ interface PlaylistQueueState {
   // Shuffle state
   isShuffled: boolean;
   
+  // Manual queue mode (not tied to a playlist)
+  isManualQueue: boolean;
+  
   // Actions
   setPlaylistQueue: (playlistId: string, playlistName: string, videos: PlaylistVideo[], startIndex?: number, shuffle?: boolean) => void;
   clearQueue: () => void;
@@ -41,6 +44,9 @@ interface PlaylistQueueState {
   getCurrentVideo: () => PlaylistVideo | null;
   hasNext: () => boolean;
   hasPrevious: () => boolean;
+  addToQueue: (video: PlaylistVideo) => void;
+  removeFromQueue: (videoId: string) => void;
+  isInQueue: (videoId: string) => boolean;
 }
 
 export const usePlaylistQueueStore = create<PlaylistQueueState>()(
@@ -52,6 +58,7 @@ export const usePlaylistQueueStore = create<PlaylistQueueState>()(
       originalQueue: [],
       currentIndex: 0,
       isShuffled: false,
+      isManualQueue: false,
 
       setPlaylistQueue: (playlistId, playlistName, videos, startIndex = 0, shuffle = false) => {
         let queue = [...videos];
@@ -72,6 +79,7 @@ export const usePlaylistQueueStore = create<PlaylistQueueState>()(
           originalQueue: videos,
           currentIndex: startIndex,
           isShuffled: shuffle,
+          isManualQueue: false,
         });
       },
 
@@ -83,6 +91,7 @@ export const usePlaylistQueueStore = create<PlaylistQueueState>()(
           originalQueue: [],
           currentIndex: 0,
           isShuffled: false,
+          isManualQueue: false,
         });
       },
 
@@ -150,6 +159,57 @@ export const usePlaylistQueueStore = create<PlaylistQueueState>()(
       hasPrevious: () => {
         const { currentIndex } = get();
         return currentIndex > 0;
+      },
+
+      addToQueue: (video) => {
+        const { queue, isManualQueue, playlistId } = get();
+        
+        // Check if video already in queue
+        if (queue.some(v => v._id === video._id)) {
+          return;
+        }
+        
+        // If we're in playlist mode, just add to the end
+        // If no queue exists, start a manual queue
+        if (queue.length === 0 || (!playlistId && !isManualQueue)) {
+          set({
+            queue: [video],
+            originalQueue: [video],
+            currentIndex: 0,
+            isManualQueue: true,
+            playlistId: null,
+            playlistName: null,
+          });
+        } else {
+          set({
+            queue: [...queue, video],
+            originalQueue: [...queue, video],
+          });
+        }
+      },
+
+      removeFromQueue: (videoId) => {
+        const { queue, currentIndex } = get();
+        const newQueue = queue.filter(v => v._id !== videoId);
+        const removedIndex = queue.findIndex(v => v._id === videoId);
+        
+        let newIndex = currentIndex;
+        if (removedIndex < currentIndex) {
+          newIndex = currentIndex - 1;
+        } else if (removedIndex === currentIndex && currentIndex >= newQueue.length) {
+          newIndex = Math.max(0, newQueue.length - 1);
+        }
+        
+        set({
+          queue: newQueue,
+          originalQueue: newQueue,
+          currentIndex: newIndex,
+        });
+      },
+
+      isInQueue: (videoId) => {
+        const { queue } = get();
+        return queue.some(v => v._id === videoId);
       },
     }),
     {

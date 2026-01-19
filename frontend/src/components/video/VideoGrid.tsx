@@ -24,12 +24,14 @@ interface Video {
   createdAt: string;
   previewAnimationUrl?: string; // Added for animated WebP previews
   processingStatus?: 'pending' | 'processing' | 'completed' | 'failed';
+  categories?: string[]; // Video categories for filtering
 }
 
 interface VideoGridProps {
   subscribedOnly?: boolean;
   sortBy?: 'recent' | 'views' | 'duration';
   channelId?: string;
+  category?: string; // Category filter
 }
 
 const VideoCard = ({ video, isSubscribed, isAboveFold }: { video: Video, isSubscribed: boolean, isAboveFold: boolean }) => {
@@ -143,7 +145,7 @@ const VideoCard = ({ video, isSubscribed, isAboveFold }: { video: Video, isSubsc
     )
 }
 
-export function VideoGrid({ subscribedOnly = false, sortBy = 'recent', channelId }: VideoGridProps) {
+export function VideoGrid({ subscribedOnly = false, sortBy = 'recent', channelId, category = 'all' }: VideoGridProps) {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscribedChannels, setSubscribedChannels] = useState<Set<string>>(new Set());
@@ -165,8 +167,12 @@ export function VideoGrid({ subscribedOnly = false, sortBy = 'recent', channelId
         }
       }
       
-      // Fetch all videos from homepage endpoint
-      const videosResponse = await apiClient.get("/videos");
+      // Fetch videos with category filter
+      const params = new URLSearchParams();
+      if (category && category !== 'all') {
+        params.append('category', category);
+      }
+      const videosResponse = await apiClient.get(`/videos${params.toString() ? '?' + params.toString() : ''}`);
       let allVideos = videosResponse.data.data || videosResponse.data || [];
       allVideos = Array.isArray(allVideos) ? allVideos : [];
       
@@ -213,7 +219,7 @@ export function VideoGrid({ subscribedOnly = false, sortBy = 'recent', channelId
     } finally {
       setLoading(false);
     }
-  }, [channelId, sortBy, subscribedOnly, user]);
+  }, [channelId, sortBy, subscribedOnly, user, category]);
 
   useEffect(() => {
     fetchVideosWithSubscriptions();

@@ -33,7 +33,7 @@ export default function UploadPage() {
       description: "Your video has been processed and is now available.",
     });
     setTimeout(() => {
-      router.push('/my-channel');
+      router.push('/');
     }, 2000);
   }, [uploadProgressHook, toast, router]);
 
@@ -87,14 +87,14 @@ export default function UploadPage() {
     videoFile: File | null;
     thumbnail: File | null;
     isDraft: boolean;
-    category: string;
+    categories: string[];
   }>({
     title: '',
     description: '',
     videoFile: null,
     thumbnail: null,
     isDraft: false,
-    category: 'all',
+    categories: ['all'],
   });
   
   const [previews, setPreviews] = useState<{
@@ -156,7 +156,7 @@ export default function UploadPage() {
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
       formDataToSend.append('description', formData.description);
-      formDataToSend.append('category', formData.category);
+      formDataToSend.append('categories', JSON.stringify(formData.categories));
       formDataToSend.append('videoFile', formData.videoFile);
       formDataToSend.append('thumbnail', formData.thumbnail);
       formDataToSend.append('isPublished', String(!formData.isDraft));
@@ -217,7 +217,7 @@ export default function UploadPage() {
       videoFile: null,
       thumbnail: null,
       isDraft: false,
-      category: 'all',
+      categories: ['all'],
     });
     setPreviews({ video: '', thumbnail: '' });
     setUploadedVideoId(null);
@@ -370,30 +370,58 @@ export default function UploadPage() {
               />
             </div>
 
-            {/* Category Selection */}
+            {/* Category Selection - Multi-select */}
             <div>
               <label className="block text-lg font-semibold mb-3">
-                Category <span className="text-destructive">*</span>
+                Categories <span className="text-destructive">*</span>
+                <span className="text-sm font-normal text-muted-foreground ml-2">(Select up to 3)</span>
               </label>
-              <select
-                required
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                className="w-full py-4 px-4 text-base bg-background border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                disabled={isUploading}
-              >
-                <option value="all">General</option>
-                <option value="music">Music</option>
-                <option value="gaming">Gaming</option>
-                <option value="education">Education</option>
-                <option value="fitness">Fitness</option>
-                <option value="cooking">Cooking</option>
-                <option value="movies">Movies</option>
-                <option value="news">News</option>
-                <option value="programming">Coding</option>
-                <option value="art">Art & Design</option>
-                <option value="photography">Photography</option>
-              </select>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'all', label: 'General' },
+                  { value: 'music', label: 'Music' },
+                  { value: 'gaming', label: 'Gaming' },
+                  { value: 'education', label: 'Education' },
+                  { value: 'fitness', label: 'Fitness' },
+                  { value: 'cooking', label: 'Cooking' },
+                  { value: 'movies', label: 'Movies' },
+                  { value: 'news', label: 'News' },
+                  { value: 'programming', label: 'Coding' },
+                  { value: 'art', label: 'Art & Design' },
+                  { value: 'photography', label: 'Photography' },
+                ].map((cat) => {
+                  const isSelected = formData.categories.includes(cat.value);
+                  return (
+                    <button
+                      key={cat.value}
+                      type="button"
+                      disabled={isUploading || (!isSelected && formData.categories.length >= 3)}
+                      onClick={() => {
+                        setFormData(prev => {
+                          const newCategories = isSelected
+                            ? prev.categories.filter(c => c !== cat.value)
+                            : [...prev.categories, cat.value];
+                          // Ensure at least one category is selected
+                          return {
+                            ...prev,
+                            categories: newCategories.length > 0 ? newCategories : ['all']
+                          };
+                        });
+                      }}
+                      className={`px-4 py-2 rounded-full border-2 text-sm font-medium transition-all ${
+                        isSelected
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-muted-foreground/30 hover:border-primary/50 disabled:opacity-50 disabled:cursor-not-allowed'
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  );
+                })}
+              </div>
+              {formData.categories.length === 0 && (
+                <p className="text-sm text-destructive mt-2">Please select at least one category</p>
+              )}
             </div>
 
             {/* Publish/Draft Toggle */}

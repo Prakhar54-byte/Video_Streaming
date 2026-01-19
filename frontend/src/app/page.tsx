@@ -112,7 +112,10 @@ export default function HomePage() {
                   </h2>
                 </div>
               )}
-              <VideoGrid sortBy={activeCategory === "trending" ? "views" : "recent"} />
+              <VideoGrid 
+                sortBy={activeCategory === "trending" ? "views" : "recent"} 
+                category={activeCategory}
+              />
             </div>
           </TabsContent>
           

@@ -156,7 +156,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
                     createdAt:1,
                     isPublished:1,
                     processingStatus:1,
-                    category:1,
+                    categories:1,
                     likesCount: 1,
                     commentsCount: 1,
                     owner:{
@@ -197,7 +197,7 @@ import { addVideoToQueue } from "../queues/videoProcessing.queue.js";
 import { log } from "console"
 
 const publishAVideo = asyncHandler(async (req, res) => {
-    const { title, description, isPublished, category } = req.body;
+    const { title, description, isPublished, categories } = req.body;
     
     // Parse isPublished - default to true (published) if not specified
     const shouldPublish = isPublished === undefined ? true : (isPublished === 'true' || isPublished === true);
@@ -206,9 +206,31 @@ const publishAVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Title and description are required.");
     }
 
-    // Validate category
+    // Validate categories (support both single category string and array)
     const validCategories = ["all", "trending", "music", "gaming", "education", "fitness", "cooking", "movies", "news", "programming", "art", "photography"];
-    const videoCategory = category && validCategories.includes(category) ? category : "all";
+    
+    // Parse categories - can be a JSON string array, comma-separated string, or single value
+    let parsedCategories = ["all"];
+    if (categories) {
+        if (Array.isArray(categories)) {
+            parsedCategories = categories.filter(c => validCategories.includes(c));
+        } else if (typeof categories === 'string') {
+            // Try parsing as JSON array first
+            try {
+                const parsed = JSON.parse(categories);
+                if (Array.isArray(parsed)) {
+                    parsedCategories = parsed.filter(c => validCategories.includes(c));
+                }
+            } catch {
+                // Treat as comma-separated or single value
+                parsedCategories = categories.split(',').map(c => c.trim()).filter(c => validCategories.includes(c));
+            }
+        }
+    }
+    // Default to ["all"] if no valid categories
+    if (parsedCategories.length === 0) {
+        parsedCategories = ["all"];
+    }
 
     // Check if user has a channel
     const channel = await Channel.findOne({ owner: req.user._id });
@@ -227,7 +249,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const video = await Video.create({
         title,
         description,
-        category: videoCategory,
+        categories: parsedCategories,
         videoFiles: toPublicDbPath(videoFileLocalPath), // Store under public/ so API can expose a URL path
         thumbnail: thumbnailLocalPath ? toPublicDbPath(thumbnailLocalPath) : "",
         owner: req.user._id,
@@ -301,7 +323,7 @@ const getVideoById = asyncHandler(async (req, res) => {
                     _id: 1,
                     title: 1,
                     description: 1,
-                    category: 1,
+                    categories: 1,
                     videoFiles: 1,
                     thumbnail: 1,
                     processingStatus: 1,
@@ -384,7 +406,7 @@ const updateVideo = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Video Id is incorrect to update video")
         }
     
-        const { title, description, thumbnail, category, isPublished } = req.body;
+        const { title, description, thumbnail, categories, isPublished } = req.body;
         
         // Build update object with only provided fields
         const updateFields = {};
@@ -393,11 +415,24 @@ const updateVideo = asyncHandler(async (req, res) => {
         if (thumbnail !== undefined) updateFields.thumbnail = thumbnail;
         if (isPublished !== undefined) updateFields.isPublished = isPublished;
         
-        // Validate and add category if provided
-        if (category !== undefined) {
+        // Validate and add categories if provided
+        if (categories !== undefined) {
             const validCategories = ["all", "trending", "music", "gaming", "education", "fitness", "cooking", "movies", "news", "programming", "art", "photography"];
-            if (validCategories.includes(category)) {
-                updateFields.category = category;
+            let parsedCategories = [];
+            if (Array.isArray(categories)) {
+                parsedCategories = categories.filter(c => validCategories.includes(c));
+            } else if (typeof categories === 'string') {
+                try {
+                    const parsed = JSON.parse(categories);
+                    if (Array.isArray(parsed)) {
+                        parsedCategories = parsed.filter(c => validCategories.includes(c));
+                    }
+                } catch {
+                    parsedCategories = categories.split(',').map(c => c.trim()).filter(c => validCategories.includes(c));
+                }
+            }
+            if (parsedCategories.length > 0) {
+                updateFields.categories = parsedCategories;
             }
         }
         
@@ -496,14 +531,22 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
 const homepageVideos = asyncHandler(async (req, res) => {
     try {
-        const { page = 1, limit = 20 } = req.query;
+        const { page = 1, limit = 20, category } = req.query;
         const pageNum = parseInt(page, 10);
         const limitNum = parseInt(limit, 10);
         const skip = (pageNum - 1) * limitNum;
 
+        // Build match query for filtering
+        const matchQuery = { isPublished: true };
+        
+        // Filter by category if provided and not "all"
+        if (category && category !== "all") {
+            matchQuery.categories = { $in: [category] };
+        }
+
         // Fetch videos with owner details using aggregation
         const videos = await Video.aggregate([
-            { $match: { isPublished: true } },
+            { $match: matchQuery },
             { $sort: { createdAt: -1 } },
             { $skip: skip },
             { $limit: limitNum },
@@ -521,13 +564,15 @@ const homepageVideos = asyncHandler(async (req, res) => {
                 _id: 1,
                 title: 1,
                 description: 1,
-                category: 1,
+                categories: 1,
                 thumbnail: 1,
                 videoFiles: 1,
                 duration: 1,
                 views: 1,
                 isPublished: 1,
                 createdAt: 1,
+                processingStatus: 1,
+                previewAnimationUrl: 1,
                 owner: {
                     _id: { $ifNull: ["$ownerDetails._id", null] },
                     username: { $ifNull: ["$ownerDetails.username", "Unknown"] },

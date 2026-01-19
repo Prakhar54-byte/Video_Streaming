@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,15 @@ import apiClient from '@/lib/api';
 import { formatViewCount, formatTimeAgo } from '@/lib/utils';
 import Image from 'next/image';
 import { VideoJsPlayer } from '@/components/video/VideoJsPlayer';
+import { LiveAudioWaveform } from '@/components/video/LiveAudioWaveform';
 import { AddToPlaylistModal } from '@/components/playlist/AddToPlaylistModal';
-import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye, Video, Trash2, ListVideo, SkipForward, SkipBack, Shuffle } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye, Video, Trash2, ListVideo, SkipForward, SkipBack, Shuffle, MoreVertical, Clock, Plus, X } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 // Removed server-only import
 
 interface Video {
@@ -80,6 +87,7 @@ export default function VideoPlayerPage() {
     queue, 
     currentIndex, 
     isShuffled,
+    isManualQueue,
     setCurrentIndex,
     nextVideo: getNextVideo,
     previousVideo: getPreviousVideo,
@@ -87,6 +95,9 @@ export default function VideoPlayerPage() {
     hasNext,
     hasPrevious,
     clearQueue,
+    addToQueue,
+    removeFromQueue,
+    isInQueue,
   } = usePlaylistQueueStore();
   
   // Check if we're in playlist mode - only when ?playlist= query param is present
@@ -105,6 +116,14 @@ export default function VideoPlayerPage() {
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [relatedVideos, setRelatedVideos] = useState<Video[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
+  
+  // Video playback state for waveform
+  const [currentTime, setCurrentTime] = useState(0);
+  const [videoDuration, setVideoDuration] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
+  const seekToRef = useRef<((time: number) => void) | null>(null);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -301,6 +320,70 @@ export default function VideoPlayerPage() {
     }
   };
 
+  // Handle adding video to queue
+  const handleAddToQueue = (v: Video) => {
+    addToQueue({
+      _id: v._id,
+      title: v.title,
+      thumbnail: v.thumbnail,
+      duration: v.duration,
+      views: v.views,
+      category: v.category,
+      owner: v.owner,
+    });
+    toast({
+      title: 'Added to queue',
+      description: v.title,
+    });
+  };
+
+  // Handle saving to Watch Later playlist
+  const handleSaveToWatchLater = async (videoId: string) => {
+    if (!user?._id) {
+      router.push('/auth/login');
+      return;
+    }
+    
+    try {
+      // First, try to get or create Watch Later playlist
+      const playlistsResponse = await apiClient.get(`/playlists/user/${user._id}`);
+      const playlists = playlistsResponse.data.data || [];
+
+      console.log("Fuck play",playlists);
+      
+      
+      let watchLaterPlaylist = playlists.find((p: any) => p.name === 'Watch Later');
+      
+      if (!watchLaterPlaylist) {
+        // Create Watch Later playlist
+        const createResponse = await apiClient.post('/playlist', {
+          name: 'Watch Later',
+          description: 'Videos to watch later',
+        });
+        watchLaterPlaylist = createResponse.data.data;
+      }
+      
+      // Add video to Watch Later playlist
+      await apiClient.patch(`/playlist/add/${videoId}/${watchLaterPlaylist._id}`);
+      
+      toast({
+        title: 'Saved to Watch Later',
+      });
+    } catch (error: any) {
+      if (error.response?.status === 400 && error.response?.data?.message?.includes('already')) {
+        toast({
+          title: 'Already in Watch Later',
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Error saving video',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
 const handleSubscribe = async () => {
     if (!video) return;
     if (!user?._id) {
@@ -452,6 +535,22 @@ const handleSubscribe = async () => {
                   videoWidth={video?.metadata?.originalWidth}
                   videoHeight={video?.metadata?.originalHeight}
                   aspectRatioMode="auto"
+                  onTimeUpdate={(time, duration) => {
+                    setCurrentTime(time);
+                    setVideoDuration(duration);
+                  }}
+                  onPlayerReady={(seekFn) => {
+                    seekToRef.current = seekFn;
+                  }}
+                  onVideoElementReady={(el) => {
+                    setVideoElement(el);
+                  }}
+                  onPlayStateChange={(playing) => {
+                    setIsPlaying(playing);
+                  }}
+                  onVolumeChange={(vol) => {
+                    setVolume(vol);
+                  }}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full bg-muted">
@@ -466,20 +565,21 @@ const handleSubscribe = async () => {
             <div className="space-y-4">
               <h1 className="text-3xl font-bold">{video.title}</h1>
               
-              
-              
-              {video.waveformUrl && (
-                <div className="w-full bg-muted rounded-lg overflow-hidden">
-                  <Image
-                    src={toUrl(video.waveformUrl)}
-                    alt="Audio Waveform"
-                    width={1200}
-                    height={120}
-                    className="w-full h-auto object-cover"
-                    unoptimized
-                  />
-                </div>
-              )}
+              {/* Live Audio Waveform */}
+              <LiveAudioWaveform
+                videoElement={videoElement}
+                duration={videoDuration || video.duration || 0}
+                currentTime={currentTime}
+                isPlaying={isPlaying}
+                volume={volume}
+                onSeek={(time) => {
+                  if (seekToRef.current) {
+                    seekToRef.current(time);
+                  }
+                }}
+                compact
+                className="border-0 shadow-none bg-muted/50"
+              />
 
               <div className="flex items-center justify-between flex-wrap gap-4">
                 <div className="flex items-center gap-4 text-base text-muted-foreground">
@@ -613,15 +713,21 @@ const handleSubscribe = async () => {
               </div>
 
               <div className="space-y-6">
-                {comments.map((comment) => (
-                  <div key={comment._id} className="flex gap-4">
-                    <Image
-                      src={comment.owner?.avatar || '/placeholder/user-avatar.png'}
-                      alt={comment.owner?.username || 'User'}
-                      width={48}
-                      height={48}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
+                {comments.map((comment, index) => (
+                  <div key={comment._id || `comment-${index}`} className="flex gap-4">
+                    {comment.owner?.avatar ? (
+                      <Image
+                        src={comment.owner.avatar}
+                        alt={comment.owner?.username || 'User'}
+                        width={48}
+                        height={48}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white font-bold text-lg">
+                        {(comment.owner?.fullName || comment.owner?.username || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-base">{comment?.owner?.fullName || 'Unknown User'}</span>
@@ -736,6 +842,78 @@ const handleSubscribe = async () => {
               </div>
             )}
 
+            {/* Manual Queue Box (when videos are added to queue manually) */}
+            {isManualQueue && queue.length > 0 && (
+              <div className="bg-zinc-900/90 rounded-xl border border-zinc-800 overflow-hidden">
+                {/* Queue Header */}
+                <div className="p-4 border-b border-zinc-800 bg-zinc-950/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <ListVideo className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold text-white">Queue</h3>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearQueue}
+                      className="h-8 px-2 text-zinc-400 hover:text-red-400"
+                      title="Clear queue"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-zinc-400">
+                    {queue.length} video{queue.length !== 1 ? 's' : ''} in queue
+                  </p>
+                </div>
+                
+                {/* Queue Videos List */}
+                <div className="max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700">
+                  {queue.map((v, idx) => (
+                    <div
+                      key={v._id}
+                      className="flex items-center gap-3 p-3 hover:bg-zinc-800/50 transition-colors group"
+                    >
+                      <span className="w-6 text-center text-sm font-medium text-zinc-500">
+                        {idx + 1}
+                      </span>
+                      <a href={`/video/${v._id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-20 aspect-video rounded overflow-hidden bg-zinc-800 flex-shrink-0">
+                          {v.thumbnail ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={toUrl(v.thumbnail)}
+                              alt={v.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Video className="w-4 h-4 text-zinc-600" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium line-clamp-2 text-zinc-300">
+                            {v.title}
+                          </p>
+                          <p className="text-xs text-zinc-500 mt-1">
+                            {Math.floor((v.duration || 0) / 60)}:{String(Math.floor((v.duration || 0) % 60)).padStart(2, '0')}
+                          </p>
+                        </div>
+                      </a>
+                      <button
+                        onClick={() => removeFromQueue(v._id)}
+                        className="p-1.5 rounded-full hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Remove from queue"
+                      >
+                        <X className="w-4 h-4 text-zinc-400 hover:text-red-400" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Related Videos Section */}
             <div>
               <h2 className="text-xl font-bold mb-4">
@@ -759,36 +937,56 @@ const handleSubscribe = async () => {
               ) : (
                 <div className="space-y-4">
                   {relatedVideos.map((v) => (
-                    <a
-                      key={v._id}
-                      href={`/video/${v._id}`}
-                      className="flex gap-3 group"
-                    >
-                      <div className="w-40 rounded-lg overflow-hidden bg-muted aspect-video flex-shrink-0">
-                        {v.thumbnail ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={toUrl(v.thumbnail)}
-                            alt={v.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Eye className="w-6 h-6 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
+                    <div key={v._id} className="flex gap-3 group relative">
+                      <a href={`/video/${v._id}`} className="flex gap-3 flex-1">
+                        <div className="w-40 rounded-lg overflow-hidden bg-muted aspect-video flex-shrink-0">
+                          {v.thumbnail ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={toUrl(v.thumbnail)}
+                              alt={v.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Eye className="w-6 h-6 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
 
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-                          {v.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1 truncate">{v.owner?.fullName}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatViewCount(v.views)} views • {formatTimeAgo(v.createdAt)}
-                        </p>
-                      </div>
-                    </a>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors pr-8">
+                            {v.title}
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-1 truncate">{v.owner?.fullName}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatViewCount(v.views)} views • {formatTimeAgo(v.createdAt)}
+                          </p>
+                        </div>
+                      </a>
+                      
+                      {/* 3-dot menu */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="absolute top-0 right-0 p-1.5 rounded-full hover:bg-muted/80 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={() => handleSaveToWatchLater(v._id)}>
+                            <Clock className="w-4 h-4 mr-2" />
+                            Save to Watch Later
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => handleAddToQueue(v)}
+                            disabled={isInQueue(v._id)}
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            {isInQueue(v._id) ? 'Already in Queue' : 'Add to Queue'}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   ))}
                 </div>
               )}
