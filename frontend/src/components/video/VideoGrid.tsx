@@ -3,10 +3,23 @@ import { useAuthStore } from "@/store/authStore";
 import apiClient from "@/lib/api";
 import Link from "next/link";
 import Image from "next/image";
-import { Play, Eye, Clock, Bell, MoreVertical, CheckCircle2 } from "lucide-react";
+import { Play, Eye, Clock, Bell, MoreVertical, CheckCircle2, ListPlus, ListVideo, EyeOff, BookmarkPlus, BookmarkCheck } from "lucide-react";
 import { formatViewCount, formatTimeAgo, toBackendAssetUrl } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ProcessingOverlay } from "@/components/video/VideoProcessingStatus";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { useQueueStore } from "@/store/queueStore";
+import { useWatchLaterStore } from "@/store/watchLaterStore";
+import { useHiddenVideosStore } from "@/store/hiddenVideosStore";
+import { AddToPlaylistModal } from "@/components/playlist/AddToPlaylistModal";
+import { toast } from "sonner";
 
 interface Video {
   _id: string;
@@ -37,7 +50,13 @@ interface VideoGridProps {
 const VideoCard = ({ video, isSubscribed, isAboveFold }: { video: Video, isSubscribed: boolean, isAboveFold: boolean }) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+    const [showPlaylistModal, setShowPlaylistModal] = useState(false);
     const hoverTimeoutRef = useRef<NodeJS.Timeout>(null);
+    const { addToQueue } = useQueueStore();
+    const { addToWatchLater, removeFromWatchLater, isInWatchLater } = useWatchLaterStore();
+    const { hideVideo } = useHiddenVideosStore();
+    const { user } = useAuthStore();
+    const inWatchLater = isInWatchLater(video._id);
 
     const handleMouseEnter = () => {
         setIsHovered(true);
@@ -56,7 +75,48 @@ const VideoCard = ({ video, isSubscribed, isAboveFold }: { video: Video, isSubsc
         }
     };
 
+    const handleAddToQueue = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!user) return toast.error("Login required");
+        addToQueue(video._id);
+        toast.success("Added to queue");
+    };
+
+    const handleWatchLater = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!user) return toast.error("Login required");
+        if (inWatchLater) {
+            removeFromWatchLater(video._id);
+            toast.success("Removed from Watch Later");
+        } else {
+            addToWatchLater(video._id);
+            toast.success("Added to Watch Later");
+        }
+    };
+
+    const handleAddToPlaylist = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!user) return toast.error("Login required");
+        setShowPlaylistModal(true);
+    };
+
+    const handleHideVideo = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        hideVideo(video._id);
+        toast.success("Video hidden");
+    };
+
     return (
+        <>
+        <AddToPlaylistModal
+            videoId={video._id}
+            isOpen={showPlaylistModal}
+            onClose={() => setShowPlaylistModal(false)}
+        />
         <div className="group flex flex-col gap-3">
              {/* Thumbnail Section */}
              <Link href={`/video/${video._id}`} className="block relative aspect-video rounded-xl overflow-hidden bg-muted outline-none ring-offset-2 focus-visible:ring-2 focus-visible:ring-primary">
@@ -136,12 +196,34 @@ const VideoCard = ({ video, isSubscribed, isAboveFold }: { video: Video, isSubsc
                      </div>
                  </div>
 
-                 {/* More Options (Placeholder) */}
-                 <button className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded-full -mr-2">
-                     <MoreVertical className="w-4 h-4 text-foreground" />
-                 </button>
+                 {/* More Options */}
+                 <DropdownMenu>
+                     <DropdownMenuTrigger asChild>
+                         <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <MoreVertical className="w-4 h-4" />
+                             <span className="sr-only">Menu</span>
+                         </Button>
+                     </DropdownMenuTrigger>
+                     <DropdownMenuContent align="end">
+                         <DropdownMenuItem onClick={handleWatchLater}>
+                             {inWatchLater ? <BookmarkCheck className="mr-2 h-4 w-4 text-primary" /> : <BookmarkPlus className="mr-2 h-4 w-4" />}
+                             {inWatchLater ? "Remove from Watch Later" : "Watch Later"}
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={handleAddToQueue}>
+                             <ListPlus className="mr-2 h-4 w-4" /> Add to queue
+                         </DropdownMenuItem>
+                         <DropdownMenuItem onClick={handleAddToPlaylist}>
+                             <ListVideo className="mr-2 h-4 w-4" /> Save to playlist
+                         </DropdownMenuItem>
+                         <DropdownMenuSeparator />
+                         <DropdownMenuItem onClick={handleHideVideo}>
+                             <EyeOff className="mr-2 h-4 w-4" /> Hide video
+                         </DropdownMenuItem>
+                     </DropdownMenuContent>
+                 </DropdownMenu>
              </div>
         </div>
+        </>
     )
 }
 
@@ -150,6 +232,7 @@ export function VideoGrid({ subscribedOnly = false, sortBy = 'recent', channelId
   const [loading, setLoading] = useState(true);
   const [subscribedChannels, setSubscribedChannels] = useState<Set<string>>(new Set());
   const { user } = useAuthStore();
+  const { videoIds: hiddenVideoIds } = useHiddenVideosStore();
 
   const fetchVideosWithSubscriptions = useCallback(async () => {
     try {
@@ -288,7 +371,9 @@ export function VideoGrid({ subscribedOnly = false, sortBy = 'recent', channelId
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-y-10 gap-x-6 pb-12">
-      {videos.map((video, index) => (
+      {videos
+        .filter((video) => !hiddenVideoIds.includes(video._id))
+        .map((video, index) => (
         <VideoCard 
             key={video._id} 
             video={video} 

@@ -34,6 +34,12 @@ interface PlaylistQueueState {
   // Manual queue mode (not tied to a playlist)
   isManualQueue: boolean;
   
+  // Autoplay: auto-play next video when current ends
+  isAutoplay: boolean;
+
+  // History of recently played video IDs (to avoid autoplay loops)
+  playedHistory: string[];
+  
   // Actions
   setPlaylistQueue: (playlistId: string, playlistName: string, videos: PlaylistVideo[], startIndex?: number, shuffle?: boolean) => void;
   clearQueue: () => void;
@@ -47,6 +53,9 @@ interface PlaylistQueueState {
   addToQueue: (video: PlaylistVideo) => void;
   removeFromQueue: (videoId: string) => void;
   isInQueue: (videoId: string) => boolean;
+  toggleAutoplay: () => void;
+  addToHistory: (videoId: string) => void;
+  getUpcomingVideos: () => PlaylistVideo[];
 }
 
 export const usePlaylistQueueStore = create<PlaylistQueueState>()(
@@ -59,6 +68,8 @@ export const usePlaylistQueueStore = create<PlaylistQueueState>()(
       currentIndex: 0,
       isShuffled: false,
       isManualQueue: false,
+      isAutoplay: true,
+      playedHistory: [],
 
       setPlaylistQueue: (playlistId, playlistName, videos, startIndex = 0, shuffle = false) => {
         let queue = [...videos];
@@ -92,6 +103,7 @@ export const usePlaylistQueueStore = create<PlaylistQueueState>()(
           currentIndex: 0,
           isShuffled: false,
           isManualQueue: false,
+          playedHistory: [],
         });
       },
 
@@ -210,6 +222,22 @@ export const usePlaylistQueueStore = create<PlaylistQueueState>()(
       isInQueue: (videoId) => {
         const { queue } = get();
         return queue.some(v => v._id === videoId);
+      },
+
+      toggleAutoplay: () => {
+        set((state) => ({ isAutoplay: !state.isAutoplay }));
+      },
+
+      addToHistory: (videoId) => {
+        const { playedHistory } = get();
+        // Avoid duplicates at the end, keep last 20 videos
+        if (playedHistory[playedHistory.length - 1] === videoId) return;
+        set({ playedHistory: [...playedHistory.slice(-19), videoId] });
+      },
+
+      getUpcomingVideos: () => {
+        const { queue, currentIndex } = get();
+        return queue.slice(currentIndex + 1);
       },
     }),
     {

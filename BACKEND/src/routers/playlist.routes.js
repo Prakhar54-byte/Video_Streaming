@@ -12,19 +12,19 @@ import {verifyJWT} from "../middlewares/authMiddleware.js"
 
 const router = Router();
 
-// router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
+// Public routes (no auth needed)
+router.route("/user/:userId").get(getUserPlaylists);
+router.route("/:playlistId").get(getPlaylistById);
 
-router.route("/").post(createPlaylist)
+// Protected routes (auth required)
+router.route("/").post(verifyJWT, createPlaylist);
 
 router
     .route("/:playlistId")
-    .get(getPlaylistById)
-    .patch(updatePlaylist)
-    .delete(deletePlaylist);
+    .patch(verifyJWT, updatePlaylist)
+    .delete(verifyJWT, deletePlaylist);
 
-router.route("/add/:videoId/:playlistId").patch(addVideoToPlaylist);
-router.route("/remove/:videoId/:playlistId").patch(removeVideoFromPlaylist);
-
-router.route("/user/:userId").get(getUserPlaylists);
+router.route("/add/:videoId/:playlistId").patch(verifyJWT, addVideoToPlaylist);
+router.route("/remove/:videoId/:playlistId").patch(verifyJWT, removeVideoFromPlaylist);
 
 export default router

@@ -11,8 +11,27 @@ import {
   Eye,
   CheckCircle2,
   ListVideo,
+  MoreVertical,
+  ListPlus,
+  EyeOff,
+  BookmarkPlus,
+  BookmarkCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { useQueueStore } from "@/store/queueStore";
+import { useWatchLaterStore } from "@/store/watchLaterStore";
+import { useHiddenVideosStore } from "@/store/hiddenVideosStore";
+import { useAuthStore } from "@/store/authStore";
+import { AddToPlaylistModal } from "@/components/playlist/AddToPlaylistModal";
+import { toast } from "sonner";
 
 interface Video {
   _id: string;
@@ -94,7 +113,9 @@ export function RelatedVideos({
       </div>
 
       <div className="space-y-3">
-        {videos.map((video) => (
+        {videos
+          .filter((video) => !useHiddenVideosStore.getState().isHidden(video._id))
+          .map((video) => (
           <RelatedVideoCard
             key={video._id}
             video={video}
@@ -119,12 +140,60 @@ function RelatedVideoCard({
   isCurrentVideo = false,
 }: RelatedVideoCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const { addToQueue } = useQueueStore();
+  const { addToWatchLater, removeFromWatchLater, isInWatchLater } = useWatchLaterStore();
+  const { hideVideo } = useHiddenVideosStore();
+  const { isAuthenticated } = useAuthStore();
+  const inWatchLater = isInWatchLater(video._id);
+
+  const handleAddToQueue = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) return toast.error("Login required");
+    addToQueue(video._id);
+    toast.success("Added to queue");
+  };
+
+  const handleWatchLater = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) return toast.error("Login required");
+    if (inWatchLater) {
+      removeFromWatchLater(video._id);
+      toast.success("Removed from Watch Later");
+    } else {
+      addToWatchLater(video._id);
+      toast.success("Added to Watch Later");
+    }
+  };
+
+  const handleAddToPlaylist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) return toast.error("Login required");
+    setShowPlaylistModal(true);
+  };
+
+  const handleHideVideo = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hideVideo(video._id);
+    toast.success("Video hidden");
+  };
 
   return (
+    <>
+    <AddToPlaylistModal
+      videoId={video._id}
+      isOpen={showPlaylistModal}
+      onClose={() => setShowPlaylistModal(false)}
+    />
+    <div className="relative group">
     <Link
       href={`/video/${video._id}`}
       className={cn(
-        "flex gap-3 group rounded-lg p-2 -mx-2 transition-colors",
+        "flex gap-3 rounded-lg p-2 -mx-2 transition-colors",
         isCurrentVideo
           ? "bg-primary/10 border border-primary/20"
           : "hover:bg-muted/50"
@@ -206,6 +275,34 @@ function RelatedVideoCard({
         </div>
       </div>
     </Link>
+
+    {/* 3-dot menu */}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="absolute top-2 right-0 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+          <MoreVertical className="w-4 h-4" />
+          <span className="sr-only">Menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={handleWatchLater}>
+          {inWatchLater ? <BookmarkCheck className="mr-2 h-4 w-4 text-primary" /> : <BookmarkPlus className="mr-2 h-4 w-4" />}
+          {inWatchLater ? "Remove from Watch Later" : "Watch Later"}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleAddToQueue}>
+          <ListPlus className="mr-2 h-4 w-4" /> Add to queue
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleAddToPlaylist}>
+          <ListVideo className="mr-2 h-4 w-4" /> Save to playlist
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleHideVideo}>
+          <EyeOff className="mr-2 h-4 w-4" /> Hide video
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+    </div>
+    </>
   );
 }
 

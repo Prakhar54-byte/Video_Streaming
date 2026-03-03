@@ -6,18 +6,20 @@ import { usePlaylistStore } from "@/store/playlistStore";
 import { useAuthStore } from "@/store/authStore";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, ListVideo, PlayCircle, Trash2 } from "lucide-react";
+import { Plus, ListVideo, PlayCircle, Trash2, BookmarkCheck, Clock } from "lucide-react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";  // Need to make sure Textarea exists
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { useWatchLaterStore } from "@/store/watchLaterStore";
 
 export default function PlaylistsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore();
   const { playlists, fetchUserPlaylists, createPlaylist, deletePlaylist, isLoading } = usePlaylistStore();
   
+  const { videoIds: watchLaterIds } = useWatchLaterStore();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -113,16 +115,42 @@ export default function PlaylistsPage() {
           </Dialog>
         </div>
 
-        {playlists.length === 0 && !isLoading ? (
-             <div className="text-center py-20 bg-muted/20 rounded-xl border border-dashed border-muted-foreground/30">
-                 <ListVideo className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                 <h3 className="text-lg font-semibold">No playlists yet</h3>
-                 <p className="text-muted-foreground mb-6">Create your first playlist to start collecting videos.</p>
-                 <Button onClick={() => setIsCreateOpen(true)} variant="outline">Create Playlist</Button>
-             </div>
-        ) : (
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {playlists.map((playlist) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Watch Later — always-visible default playlist */}
+            <Link href="/playlists/watch-later">
+                <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group relative overflow-hidden border-primary/30">
+                    <div className="absolute top-0 left-0 w-2 h-full bg-primary opacity-60 group-hover:opacity-100 transition-opacity" />
+                    <CardHeader className="pb-2">
+                        <CardTitle className="line-clamp-1 flex items-center gap-2">
+                            <BookmarkCheck className="w-5 h-5 text-primary" />
+                            Watch Later
+                        </CardTitle>
+                        <CardDescription className="line-clamp-1">
+                            Videos you saved to watch later
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="components-center flex justify-center py-8 bg-primary/5">
+                        <div className="relative">
+                            <Clock className="w-16 h-16 text-primary/40" />
+                            <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
+                                {watchLaterIds.length}
+                            </div>
+                        </div>
+                    </CardContent>
+                    
+                </Card>
+            </Link>
+
+            {/* User-created playlists */}
+            {playlists.length === 0 && !isLoading ? (
+                <Card className="h-full border-dashed border-muted-foreground/30 flex flex-col items-center justify-center p-8 col-span-1 md:col-span-1 lg:col-span-2">
+                    <ListVideo className="w-12 h-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold">No custom playlists yet</h3>
+                    <p className="text-muted-foreground mb-4 text-center">Create a playlist to organize videos.</p>
+                    <Button onClick={() => setIsCreateOpen(true)} variant="outline">Create Playlist</Button>
+                </Card>
+            ) : (
+                playlists.map((playlist) => (
                     <Link href={`/playlists/${playlist._id}`} key={playlist._id}>
                         <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-2 h-full bg-primary/80 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -153,9 +181,9 @@ export default function PlaylistsPage() {
                             </CardFooter>
                         </Card>
                     </Link>
-                ))}
-             </div>
-        )}
+                ))
+            )}
+        </div>
       </div>
     </MainLayout>
   );

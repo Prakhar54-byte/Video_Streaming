@@ -21,9 +21,10 @@ interface AddToPlaylistModalProps {
   videoId: string;
   isOpen: boolean;
   onClose: () => void;
+  onAdd?: (playlistId: string) => Promise<void> | void;
 }
 
-export function AddToPlaylistModal({ videoId, isOpen, onClose }: AddToPlaylistModalProps) {
+export function AddToPlaylistModal({ videoId, isOpen, onClose, onAdd }: AddToPlaylistModalProps) {
   const { user } = useAuthStore();
   const { playlists, fetchUserPlaylists, createPlaylist, addVideoToPlaylist } = usePlaylistStore();
   
@@ -55,9 +56,13 @@ export function AddToPlaylistModal({ videoId, isOpen, onClose }: AddToPlaylistMo
 
   const handleAddToPlaylist = async (playlistId: string) => {
       try {
-          await addVideoToPlaylist(playlistId, videoId);
-          toast.success("Added to playlist");
-          onClose(); 
+          if (onAdd) {
+            await onAdd(playlistId);
+          } else {
+            await addVideoToPlaylist(playlistId, videoId);
+            toast.success("Added to playlist");
+            onClose();
+          }
       } catch (error) {
           toast.error("Failed to add to playlist");
       }

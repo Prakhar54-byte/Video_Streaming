@@ -34,7 +34,7 @@ const createRedisConnection = () => {
             maxRetriesPerRequest: null,
           });
 
-    // Prevent Node from crashing on an unhandled 'error' event.
+    // Prevent Node from crashing on al new  unhandled 'error' event.
     redis.on('error', (err) => {
         console.error('[redis] connection error:', err?.message || err);
     });

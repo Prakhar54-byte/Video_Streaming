@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -34,6 +34,51 @@ export default function SubscribedPage() {
   const [allChannels, setAllChannels] = useState<Channel[]>([]);
   const [subscribedIds, setSubscribedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+
+  // Refs for animated tab indicator
+  const tabContainerRef = useRef<HTMLDivElement>(null);
+  const subscribedTabRef = useRef<HTMLButtonElement>(null);
+  const exploreTabRef = useRef<HTMLButtonElement>(null);
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
+
+  // Animation direction for content transition
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Measure and position the sliding indicator under the active tab
+  const updateIndicator = useCallback(() => {
+    const activeRef = activeTab === 'subscribed' ? subscribedTabRef : exploreTabRef;
+    const container = tabContainerRef.current;
+    const el = activeRef.current;
+    if (!el || !container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const tabRect = el.getBoundingClientRect();
+    setIndicatorStyle({
+      left: tabRect.left - containerRect.left,
+      width: tabRect.width,
+    });
+  }, [activeTab]);
+
+  useEffect(() => {
+    updateIndicator();
+    window.addEventListener('resize', updateIndicator);
+    return () => window.removeEventListener('resize', updateIndicator);
+  }, [updateIndicator]);
+
+  const switchTab = (tab: 'subscribed' | 'explore') => {
+    if (tab === activeTab) return;
+    setSlideDirection(tab === 'explore' ? 'left' : 'right');
+    setIsTransitioning(true);
+    // Let the exit animation play, then swap content
+    setTimeout(() => {
+      setActiveTab(tab);
+      // Let the enter animation play
+      requestAnimationFrame(() => {
+        setIsTransitioning(false);
+      });
+    }, 200);
+  };
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -94,8 +139,8 @@ export default function SubscribedPage() {
       setSubscribedIds(new Set(channels.map((c: { _id: string }) => c._id)));
       
       // If no subscriptions, switch to explore tab
-      if (channels.length === 0) {
-        setActiveTab('explore');
+      if (channels.length === 0 && activeTab === 'subscribed') {
+        switchTab('explore');
       }
     } catch (error) {
       console.error("Error fetching subscribed channels:", error);
@@ -287,41 +332,58 @@ export default function SubscribedPage() {
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-4 mb-8 border-b">
+        {/* Tabs with sliding indicator */}
+        <div ref={tabContainerRef} className="relative flex gap-4 mb-8 border-b">
           <button
-            onClick={() => setActiveTab('subscribed')}
-            className={`px-6 py-3 text-lg font-semibold transition-all relative ${
+            ref={subscribedTabRef}
+            onClick={() => switchTab('subscribed')}
+            className={`px-6 py-3 text-lg font-semibold transition-colors duration-300 relative ${
               activeTab === 'subscribed'
                 ? 'text-primary'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <div className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
+              <Bell className={`w-5 h-5 transition-transform duration-300 ${activeTab === 'subscribed' ? 'scale-110' : 'scale-100'}`} />
               Subscribed ({subscribedChannelsList.length})
             </div>
-            {activeTab === 'subscribed' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500" />
-            )}
           </button>
           <button
-            onClick={() => setActiveTab('explore')}
-            className={`px-6 py-3 text-lg font-semibold transition-all relative ${
+            ref={exploreTabRef}
+            onClick={() => switchTab('explore')}
+            className={`px-6 py-3 text-lg font-semibold transition-colors duration-300 relative ${
               activeTab === 'explore'
                 ? 'text-primary'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
+              <Sparkles className={`w-5 h-5 transition-transform duration-300 ${activeTab === 'explore' ? 'rotate-12 scale-110' : 'rotate-0 scale-100'}`} />
               Explore ({allChannels.length})
             </div>
-            {activeTab === 'explore' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500" />
-            )}
           </button>
+
+          {/* Animated sliding indicator */}
+          <div
+            className="absolute bottom-0 h-0.5 bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            style={{
+              left: indicatorStyle.left,
+              width: indicatorStyle.width,
+            }}
+          />
         </div>
+
+        {/* Animated content area */}
+        <div className="overflow-hidden">
+          <div
+            className="transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+            style={{
+              transform: isTransitioning
+                ? `translateX(${slideDirection === 'left' ? '-24px' : '24px'})`
+                : 'translateX(0)',
+              opacity: isTransitioning ? 0 : 1,
+            }}
+          >
 
         {/* Empty State for Subscribed */}
         {activeTab === 'subscribed' && subscribedChannelsList.length === 0 && (
@@ -334,7 +396,7 @@ export default function SubscribedPage() {
               Start following your favorite creators to see their content here
             </p>
             <Button
-              onClick={() => setActiveTab('explore')}
+              onClick={() => switchTab('explore')}
               className="bg-gradient-to-r from-orange-500 via-red-500 to-yellow-500 text-white font-semibold px-8 py-6 text-lg"
             >
               <Sparkles className="w-5 h-5 mr-2" />
@@ -346,13 +408,14 @@ export default function SubscribedPage() {
         {/* Channels Grid */}
         {displayChannels.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayChannels.map((channel) => (
+            {displayChannels.map((channel, index) => (
               <div
                 key={channel._id}
                 className="group relative bg-card border rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2"
                 style={{
                   transformStyle: 'preserve-3d',
-                  perspective: '1000px'
+                  perspective: '1000px',
+                  animation: `cardFadeIn 0.4s ease-out ${index * 0.06}s both`,
                 }}
               >
                 {/* Cover Image */}
@@ -449,7 +512,24 @@ export default function SubscribedPage() {
             ))}
           </div>
         )}
+
+          </div>{/* End animated slide wrapper */}
+        </div>{/* End overflow container */}
       </div>
+
+      {/* Keyframes for staggered card entrance */}
+      <style jsx global>{`
+        @keyframes cardFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(16px) scale(0.97);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+      `}</style>
     </MainLayout>
   );
 }

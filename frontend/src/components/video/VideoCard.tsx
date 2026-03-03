@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Clock, MoreVertical, ListPlus, Radio, ListVideo } from "lucide-react";
+import { Eye, Clock, MoreVertical, ListPlus, Radio, ListVideo, EyeOff, BookmarkPlus, BookmarkCheck } from "lucide-react";
 import { formatViewCount, formatTimeAgo } from "@/lib/utils";
 import apiClient from "@/lib/api";
 import video from "video.js";
@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useQueueStore } from "@/store/queueStore";
+import { useWatchLaterStore } from "@/store/watchLaterStore";
+import { useHiddenVideosStore } from "@/store/hiddenVideosStore";
 import { toast } from "sonner";
 import { useState } from "react";
 import { AddToPlaylistModal } from "../playlist/AddToPlaylistModal";
@@ -74,7 +76,10 @@ export function VideoCard({ video }: VideoCardProps) {
   
   const { addToQueue } = useQueueStore();
   const { isAuthenticated } = useAuthStore();
+  const { addToWatchLater, removeFromWatchLater, isInWatchLater } = useWatchLaterStore();
+  const { hideVideo } = useHiddenVideosStore();
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const inWatchLater = isInWatchLater(video._id);
 
   const handleAddToQueue = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -89,6 +94,26 @@ export function VideoCard({ video }: VideoCardProps) {
     e.stopPropagation();
     if (!isAuthenticated) return toast.error("Login required");
     setShowPlaylistModal(true);
+  };
+
+  const handleWatchLater = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) return toast.error("Login required");
+    if (inWatchLater) {
+      removeFromWatchLater(video._id);
+      toast.success("Removed from Watch Later");
+    } else {
+      addToWatchLater(video._id);
+      toast.success("Added to Watch Later");
+    }
+  };
+
+  const handleHideVideo = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hideVideo(video._id);
+    toast.success("Video hidden");
   };
 
   return (
@@ -166,11 +191,19 @@ export function VideoCard({ video }: VideoCardProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleWatchLater}>
+                  {inWatchLater ? <BookmarkCheck className="mr-2 h-4 w-4 text-primary" /> : <BookmarkPlus className="mr-2 h-4 w-4" />}
+                  {inWatchLater ? "Remove from Watch Later" : "Watch Later"}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleAddToQueue}>
                   <ListPlus className="mr-2 h-4 w-4" /> Add to queue
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleAddToPlaylist}>
                   <ListVideo className="mr-2 h-4 w-4" /> Save to playlist
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleHideVideo}>
+                  <EyeOff className="mr-2 h-4 w-4" /> Hide video
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

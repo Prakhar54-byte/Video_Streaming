@@ -1,5 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Optimize imports for heavy libraries — reduces HMR module graph size
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      'recharts',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-tooltip',
+      '@radix-ui/react-select',
+      'date-fns',
+      'framer-motion',
+    ],
+  },
   async rewrites() {
     return [
       {

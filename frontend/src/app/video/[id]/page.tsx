@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -10,10 +11,10 @@ import { usePlaylistQueueStore } from '@/store/playlistQueueStore';
 import apiClient from '@/lib/api';
 import { formatViewCount, formatTimeAgo } from '@/lib/utils';
 import Image from 'next/image';
-import { VideoJsPlayer } from '@/components/video/VideoJsPlayer';
-import { LiveAudioWaveform } from '@/components/video/LiveAudioWaveform';
 import { AddToPlaylistModal } from '@/components/playlist/AddToPlaylistModal';
-import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye, Video, Trash2, ListVideo, SkipForward, SkipBack, Shuffle, MoreVertical, Clock, Plus, X } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye, Video, Trash2, ListVideo, SkipForward, SkipBack, Shuffle, MoreVertical, Clock, Plus, X, PlayCircle } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +22,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 // Removed server-only import
+
+// Lazy-load heavy video components — they create HMR boundaries so edits
+// to VideoJsPlayer or LiveAudioWaveform don't invalidate this entire page.
+const VideoJsPlayer = dynamic(
+  () => import('@/components/video/VideoJsPlayer').then(m => ({ default: m.VideoJsPlayer })),
+  { ssr: false }
+);
+const LiveAudioWaveform = dynamic(
+  () => import('@/components/video/LiveAudioWaveform').then(m => ({ default: m.LiveAudioWaveform })),
+  { ssr: false }
+);
 
 interface Video {
   _id: string;
@@ -98,6 +110,11 @@ export default function VideoPlayerPage() {
     addToQueue,
     removeFromQueue,
     isInQueue,
+    isAutoplay,
+    toggleAutoplay,
+    addToHistory,
+    playedHistory,
+    getUpcomingVideos,
   } = usePlaylistQueueStore();
   
   // Check if we're in playlist mode - only when ?playlist= query param is present
@@ -292,15 +309,65 @@ export default function VideoPlayerPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id, queue, isPlaylistMode]);
 
-  // Handle video end - auto-play next in playlist
+  // Update current index when video changes (for manual queue mode)
+  useEffect(() => {
+    if (isManualQueue && queue.length > 0) {
+      const idx = queue.findIndex(v => v._id === params.id);
+      if (idx >= 0 && idx !== currentIndex) {
+        setCurrentIndex(idx);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.id, queue, isManualQueue]);
+
+  // Track played videos to avoid autoplay loops
+  useEffect(() => {
+    if (params.id) {
+      addToHistory(params.id as string);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.id]);
+
+  // Handle video end - auto-play next in playlist, queue, or suggested videos
   const handleVideoEnd = useCallback(() => {
+    // 1. Playlist mode always auto-plays next (independent of autoplay toggle)
     if (isPlaylistMode && hasNext()) {
       const nextVid = getNextVideo();
       if (nextVid) {
         router.push(`/video/${nextVid._id}?playlist=${queuePlaylistId}`);
+        return;
       }
     }
-  }, [isPlaylistMode, hasNext, getNextVideo, router, queuePlaylistId]);
+
+    // 2. If autoplay is enabled, play next from queue or suggested videos
+    if (isAutoplay) {
+      // First: try the manual queue
+      if (isManualQueue && queue.length > 0) {
+        const nextIdx = currentIndex + 1;
+        if (nextIdx < queue.length) {
+          const nextVid = getNextVideo();
+          if (nextVid) {
+            router.push(`/video/${nextVid._id}`);
+            return;
+          }
+        } else {
+          // Queue exhausted — clear it
+          clearQueue();
+        }
+      }
+
+      // Second: play first suggested/related video that hasn't been recently played
+      if (relatedVideos.length > 0) {
+        const nextRelated = relatedVideos.find(v => !playedHistory.includes(v._id));
+        if (nextRelated) {
+          router.push(`/video/${nextRelated._id}`);
+        } else {
+          // All related videos have been played recently — play the first one anyway
+          router.push(`/video/${relatedVideos[0]._id}`);
+        }
+      }
+    }
+  }, [isPlaylistMode, hasNext, getNextVideo, router, queuePlaylistId, isAutoplay, isManualQueue, queue, currentIndex, clearQueue, relatedVideos, playedHistory]);
 
   const handleNextVideo = () => {
     if (hasNext()) {
@@ -356,15 +423,18 @@ export default function VideoPlayerPage() {
       
       if (!watchLaterPlaylist) {
         // Create Watch Later playlist
-        const createResponse = await apiClient.post('/playlist', {
+        const createResponse = await apiClient.post('/playlists', {
           name: 'Watch Later',
           description: 'Videos to watch later',
         });
         watchLaterPlaylist = createResponse.data.data;
       }
+
+      console.log("Watvh",watchLaterPlaylist);
+      
       
       // Add video to Watch Later playlist
-      await apiClient.patch(`/playlist/add/${videoId}/${watchLaterPlaylist._id}`);
+      await apiClient.patch(`/playlists/add/${videoId}/${watchLaterPlaylist._id}`);
       
       toast({
         title: 'Saved to Watch Later',
@@ -492,6 +562,26 @@ const handleSubscribe = async () => {
     toast({ title: 'Link copied to clipboard!' });
   };
 
+  const handleAddToPlaylist = async (playlistId: string) => {
+    if (!user?._id) {
+      router.push('/auth/login');
+      return;
+    }
+    if (!video?._id) return;
+
+    try {
+      await apiClient.patch(`/playlists/add/${video._id}/${playlistId}`);
+      toast({ title: 'Added to playlist' });
+      setShowPlaylistModal(false);
+    } catch (error: any) {
+      if (error.response?.status === 400 && error.response?.data?.message?.includes('already')) {
+        toast({ title: 'Video already in playlist', variant: 'default' });
+      } else {
+        toast({ title: 'Failed to add to playlist', variant: 'destructive' });
+      }
+    }
+  };
+
 
   if (loading) {
     return (
@@ -551,6 +641,7 @@ const handleSubscribe = async () => {
                   onVolumeChange={(vol) => {
                     setVolume(vol);
                   }}
+                  onEnded={handleVideoEnd}
                 />
               ) : (
                 <div className="flex items-center justify-center h-full bg-muted">
@@ -628,6 +719,7 @@ const handleSubscribe = async () => {
                 videoId={video._id}
                 isOpen={showPlaylistModal}
                 onClose={() => setShowPlaylistModal(false)}
+                onAdd={handleAddToPlaylist}
               />
             )}
 
@@ -843,14 +935,14 @@ const handleSubscribe = async () => {
             )}
 
             {/* Manual Queue Box (when videos are added to queue manually) */}
-            {isManualQueue && queue.length > 0 && (
+            {isManualQueue && queue.length > 0 && getUpcomingVideos().length > 0 && (
               <div className="bg-zinc-900/90 rounded-xl border border-zinc-800 overflow-hidden">
                 {/* Queue Header */}
                 <div className="p-4 border-b border-zinc-800 bg-zinc-950/50">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <ListVideo className="w-5 h-5 text-primary" />
-                      <h3 className="font-semibold text-white">Queue</h3>
+                      <h3 className="font-semibold text-white">Up Next in Queue</h3>
                     </div>
                     <Button
                       variant="ghost"
@@ -863,19 +955,19 @@ const handleSubscribe = async () => {
                     </Button>
                   </div>
                   <p className="text-sm text-zinc-400">
-                    {queue.length} video{queue.length !== 1 ? 's' : ''} in queue
+                    {getUpcomingVideos().length} video{getUpcomingVideos().length !== 1 ? 's' : ''} up next
                   </p>
                 </div>
                 
-                {/* Queue Videos List */}
+                {/* Queue Videos List — only show upcoming (after current) */}
                 <div className="max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-700">
-                  {queue.map((v, idx) => (
+                  {getUpcomingVideos().map((v, displayIdx) => (
                     <div
                       key={v._id}
                       className="flex items-center gap-3 p-3 hover:bg-zinc-800/50 transition-colors group"
                     >
                       <span className="w-6 text-center text-sm font-medium text-zinc-500">
-                        {idx + 1}
+                        {displayIdx + 1}
                       </span>
                       <a href={`/video/${v._id}`} className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="w-20 aspect-video rounded overflow-hidden bg-zinc-800 flex-shrink-0">
@@ -916,9 +1008,23 @@ const handleSubscribe = async () => {
 
             {/* Related Videos Section */}
             <div>
-              <h2 className="text-xl font-bold mb-4">
-                {isPlaylistMode ? 'More Videos' : 'Related Videos'}
-              </h2>
+              {/* Autoplay Toggle */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold">
+                  {isPlaylistMode ? 'More Videos' : 'Related Videos'}
+                </h2>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="autoplay-toggle" className="text-sm text-muted-foreground cursor-pointer select-none">
+                    Autoplay
+                  </Label>
+                  <Switch
+                    id="autoplay-toggle"
+                    checked={isAutoplay}
+                    onCheckedChange={toggleAutoplay}
+                    aria-label="Toggle autoplay"
+                  />
+                </div>
+              </div>
 
               {loadingRelated ? (
                 <div className="space-y-3">

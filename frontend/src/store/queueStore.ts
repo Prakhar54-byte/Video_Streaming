@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import apiClient from '@/lib/api';
+import { usePlaylistQueueStore } from './playlistQueueStore';
 
 interface Video {
     _id: string;
@@ -44,6 +45,18 @@ export const useQueueStore = create<QueueStore>((set) => ({
             // Optimistic can be tricky with full object requirement, so we rely on response or re-fetch
             const updatedQueue = response.data.data.videos;
              set({ queue: updatedQueue });
+
+            // Sync with playback queue store so autoplay can use it
+            const addedVideo = updatedQueue.find((v: Video) => v._id === videoId);
+            if (addedVideo) {
+                usePlaylistQueueStore.getState().addToQueue({
+                    _id: addedVideo._id,
+                    title: addedVideo.title,
+                    thumbnail: addedVideo.thumbnail,
+                    duration: addedVideo.duration,
+                    owner: addedVideo.owner,
+                });
+            }
         } catch (error) {
             console.error("Failed to add to queue", error);
         }
@@ -53,6 +66,8 @@ export const useQueueStore = create<QueueStore>((set) => ({
         try {
             set((state) => ({ queue: state.queue.filter(v => v._id !== videoId) }));
             await apiClient.patch(`/queue/remove/${videoId}`);
+            // Sync with playback queue store
+            usePlaylistQueueStore.getState().removeFromQueue(videoId);
         } catch (error) {
             console.error("Failed to remove from queue", error);
         }
@@ -62,6 +77,11 @@ export const useQueueStore = create<QueueStore>((set) => ({
         try {
             set({ queue: [] });
             await apiClient.delete('/queue');
+            // Sync with playback queue store (only if in manual queue mode)
+            const playbackStore = usePlaylistQueueStore.getState();
+            if (playbackStore.isManualQueue) {
+                playbackStore.clearQueue();
+            }
         } catch (error) {
             console.error("Failed to clear queue", error);
         }

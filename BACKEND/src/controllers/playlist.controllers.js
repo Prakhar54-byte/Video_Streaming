@@ -171,9 +171,13 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     !mongoose.Types.ObjectId.isValid(videoId)) {
       throw new ApiError(400, "Invalid Playlist ID or Video ID");
     }
+
+    // console.log("Playlist req",req);
+    // console.log("Playlist req",req?.user);
+    
   
     const playlist = await Playlist.findOneAndUpdate(
-      { _id: playlistId, owner: req.user._id },
+      { _id: playlistId, owner: req?.user._id },
       {
         $addToSet: { videos: videoId } // Fixed: key is 'videos', not 'videoId'
       },

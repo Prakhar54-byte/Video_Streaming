@@ -24,12 +24,10 @@ import useABRController from "@/hooks/useABRController";
 import useFrameAnalyzer from "@/hooks/useFrameAnalyzer";
 
 // Import components
-import {
-  VideoQualityPanel,
-  ABRControls,
-  WaveformViewer,
-  DuplicateDetectionPanel,
-} from "@/components/video";
+import { VideoQualityPanel } from "./VideoQualityPanel";
+import { ABRControls } from "./ABRControls";
+import { WaveformViewer } from "./WaveformViewer";
+import { DuplicateDetectionPanel } from "./DuplicateDetectionPanel";
 
 interface EnhancedVideoPlayerProps {
   src: string;
