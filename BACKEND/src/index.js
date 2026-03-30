@@ -16,6 +16,11 @@ const __dirname = path.dirname(__filename);
 // Always load BACKEND/.env, regardless of the directory the process is started from.
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
+import logger from './utils/logger.js';
+
+logger.info('Logger initialized');
+logger.error('Test error message');
+
 
 const DEFAULT_PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
 const isProd = process.env.NODE_ENV === 'production';

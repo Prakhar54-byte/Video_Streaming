@@ -4,6 +4,11 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import helmet from 'helmet'
+import mongoSanitize from 'mongo-sanitize'
+import xss from 'xss-clean'
+import { apiLimiter,authLimiter } from './middlewares/rateLimitor.js';
+import { errorHandler,notFoundHandler } from './middlewares/errorHandler.middleware.js';
 
 const app = express();
 
@@ -18,7 +23,7 @@ const publicDir = path.join(backendRoot, 'public')
 
 // For development/debugging: avoid conditional 304s that hide actual payload sizes.
 // (HLS manifests are small by design; segments carry the bulk of data.)
-app.set('etag', false);
+
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) 
@@ -50,6 +55,21 @@ app.get("/ping", (req, res) => {
 // // Increase body size limit to 10MB
 // app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // app.use(express.json({ limit: "10mb" }));
+
+app.set('etag', false);
+
+app.use(helmet())
+
+app.use(mongoSanitize())
+
+app.use(xss())
+
+app.use(express.json({limit:'10mb'}));
+app.use(express.urlencoded({extended:true,limit:'10mb'}))
+
+
+
+
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -143,44 +163,55 @@ const createTestUser = async () =>{
 // Like routes
 import likeRouter from "./routers/like.routes.js";
 app.use("/api/v1/likes", likeRouter);
+app.use(notFoundHandler)
 
 // Tweet routes
 import tweetRouter from "./routers/tweet.routes.js";
 app.use("/api/v1/tweets", tweetRouter);
+app.use(notFoundHandler)
 
 
 // Playlist routes
 import playlistRouter from "./routers/playlist.routes.js";  
 app.use("/api/v1/playlists", playlistRouter);
+app.use(notFoundHandler)
 
 // Queue routes
 import queueRouter from "./routers/queue.routes.js";  
 app.use("/api/v1/queue", queueRouter);
+app.use(notFoundHandler)
 
 // Video routes
 import videoRouter from "./routers/video.routes.js";
 app.use("/api/v1/videos", videoRouter);
+app.use(notFoundHandler)
 
 // Video Processing routes
 import videoProcessingRouter from "./routers/videoProcessing.routes.js";
 app.use("/api/v1/video-processing", videoProcessingRouter);
+app.use(notFoundHandler)
 
 // Subscription routes
 import subscriptionRouter from "./routers/subscription.routes.js";  
 app.use("/api/v1/subscriptions", subscriptionRouter);
+app.use(notFoundHandler)
 
 // Comment routes
 import commentRouter from "./routers/comment.routes.js";  
 app.use("/api/v1/comments", commentRouter);
+app.use(notFoundHandler)
 
 // Channel routes
 import channelRouter from "./routers/channel.routes.js";  
 app.use("/api/v1/channels", channelRouter);
+app.use(notFoundHandler)
 
 // Video Analysis routes (WASM-powered analysis, duplicate detection, quality assessment)
 import videoAnalysisRouter from "./routers/videoAnalysis.route.js";
 app.use("/api/v1/analysis", videoAnalysisRouter);
+app.use(notFoundHandler)
 
+app.use(errorHandler)
 
 // Export app for server initialization
 export { app };
