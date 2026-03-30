@@ -40,6 +40,39 @@ videoProcessingQueue?.on?.('failed', (job, err) => {
     console.log(`Job ${job.id} has failed with ${err.message}`);
 });
 
+const requiredEvnVars = [
+    'ACCESS_TOKEN_SECRET',
+    'REFRESH_TOKEN_SECRET',
+    'MONGODB_URL',
+    'CLOUDINARY_CLOUD_NAME',
+    'CLOUDINARY_API_KEY',
+    'CLOUDINARY_API_SECRET'
+];
+
+const missingVars = requiredEvnVars.filter(v=>!process.env[v]);
+
+if(missingVars.length>0){
+    console.error('\n FATAL: Missing required environment variables:');
+    missingVars.forEach(v=>console.error(` - ${v}`));
+    console.error('\n📝 Please update your .env file with all required variables.\n');
+    process.exit(1);
+}
+
+const checkSecretStrength = (secret, name) => {
+    if (!secret) {
+        console.error(`❌ ${name} is empty`);
+        process.exit(1);
+    }
+    if (secret.length < 32) {
+        console.warn(`⚠️  ${name} is less than 32 characters. Consider making it stronger.`);
+    }
+};
+
+checkSecretStrength(process.env.ACCESS_TOKEN_SECRET, 'ACCESS_TOKEN_SECRET');
+checkSecretStrength(process.env.REFRESH_TOKEN_SECRET, 'REFRESH_TOKEN_SECRET');
+
+console.log('✅ All required environment variables validated\n');
+
 connectDB()
 .then(()=>{
     const startServer = (port, attempt = 0) => {

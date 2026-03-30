@@ -12,19 +12,31 @@ const __dirname = path.dirname(__filename);
 const backendRoot = path.resolve(__dirname, '..');
 const publicDir = path.join(backendRoot, 'public')
 
+
+
 ;
 
 // For development/debugging: avoid conditional 304s that hide actual payload sizes.
 // (HLS manifests are small by design; segments carry the bulk of data.)
 app.set('etag', false);
 
-// Set up CORS
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) 
+    : ['http://localhost:3000'];
+
 app.use(cors({
-    origin:  "http://localhost:3000" ,  // Ensure CORS Origin is correct
-    credentials: true, 
-    allowedHeaders: ['Content-Type', 'Authorization','x-access-token', 'Range'],
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token', 'Range'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    exposedHeaders:['x-access-token', 'Content-Type', 'Authorization', 'Content-Range', 'Accept-Ranges', 'Content-Length']
+    exposedHeaders: ['x-access-token', 'Content-Type', 'Authorization', 'Content-Range', 'Accept-Ranges', 'Content-Length'],
+    maxAge: 86400 // 24 hours
 }));
 
 
