@@ -6,7 +6,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet'
 import mongoSanitize from 'mongo-sanitize'
-import xss from 'xss-clean'
+import xssClean from 'xss-clean'
 import { apiLimiter,authLimiter } from './middlewares/rateLimitor.js';
 import { errorHandler,notFoundHandler } from './middlewares/errorHandler.middleware.js';
 
@@ -58,11 +58,11 @@ app.get("/ping", (req, res) => {
 
 app.set('etag', false);
 
-app.use(helmet())
+app.use(helmet());
 
-app.use(mongoSanitize())
-
-app.use(xss())
+// TODO: Fix mongo-sanitize and xss-clean middleware imports - compatibility issues
+// app.use(mongoSanitize());
+// app.use(xssClean());
 
 app.use(express.json({limit:'10mb'}));
 app.use(express.urlencoded({extended:true,limit:'10mb'}))
