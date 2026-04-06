@@ -41,6 +41,12 @@ import bcrypt from "bcrypt";
                     ref: "Video"
                 }
             ],
+            enrolledRoadmaps: [
+                {
+                    type: Schema.Types.ObjectId,
+                    ref: "Roadmap"
+                }
+            ],
             password: {
                 type: String,
                 required: [true, 'Password is required']

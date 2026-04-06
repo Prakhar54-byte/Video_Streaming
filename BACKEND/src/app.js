@@ -7,8 +7,8 @@ import { fileURLToPath } from 'url';
 import helmet from 'helmet'
 import mongoSanitize from 'mongo-sanitize'
 import xssClean from 'xss-clean'
-import { apiLimiter,authLimiter } from './middlewares/rateLimitor.js';
-import { errorHandler,notFoundHandler } from './middlewares/errorHandler.middleware.js';
+import { apiLimiter, authLimiter } from './middlewares/rateLimitor.js';
+import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
 
 const app = express();
 
@@ -17,17 +17,10 @@ const __dirname = path.dirname(__filename);
 const backendRoot = path.resolve(__dirname, '..');
 const publicDir = path.join(backendRoot, 'public')
 
-
-
-;
-
-// For development/debugging: avoid conditional 304s that hide actual payload sizes.
-// (HLS manifests are small by design; segments carry the bulk of data.)
-
-
+// Production Security Configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
     ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) 
-    : ['http://localhost:3000'];
+    : ['http://localhost:3000', 'http://localhost:3001'];
 
 app.use(cors({
     origin: (origin, callback) => {
@@ -41,179 +34,101 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token', 'Range'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     exposedHeaders: ['x-access-token', 'Content-Type', 'Authorization', 'Content-Range', 'Accept-Ranges', 'Content-Length'],
-    maxAge: 86400 // 24 hours
+    maxAge: 86400
 }));
-
-
-
-
-app.get("/ping", (req, res) => {
-  console.log("Ping route hit");
-  res.json({ message: "pong" });
-});
-
-// // Increase body size limit to 10MB
-// app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-// app.use(express.json({ limit: "10mb" }));
-
-app.set('etag', false);
 
 app.use(helmet());
 
-// TODO: Fix mongo-sanitize and xss-clean middleware imports - compatibility issues
-// app.use(mongoSanitize());
-// app.use(xssClean());
-
-app.use(express.json({limit:'10mb'}));
-app.use(express.urlencoded({extended:true,limit:'10mb'}))
-
-
-
-
-
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-
-// Avoid caching API responses (prevents confusing 304s for XHR/fetch).
-app.use('/api', (req, res, next) => {
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  next();
-});
-
-
-
-// Serve static files from the 'public' folder
-// Ensure correct MIME types for HLS assets.
-// Compatibility redirect: old "/temp/hls-*" paths now live at root "/hls-*"
-app.get(/^\/temp\/hls-[^/]+\/.+$/, (req, res, next) => {
-  // Only redirect when the asset exists in the new location.
-  // This avoids breaking already-generated assets that still live under public/temp.
-  const target = req.originalUrl.replace(/^\/temp\//, '/');
-  const absoluteTarget = path.join(publicDir, target.replace(/^\//, ''));
-  if (fs.existsSync(absoluteTarget)) {
-    return res.redirect(301, target);
-  }
-  // Let express.static serve from public/temp if present.
-  return next();
-});
-
-app.use(
-  express.static(publicDir, {
-    setHeaders: (res, filePath) => {
-      
-      
-      //TODO 
-
-
-
-
-      if (filePath.endsWith('.m3u8')) {
-        // Many players expect this exact MIME type for HLS manifests
-        res.setHeader('Content-Type', 'application/x-mpegURL');
-        // Prevent stale manifests during dev; also avoids conditional 304s.
-        res.setHeader('Cache-Control', 'no-store');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-      }
-      if (filePath.endsWith('.ts')) {
-        res.setHeader('Content-Type', 'video/mp2t');
-        // Prevent conditional caching during dev (makes Network tab clearer).
-        res.setHeader('Cache-Control', 'no-store');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-      }
-    },
-  })
-);
-console.log("Static files served from the 'public' folder");
-
-// Set up cookie parser
+// body parser
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
-console.log("Cookie parser middleware added");
 
-// Import user routes
+// Rate Limiting
+app.use("/api/", apiLimiter);
+app.use("/api/v1/users/login", authLimiter);
+app.use("/api/v1/users/register", authLimiter);
+
+// Body Parsers
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
+
+// Disable ETag for HLS streaming to prevent 304s
+app.set('etag', false);
+
+// Health Check
+app.get("/ping", (req, res) => {
+    res.json({ success: true, message: "pong" });
+});
+
+// API Cache Control
+app.use('/api', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+});
+
+// HLS Compatibility Redirects
+app.get(/^\/temp\/hls-[^/]+\/.+$/, (req, res, next) => {
+    const target = req.originalUrl.replace(/^\/temp\//, '/');
+    const absoluteTarget = path.join(publicDir, target.replace(/^\//, ''));
+    if (fs.existsSync(absoluteTarget)) {
+        return res.redirect(301, target);
+    }
+    next();
+});
+
+// Static File Service
+app.use(
+    express.static(publicDir, {
+        setHeaders: (res, filePath) => {
+            if (filePath.endsWith('.m3u8')) {
+                res.setHeader('Content-Type', 'application/x-mpegURL');
+                res.setHeader('Cache-Control', 'no-store');
+            }
+            if (filePath.endsWith('.ts')) {
+                res.setHeader('Content-Type', 'video/mp2t');
+                res.setHeader('Cache-Control', 'no-store');
+            }
+        },
+    })
+);
+
+// --- Routes ---
 import userRouter from "./routers/user.routes.js";
-
-// Use routes
-app.use("/api/v1/users", userRouter);
-
-console.log(`App is running on port ${process.env.PORT }  `);
-
-
-import { User } from './models/user.model.js';
-
-const createTestUser = async () =>{
-  const user = new User({
-    username: "testuser",
-    email: "trwe@gmail.com",
-    fullName: "Test User",
-    password: "testpassword",
-    avatar:"https://example.com/avatar.png",
-  })
-
-  await user.save()
-  console.log("Test user created:", user);
-  
-}
-
-// createTestUser()
-
-// Like routes
 import likeRouter from "./routers/like.routes.js";
-app.use("/api/v1/likes", likeRouter);
-app.use(notFoundHandler)
-
-// Tweet routes
 import tweetRouter from "./routers/tweet.routes.js";
-app.use("/api/v1/tweets", tweetRouter);
-app.use(notFoundHandler)
-
-
-// Playlist routes
 import playlistRouter from "./routers/playlist.routes.js";  
-app.use("/api/v1/playlists", playlistRouter);
-app.use(notFoundHandler)
-
-// Queue routes
 import queueRouter from "./routers/queue.routes.js";  
-app.use("/api/v1/queue", queueRouter);
-app.use(notFoundHandler)
-
-// Video routes
 import videoRouter from "./routers/video.routes.js";
-app.use("/api/v1/videos", videoRouter);
-app.use(notFoundHandler)
-
-// Video Processing routes
 import videoProcessingRouter from "./routers/videoProcessing.routes.js";
-app.use("/api/v1/video-processing", videoProcessingRouter);
-app.use(notFoundHandler)
-
-// Subscription routes
 import subscriptionRouter from "./routers/subscription.routes.js";  
-app.use("/api/v1/subscriptions", subscriptionRouter);
-app.use(notFoundHandler)
-
-// Comment routes
 import commentRouter from "./routers/comment.routes.js";  
-app.use("/api/v1/comments", commentRouter);
-app.use(notFoundHandler)
-
-// Channel routes
 import channelRouter from "./routers/channel.routes.js";  
-app.use("/api/v1/channels", channelRouter);
-app.use(notFoundHandler)
-
-// Video Analysis routes (WASM-powered analysis, duplicate detection, quality assessment)
 import videoAnalysisRouter from "./routers/videoAnalysis.route.js";
+import roadmapRouter from "./routers/roadmap.routes.js";
+import progressRouter from "./routers/progress.routes.js";
+
+app.use("/api/v1/users", userRouter);
+app.use("/api/v1/likes", likeRouter);
+app.use("/api/v1/tweets", tweetRouter);
+app.use("/api/v1/playlists", playlistRouter);
+app.use("/api/v1/queue", queueRouter);
+app.use("/api/v1/videos", videoRouter);
+app.use("/api/v1/video-processing", videoProcessingRouter);
+app.use("/api/v1/subscriptions", subscriptionRouter);
+app.use("/api/v1/comments", commentRouter);
+app.use("/api/v1/channels", channelRouter);
 app.use("/api/v1/analysis", videoAnalysisRouter);
-app.use(notFoundHandler)
+app.use("/api/v1/roadmaps", roadmapRouter);
+app.use("/api/v1/progress", progressRouter);
 
-app.use(errorHandler)
+// --- Error Handling ---
+app.use(notFoundHandler);
+app.use(errorHandler);
 
-// Export app for server initialization
 export { app };
 
 

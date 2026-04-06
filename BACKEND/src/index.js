@@ -1,115 +1,69 @@
-// require('dotenv').config({path:'../.env'})
-
-
-import mongoose from 'mongoose'
-import dotenv from 'dotenv'
-import { DB_NAME} from './constants.js'
 import connectDB from "./db/index.js";
-import {app} from './app.js'
-// import {app} from './app.js'
+import { app } from './app.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import logger from './utils/logger.js';
+import { DB_NAME } from './constants.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env.local for development, fall back to .env for Docker/production
+// Environment Configuration
 const envPath = process.env.NODE_ENV === 'development' 
   ? path.resolve(__dirname, '../.env.local')
   : path.resolve(__dirname, '../.env');
 
 dotenv.config({ path: envPath });
 
-import logger from './utils/logger.js';
+const PORT = process.env.PORT || 8080;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const isProd = NODE_ENV === 'production';
 
-logger.info('Logger initialized');
-logger.error('Test error message');
+logger.info(`Server starting in ${NODE_ENV} mode`);
 
-
-const DEFAULT_PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
-const isProd = process.env.NODE_ENV === 'production';
-
-const options = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+// Global Security for Cookies
+// Note: In production, secure should be true (requires HTTPS)
+const cookieOptions = {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'None' : 'Lax'
 };
 
-
-
-
+// ... existing queue handlers if any ...
 import videoProcessingQueue from './queues/videoProcessing.queue.js';
+videoProcessingQueue?.on?.('completed', (job) => logger.info(`Job ${job.id} completed`));
+videoProcessingQueue?.on?.('failed', (job, err) => logger.error(`Job ${job.id} failed: ${err.message}`));
 
-// ...
-
-videoProcessingQueue?.on?.('completed', (job) => {
-    console.log(`Job ${job.id} has completed!`);
-});
-
-videoProcessingQueue?.on?.('failed', (job, err) => {
-    console.log(`Job ${job.id} has failed with ${err.message}`);
-});
-
-const requiredEvnVars = [
+const requiredEnvVars = [
     'ACCESS_TOKEN_SECRET',
     'REFRESH_TOKEN_SECRET',
-    'MONGODB_URL',
-    'CLOUDINARY_CLOUD_NAME',
-    'CLOUDINARY_API_KEY',
-    'CLOUDINARY_API_SECRET'
+    'MONGODB_URL'
 ];
 
-const missingVars = requiredEvnVars.filter(v=>!process.env[v]);
-
-if(missingVars.length>0){
-    console.error('\n FATAL: Missing required environment variables:');
-    missingVars.forEach(v=>console.error(` - ${v}`));
-    console.error('\n📝 Please update your .env file with all required variables.\n');
+const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+if (missingVars.length > 0) {
+    logger.error('Missing required environment variables:', missingVars);
     process.exit(1);
 }
 
-const checkSecretStrength = (secret, name) => {
-    if (!secret) {
-        console.error(`❌ ${name} is empty`);
-        process.exit(1);
-    }
-    if (secret.length < 32) {
-        console.warn(`⚠️  ${name} is less than 32 characters. Consider making it stronger.`);
-    }
-};
-
-checkSecretStrength(process.env.ACCESS_TOKEN_SECRET, 'ACCESS_TOKEN_SECRET');
-checkSecretStrength(process.env.REFRESH_TOKEN_SECRET, 'REFRESH_TOKEN_SECRET');
-
-console.log('✅ All required environment variables validated\n');
-
 connectDB()
-.then(()=>{
-    const startServer = (port, attempt = 0) => {
-        const server = app.listen(port, () => {
-            console.log(`SERVER is running at port ${port}`);
-            console.log(`MONGO DB IS CONNECTED TO ${DB_NAME}`);
+    .then(() => {
+        const server = app.listen(PORT, () => {
+            logger.info(`SERVER running at port ${PORT}`);
+            logger.info(`CONNECTED TO DB: ${DB_NAME}`);
         });
 
-        // Prevent Node from crashing on common startup errors like EADDRINUSE.
         server.on('error', (err) => {
             if (err?.code === 'EADDRINUSE') {
-                if (!isProd && attempt < 10) {
-                    const nextPort = port + 1;
-                    console.warn(`Port ${port} is already in use; trying ${nextPort}...`);
-                    setTimeout(() => startServer(nextPort, attempt + 1), 200);
-                    return;
-                }
-                console.error(`Port ${port} is already in use. Stop the other process or set a different PORT.`);
+                logger.error(`Port ${PORT} is already in use. Stop the other process.`);
                 process.exit(1);
             }
-            console.error('Server error:', err);
+            logger.error('Server execution error:', err);
             process.exit(1);
         });
-    };
-
-    startServer(Number.isFinite(DEFAULT_PORT) ? DEFAULT_PORT : 8080);
-})
-.catch((e)=>{
-console.log("MONGODB CONNECTION FAILED !!!!!",e);
-throw new Error(e);
-})
+    })
+    .catch((e) => {
+        logger.error("MONGODB CONNECTION FAILED", e);
+        process.exit(1);
+    });
