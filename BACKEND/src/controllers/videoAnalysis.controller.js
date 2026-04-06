@@ -116,7 +116,7 @@ export const detectDuplicates = asyncHandler(async (req, res) => {
 
       if (similarity > 0.7) {
         duplicates.push({
-          videoId: candidate.id,
+          videos: candidate.id,
           path: candidate.path,
           similarity,
           matchType:
@@ -421,14 +421,14 @@ export const generateWaveform = asyncHandler(async (req, res) => {
 
 // Get video processing status
 export const getProcessingStatus = asyncHandler(async (req, res) => {
-  const { videoId } = req.params;
+  const { videos } = req.params;
 
   // This would typically query a job queue or database
   // For now, return mock status
   res.json({
     success: true,
     data: {
-      videoId,
+      videos,
       status: "completed",
       progress: 100,
       stages: {

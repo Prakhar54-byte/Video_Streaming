@@ -13,8 +13,12 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Always load BACKEND/.env, regardless of the directory the process is started from.
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Load .env.local for development, fall back to .env for Docker/production
+const envPath = process.env.NODE_ENV === 'development' 
+  ? path.resolve(__dirname, '../.env.local')
+  : path.resolve(__dirname, '../.env');
+
+dotenv.config({ path: envPath });
 
 import logger from './utils/logger.js';
 
