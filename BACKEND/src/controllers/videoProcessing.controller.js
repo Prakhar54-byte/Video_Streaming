@@ -21,7 +21,6 @@ try {
   const kafkaModule = await import("../../ingestion/kafka-producers/videoEventProducer.js");
   sendVideoEvent = kafkaModule.sendVideoEvent;
 } catch (error) {
-  console.log("Kafka producer not available, events will not be sent");
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -263,18 +262,13 @@ async function processVideoInBackground(videoId, videoUrl) {
     try {
       // Assuming 'processing' folder is at the same level as 'BACKEND'
       const pythonScriptPath = path.resolve(backendRoot, '../processing/intro-detection/detect_intro.py');
-      console.log(`[ML] Script Path: ${pythonScriptPath}`);
-      console.log(`[ML] Input Video: ${inputPath}`);
       
       const command = `python3 "${pythonScriptPath}" "${inputPath}"`;
-      console.log(`[ML] Executing: ${command}`);
 
       const { stdout, stderr } = await execPromise(command);
       
       if (stderr) {
-          console.log(`[ML] Stderr: ${stderr}`);
       }
-      console.log(`[ML] Stdout: ${stdout}`);
 
       let mlResult;
       try {
@@ -286,15 +280,12 @@ async function processVideoInBackground(videoId, videoUrl) {
       if (mlResult && mlResult.introStartTime !== undefined && mlResult.introEndTime !== undefined) {
         video.introStartTime = mlResult.introStartTime;
         video.introEndTime = mlResult.introEndTime;
-        console.log(`[ML] Intro detected and set: ${video.introStartTime} - ${video.introEndTime}`);
       } else {
-          console.log(`[ML] Result missing timestamps:`, mlResult);
           throw new Error("Invalid ML output");
       }
     } catch (e) {
       console.error("[ML] Intro detection CRASHED:", e);
       // Fallback for demonstration if ML fails (e.g. missing python/dependencies)
-      console.log("[ML] Applying FALLBACK intro timings (10s - 40s) for demonstration.");
       video.introStartTime = 10;
       video.introEndTime = 40;
     }

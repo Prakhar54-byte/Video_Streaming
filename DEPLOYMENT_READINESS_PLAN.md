@@ -530,3 +530,115 @@ Before going to production, ensure:
 **Document Version**: 1.0  
 **Last Updated**: March 30, 2026  
 **Next Review**: Daily during implementation phase
+
+---
+
+## 🔧 Environment Configuration Guide
+
+### Two-Environment Setup
+
+The project now supports separate configurations for development and production:
+
+#### **Development Environment** (Local Machine)
+
+File: `BACKEND/.env.local` (git-ignored)
+
+**How to run**:
+```bash
+cd BACKEND
+NODE_ENV=development npm run dev
+```
+
+**Configuration**:
+- MongoDB: Uses cloud Atlas (original credentials)
+- Redis: Expects localhost:6379
+- CORS: localhost:3000
+- JWT Secrets: Development values
+
+**Prerequisites**:
+- Node.js installed locally
+- Redis running on localhost:6379 (optional: `docker run -d -p 6379:6379 redis:7`)
+
+#### **Production Environment** (Docker Compose)
+
+File: `BACKEND/.env` + `docker-compose.prod.yml`
+
+**How to run**:
+```bash
+cd /path/to/project
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+**Configuration**:
+- MongoDB: Docker service `mongo:27017` (unauthenticated)
+- Redis: Docker service `redis:6379`
+- CORS: configurable via `ALLOWED_ORIGINS`
+- JWT Secrets: Production-grade values
+
+**Services**:
+- `backend-app`: Node.js backend on port 8000 (internal)
+- `mongo-db`: MongoDB on port 27017 (internal)
+- `redis-cache`: Redis on port 6379 (internal)
+- Network: `app-network` (isolated Docker bridge network)
+
+### Environment Variable Resolution Logic
+
+The backend (`src/index.js`) loads configurations in this order:
+
+```javascript
+if (NODE_ENV === 'development') {
+  load from: .env.local
+} else {
+  load from: .env  // Docker/production
+}
+```
+
+### Quick Commands
+
+**Start all services (Docker)**:
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+**Verify services health**:
+```bash
+docker-compose -f docker-compose.prod.yml ps
+```
+
+**Test backend from inside Docker**:
+```bash
+docker-compose -f docker-compose.prod.yml exec -T backend curl http://localhost:8000/ping
+```
+
+**View backend logs**:
+```bash
+docker logs backend-app -f
+```
+
+**Stop all services**:
+```bash
+docker-compose -f docker-compose.prod.yml down
+```
+
+**Start local development**:
+```bash
+cd BACKEND
+NODE_ENV=development npm run dev
+```
+
+### Troubleshooting
+
+**Error: "getaddrinfo ENOTFOUND mongo"**
+- You're running locally but NODE_ENV is not set to development
+- Solution: `NODE_ENV=development npm run dev`
+
+**Error: "getaddrinfo ENOTFOUND redis"**
+- Same as above, or Redis is not running on localhost:6379
+- Solution: Start Redis with `docker run -d -p 6379:6379 redis:7`
+
+**Docker services not responding**:
+- Verify services are healthy: `docker-compose -f docker-compose.prod.yml ps`
+- Check logs: `docker logs [service-name]`
+- Restart: `docker-compose -f docker-compose.prod.yml restart`
+
+---

@@ -75,7 +75,6 @@ export function useABRController(config: ABRConfig = {}) {
           wasmModuleRef.current = instance;
           isLoadedRef.current = true;
           setIsLoaded(true);
-          console.log("ABR Controller WASM loaded");
           return;
         }
       }

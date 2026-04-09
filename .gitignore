@@ -175,10 +175,10 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/nextjs,node
 
-
-
-
 .deepsource.toml
-        TODO.py
-        download.jpeg
-        dummy_video.mp4.venv/
+TODO.py
+download.jpeg
+*.mp4
+public/**/*.ts
+public/**/*.m3u8
+.venv/

@@ -72,7 +72,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
         
         
-        //TODO: get all videos based on query, sort, pagination
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
             throw new ApiError(400, "User Id is incorrect to get all videos")
         }
@@ -283,7 +282,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
 const getVideoById = asyncHandler(async (req, res) => {
     try {
         const  {videoId}  = req.params
-        //TODO: get video by id
         if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
             throw new ApiError(400, "Video Id is incorrect to get video")
         }
@@ -378,7 +376,6 @@ const getVideoById = asyncHandler(async (req, res) => {
             if (!fs.existsSync(absolute)) {
                 video.hlsMasterPlaylist = "";
             }
-            console.log("Is video is playing", fs.existsSync(absolute));
             
         }
         // Avoid dumping full video doc in logs
@@ -401,7 +398,6 @@ const getVideoById = asyncHandler(async (req, res) => {
 const updateVideo = asyncHandler(async (req, res) => {
     try {
         const { videoId } = req.params
-        //TODO: update video details like title, description, thumbnail
         if (!videoId || !mongoose.Types.ObjectId.isValid(videoId)) {
             throw new ApiError(400, "Video Id is incorrect to update video")
         }
@@ -466,7 +462,6 @@ const updateVideo = asyncHandler(async (req, res) => {
 const deleteVideo = asyncHandler(async (req, res) => {
    try {
      const { videoId } = req.params
-     //TODO: delete video
      if(!videoId || !mongoose.Types.ObjectId.isValid(videoId)){
          throw new ApiError(400, "Video Id is incorrect to delete video")
      }
@@ -504,7 +499,6 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     
         const video = await Video.findById(videoId);
         
-        console.log("Check video",video);
         
         if(!video){
             throw new ApiError(404, "Video not found")

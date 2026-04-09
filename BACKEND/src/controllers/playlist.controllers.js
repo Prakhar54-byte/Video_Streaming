@@ -83,7 +83,6 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 const getPlaylistById = asyncHandler(async (req, res) => {
   try {
     const { playlistId } = req.params;
-    console.log("Plag",playlistId);
     
     
     if(!playlistId || !mongoose.Types.ObjectId.isValid(playlistId)){
@@ -146,7 +145,6 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Playlist not found");
     }
 
-    // console.log("Fuck pla",playlist);
     
   
     return res
@@ -172,8 +170,6 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
       throw new ApiError(400, "Invalid Playlist ID or Video ID");
     }
 
-    // console.log("Playlist req",req);
-    // console.log("Playlist req",req?.user);
     
   
     const playlist = await Playlist.findOneAndUpdate(

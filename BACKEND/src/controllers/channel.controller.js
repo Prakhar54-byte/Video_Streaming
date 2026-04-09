@@ -12,17 +12,11 @@ import mongoose from "mongoose";
 // import { log } from "node:console";
 
 const createChannel= asyncHandler(async(req,res)=>{
-    // console.log("Check ",req);
     
     const {name,description} = req.body;
     const userId = req.user._id;
 
-    console.log("Headers:", req.headers);
-  console.log("Body:", req.body);
-  console.log("File:", req.file); 
 
-    console.log("Creating channel with data:", );
-    console.log("Request body:", req.body);
     
 
     if(!name || !description){
@@ -44,14 +38,11 @@ const createChannel= asyncHandler(async(req,res)=>{
     // //     user.coverImage = bannerPath;
     // //     await user.save();
     // // }
-    console.log("Avatar Path:", avatarPath)
-    // console.log("Banner Path:", bannerPath);
     
     if(!avatarPath && !bannerPath){
         throw new ApiError(400,"At least one of avatar or banner must be provided");
     }
 
-    // console.log("RequestAnimation",req.path);
     const channel = await Channel.create({
         name,
         description,

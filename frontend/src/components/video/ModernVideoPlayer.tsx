@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
 import videojs from "video.js";
 import "video.js/dist/video-js.css";
 import "videojs-contrib-quality-levels";
@@ -46,23 +46,35 @@ interface ModernVideoPlayerProps {
   introEndTime?: number;
   onEnded?: () => void;
   onTimeUpdate?: (time: number) => void;
+  onLoadedMetadata?: (data: { duration: number }) => void;
   className?: string;
 }
 
-export function ModernVideoPlayer({
-  src,
-  fallbackSrc,
-  poster,
-  autoPlay = false,
-  title,
-  spriteSheetUrl,
-  spriteSheetVttUrl,
-  introStartTime,
-  introEndTime,
-  onEnded,
-  onTimeUpdate,
-  className,
-}: ModernVideoPlayerProps) {
+export interface ModernVideoPlayerRef {
+  play: () => void;
+  pause: () => void;
+  seekTo: (time: number) => void;
+  getCurrentTime: () => number;
+}
+
+export const ModernVideoPlayer = forwardRef<ModernVideoPlayerRef, ModernVideoPlayerProps>((
+  {
+    src,
+    fallbackSrc,
+    poster,
+    autoPlay = false,
+    title,
+    spriteSheetUrl,
+    spriteSheetVttUrl,
+    introStartTime,
+    introEndTime,
+    onEnded,
+    onTimeUpdate,
+    onLoadedMetadata,
+    className,
+  },
+  ref
+) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -139,8 +151,10 @@ export function ModernVideoPlayer({
         onEnded?.();
       });
       player.on("loadedmetadata", () => {
-        setDuration(player.duration() || 0);
+        const d = player.duration() || 0;
+        setDuration(d);
         setIsLoading(false);
+        onLoadedMetadata?.({ duration: d });
       });
       player.on("timeupdate", () => {
         const time = player.currentTime() || 0;
@@ -359,6 +373,14 @@ export function ModernVideoPlayer({
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
+  // Expose methods to parent
+  useImperativeHandle(ref, () => ({
+    play: () => playerRef.current?.play(),
+    pause: () => playerRef.current?.pause(),
+    seekTo: (time: number) => playerRef.current?.currentTime(time),
+    getCurrentTime: () => playerRef.current?.currentTime() || 0,
+  }));
+
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
   const bufferedPercent = duration > 0 ? (buffered / duration) * 100 : 0;
 
@@ -452,7 +474,7 @@ export function ModernVideoPlayer({
             />
             {/* Progress */}
             <div
-              className="absolute h-full bg-red-500 rounded-full"
+              className="absolute h-full bg-[#32FF7E] rounded-full shadow-[0_0_10px_#32FF7E]"
               style={{ width: `${progressPercent}%` }}
             />
             {/* Hover preview time */}
@@ -466,8 +488,8 @@ export function ModernVideoPlayer({
             )}
             {/* Scrubber */}
             <div
-              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-red-500 rounded-full 
-                         opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-lg"
+              className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-[#32FF7E] rounded-full 
+                         opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-[0_0_15px_#32FF7E]"
               style={{ left: `calc(${progressPercent}% - 8px)` }}
             />
           </div>
@@ -663,6 +685,6 @@ export function ModernVideoPlayer({
       </div>
     </div>
   );
-}
+});
 
 export default ModernVideoPlayer;

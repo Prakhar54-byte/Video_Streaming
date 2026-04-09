@@ -1,29 +1,54 @@
 version: "3.8"
 
 services:
+  gateway:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx-gateway
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend-app
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost/api/v1
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   backend:
     build:
       context: ./BACKEND
-      dockerfile: ./Dockerfile
+      dockerfile: Dockerfile
     image: video-streaming-backend:latest
     container_name: backend-app
     expose:
       - "8000"
     env_file: .env
-    ports:
-      - "8000:8000"
     environment:
       NODE_ENV: production
-      MONGODB_URL: ${MONGODB_URL}
+      MONGODB_URL: mongodb://mongo:27017/videotube
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
-      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
-      KAFKAJS_NO_PARTITIONER_WARNING: 1
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost}
     depends_on:
       redis:
         condition: service_healthy
@@ -33,11 +58,10 @@ services:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/ping" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/ping"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
 
   redis:
     image: redis:7-alpine
@@ -48,7 +72,7 @@ services:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -71,7 +95,6 @@ services:
 
 volumes:
   mongo-data:
-
 
 networks:
   app-network:

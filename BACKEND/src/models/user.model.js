@@ -52,7 +52,8 @@ import bcrypt from "bcrypt";
                 required: [true, 'Password is required']
             },
             refreshToken: {
-                type: String
+                type: String,
+                select: false
             }
     
         },

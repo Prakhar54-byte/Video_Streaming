@@ -52,7 +52,6 @@ const getVideoComments = asyncHandler(async (req, res) => {
             { $limit: limitNumber }
         ]);
 
-        console.log("Comments fetched successfully:", comments.length, "comments found for video:", videoId);
 
         return res.status(200).json(new ApiResponse(200, comments, "All comments fetched successfully"));
     } catch (error) {

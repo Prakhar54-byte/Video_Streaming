@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
-import { ModernVideoPlayer } from "./ModernVideoPlayer";
+import { ModernVideoPlayer, ModernVideoPlayerRef } from "./ModernVideoPlayer";
+import { WaveformViewer } from "./WaveformViewer";
 import { 
     Play, 
     Code, 
@@ -22,6 +23,9 @@ interface CodingWorkspaceProps {
     currentMilestoneIndex?: number;
     totalMilestones?: number;
     onComplete?: () => void;
+    waveformUrl?: string;
+    introStartTime?: number;
+    introEndTime?: number;
 }
 
 export function CodingWorkspace({
@@ -31,15 +35,41 @@ export function CodingWorkspace({
     roadmapTitle = "Python Game Development",
     currentMilestoneIndex = 3,
     totalMilestones = 5,
-    onComplete
+    onComplete,
+    waveformUrl,
+    introStartTime,
+    introEndTime
 }: CodingWorkspaceProps) {
     const [code, setCode] = useState(initialCode);
     const [isOutputVisible, setIsOutputVisible] = useState(false);
     const [output, setOutput] = useState("");
+    
+    // Video synchronization state
+    const playerRef = useRef<ModernVideoPlayerRef>(null);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
 
     const handleRunCode = () => {
         setIsOutputVisible(true);
         setOutput("Running code...\n> Hello, Gamer! Your 3D environment is initializing...\n> Done.");
+    };
+
+    const handleWaveformSeek = (time: number) => {
+        playerRef.current?.seekTo(time);
+        setCurrentTime(time);
+    };
+
+    const handleEditorWillMount = (monaco: any) => {
+        monaco.editor.defineTheme('obsidian-neon', {
+            base: 'vs-dark',
+            inherit: true,
+            rules: [],
+            colors: {
+                'editor.background': '#000000', // Deep black for the Obsidian Neon look
+                'editor.lineHighlightBackground': '#161a21',
+                'editorCursor.foreground': '#32FF7E',
+            }
+        });
     };
 
     const progressPercentage = (currentMilestoneIndex / totalMilestones) * 100;
@@ -75,9 +105,27 @@ export function CodingWorkspace({
                     <div className="flex-1 p-4 flex flex-col">
                         <div className="flex-1 relative rounded-xl overflow-hidden border border-white/5 shadow-2xl bg-black">
                             <ModernVideoPlayer 
+                                ref={playerRef}
                                 src={videoSrc}
                                 title={videoTitle}
+                                onTimeUpdate={setCurrentTime}
+                                onLoadedMetadata={({ duration }) => setDuration(duration)}
+                                introStartTime={introStartTime}
+                                introEndTime={introEndTime}
                                 className="w-full h-full"
+                            />
+                        </div>
+
+                        {/* Audio Waveform Integration */}
+                        <div className="mt-4 bg-[#10131a] rounded-xl border border-white/5 overflow-hidden">
+                            <WaveformViewer 
+                                waveformImageUrl={waveformUrl}
+                                duration={duration}
+                                currentTime={currentTime}
+                                onSeek={handleWaveformSeek}
+                                compact={true}
+                                className="bg-transparent border-none shadow-none"
+                                initialColor={{ primary: "#32FF7E", secondary: "#10B981" }}
                             />
                         </div>
                         
@@ -152,7 +200,8 @@ export function CodingWorkspace({
                             defaultLanguage="javascript"
                             value={code}
                             onChange={(value) => setCode(value || "")}
-                            theme="vs-dark"
+                            theme="obsidian-neon"
+                            beforeMount={handleEditorWillMount}
                             options={{
                                 fontSize: 13,
                                 fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
@@ -160,8 +209,7 @@ export function CodingWorkspace({
                                 scrollBeyondLastLine: false,
                                 lineNumbers: "on",
                                 roundedSelection: true,
-                                padding: { top: 20 },
-                                backgroundColor: "#000000"
+                                padding: { top: 20 }
                             }}
                         />
                         <button 

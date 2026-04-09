@@ -5,8 +5,6 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import helmet from 'helmet'
-import mongoSanitize from 'mongo-sanitize'
-import xssClean from 'xss-clean'
 import { apiLimiter, authLimiter } from './middlewares/rateLimitor.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
 
@@ -39,7 +37,7 @@ app.use(cors({
 
 app.use(helmet());
 
-// body parser
+// Body Parsers - Standardized for Production
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
@@ -48,11 +46,6 @@ app.use(cookieParser());
 app.use("/api/", apiLimiter);
 app.use("/api/v1/users/login", authLimiter);
 app.use("/api/v1/users/register", authLimiter);
-
-// Body Parsers
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
 
 // Disable ETag for HLS streaming to prevent 304s
 app.set('etag', false);
@@ -130,5 +123,3 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 export { app };
-
-

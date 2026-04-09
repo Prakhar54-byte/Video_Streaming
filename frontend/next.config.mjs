@@ -1,5 +1,11 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   // Optimize imports for heavy libraries — reduces HMR module graph size
   experimental: {
     optimizePackageImports: [

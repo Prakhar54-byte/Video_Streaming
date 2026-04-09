@@ -48,7 +48,6 @@ export function useVideoHash() {
           const instance = await wasmModule.default();
           wasmModuleRef.current = instance;
           setIsLoaded(true);
-          console.log("Video Hash WASM loaded");
           return;
         }
       }

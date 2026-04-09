@@ -55,7 +55,6 @@ export function useFrameAnalyzer() {
           const instance = await wasmModule.default();
           wasmModuleRef.current = instance;
           setIsLoaded(true);
-          console.log("Frame Analyzer WASM loaded");
           return;
         }
       }

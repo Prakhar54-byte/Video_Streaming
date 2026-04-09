@@ -119,7 +119,15 @@ dist
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Node
 .DS_Store
-public/
+
+# User Uploads Content
+public/temp/
+public/hls/
+public/previews/
+public/waveforms/
+public/sprites/
 uploads/
 *.mp4
+public/**/*.ts
+public/**/*.m3u8
 

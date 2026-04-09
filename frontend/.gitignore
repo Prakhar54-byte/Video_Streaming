@@ -40,11 +40,13 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-
-.png# images
-
-/public
-
-TODO.py
+# dynamic uploads
+/public/temp/
+/public/hls/
+/public/previews/
+/public/waveforms/
+/public/sprites/
+public/**/*.ts
+public/**/*.m3u8
 
 

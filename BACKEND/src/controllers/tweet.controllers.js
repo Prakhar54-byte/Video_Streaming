@@ -11,7 +11,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const createTweet = asyncHandler(async (req, res) => {
   
   const { content, parentTweetId } = req.body;
-  console.log("test", req.body);
   
   if (!content) {
     throw new ApiError(400, "Their is nothing to tweet");
@@ -211,7 +210,6 @@ const getUserTweets = asyncHandler(async (req, res) => {
   // TODO: get user tweets
   const userId = req.user._id ? req.user._id : req.params.userId;
 
-  console.log("Check msg",userId);
   
 
   
@@ -319,7 +317,6 @@ const getUserTweets = asyncHandler(async (req, res) => {
 });
 
 const updateTweet = asyncHandler(async (req, res) => {
-  //TODO: update tweet
   const { content } = req.body;
   const { tweetId } = req.params;
 
@@ -357,7 +354,6 @@ const updateTweet = asyncHandler(async (req, res) => {
 });
 
 const deleteTweet = asyncHandler(async (req, res) => {
-  //TODO: delete tweet
   const { tweetId } = req.params;
   if (!isValidObjectId(tweetId)) {
     throw new ApiError(400, "Tweet ID is not found ");
@@ -437,7 +433,6 @@ const calculateBadges = async (userId, channelId) => {
       badges.push("watched_10_plus");
     }
   } catch (error) {
-    console.log("Watch history check skipped:", error.message);
   }
 
   return badges;

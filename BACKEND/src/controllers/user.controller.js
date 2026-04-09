@@ -48,18 +48,12 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // Step 1
     const { fullName, email, password, username } = req.body;
-    // console.log("Request Body in Register:", req.body);
-    console.log("All Keys in req.body:", Object.keys(req.body));
-    // console.log("Request Files in Register:", req.files);
 
     
     
 
 
-    // console.log("Request Files in Register:", email);
 
-      console.log("Email", email);
-      console.log(req.body);
 
     //Step 2
     if (fullName === "") {
@@ -74,13 +68,11 @@ const registerUser = asyncHandler(async (req, res) => {
       $or: [{ username }, { email }],
     });
     if (existedUser) {
-      // console.log("This is body",req.body);
       throw new ApiError(409, "User already exists");
     }
     //Step 4
     const avatarlocalPath = req.files?.avatar?.[0];
     if (req.files?.avatar && req.files.avatar.length > 0) {
-      console.log("Avatar path:", avatarlocalPath);
     } else {
       console.error("Avatar file not found.");
       return res.status(400).json({ error: "Avatar file is required." });
@@ -98,16 +90,12 @@ const registerUser = asyncHandler(async (req, res) => {
     if (!avatarlocalPath) {
       throw new ApiError(400, "Avatar is required");
     }
-    console.log("Cover Image path:", coverImageLocalPath);
     
     // Step5
     const avatar = avatarlocalPath ? await uploadOnCloudinary(avatarlocalPath.path): null;
-    // console.log("Avatar URL:", avatar);
     
     const coverImage = coverImageLocalPath ? await uploadOnCloudinary(coverImageLocalPath.path): "";
-    // console.log("Cover Image :", coverImageLocalPath);
     
-    // console.log("Cover Image URL:", coverImage);
 
     if (!avatar ) {
       throw new ApiError(500, "Cloudinary Error");
@@ -115,8 +103,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
     // Step 6
 
-    // console.log("Avatar URL:", avatar.url);
-    // console.log("Cover Image URL:", coverImage?.url);
     
 
     const user = await User.create({
@@ -137,12 +123,7 @@ const registerUser = asyncHandler(async (req, res) => {
       throw new ApiError(500, "User not created");
     }
     // Step 9
-    console.log("User created successfully:", {
-      id: createdUser._id,
-      username: createdUser.username,
-      email: createdUser.email,
-      fullName: createdUser.fullName
-    });
+    // Step 9
     return res.status(200).json(new ApiResponse(200, createdUser, "User registered successfully"));
   } catch (error) {
     throw new ApiError(400, error?.message || "Some error regisetUser");
@@ -162,7 +143,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
 //     const {fullName, email, username, password } = req.body
-//     //console.log("email: ", email);
 
 //     if (
 //         [fullName, email, username, password].some((field) => field?.trim() === "")
@@ -177,7 +157,6 @@ const registerUser = asyncHandler(async (req, res) => {
 //     if (existedUser) {
 //         throw new ApiError(409, "User with email or username already exists")
 //     }
-//     console.log(req.files);
 
 //     const avatarFile = req.files?.avatar?.[0];
 //     const coverImageFile = req.files?.coverImage?.[0];
@@ -234,7 +213,6 @@ const logInUser = asyncHandler(async (req, res) => {
 
   const { username, email, password } = req.body;
   
-  console.log("Login request body:", { username, email, password: password ? "***" : undefined });
 
   if (!email && !username) {
     throw new ApiError(400, "Username or email is required");
@@ -258,14 +236,7 @@ const logInUser = asyncHandler(async (req, res) => {
     $or: query
   });
   
-  console.log("User found:", {
-    id: user?._id,
-    username: user?.username,
-    email: user?.email,
-    fullName: user?.fullName,
-    hasPassword: !!user?.password,
-    allFields: user ? Object.keys(user.toObject()) : []
-  });
+  // Step 4 verification logic (if needed) removed with logs
   
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -280,8 +251,6 @@ const logInUser = asyncHandler(async (req, res) => {
     user._id
   );
 
-  console.log("Access Token:", accessToken);
-  console.log("Refresh Token:", refreshToken);
   
 
   const loggedInUser = await User.findById(user._id).select(
@@ -315,7 +284,6 @@ const logInUser = asyncHandler(async (req, res) => {
 });
 
 const loggedOut = asyncHandler(async (req, res) => {
-  // console.log("email cjeck login",email);
   try {
     await User.findByIdAndUpdate(
       req.user._id,
@@ -477,7 +445,6 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
     const avatar = await uploadOnCloudinary(avatarLocalPath);
 
-    //TODO - delete old image from cloudinary
     
 
     if (!avatar.url) {
@@ -609,7 +576,6 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         },
       },
     ]);
-    console.log("Channel profile fetched:", channel);
 
     if (!channel?.length) {
       throw new ApiError(404, "Channel not found");

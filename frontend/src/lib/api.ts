@@ -31,7 +31,6 @@ apiClient.interceptors.request.use(
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('accessToken');
       if (token) {
-        // console.log(`[API] Attaching token to ${config.url}:`, token.substring(0, 10) + "...");
         config.headers.Authorization = `Bearer ${token}`;
       } else {
         // console.warn(`[API] No access token found for ${config.url}`);
@@ -56,7 +55,6 @@ apiClient.interceptors.response.use(
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        console.log("[API] Refresh already in progress, queuing request to", originalRequest.url);
         return new Promise(function(resolve, reject) {
           failedQueue.push({resolve, reject});
         }).then(token => {
@@ -67,7 +65,6 @@ apiClient.interceptors.response.use(
         });
       }
 
-      console.log("[API] 401 detected. Starting token refresh...");
       originalRequest._retry = true;
       isRefreshing = true;
 
@@ -75,7 +72,6 @@ apiClient.interceptors.response.use(
         // Try to refresh token
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          // console.log("[API] Found refreshToken, calling /users/refresh-token");
           const response = await axios.post(
             `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api/v1'}/users/refresh-token`,
             { refreshToken },
@@ -83,7 +79,6 @@ apiClient.interceptors.response.use(
           );
 
           if (response.data.success) {
-            console.log("[API] Token refresh successful");
             const { accessToken, refreshToken: newRefreshToken } = response.data.data;
             
             // Update tokens in active storage
@@ -109,7 +104,6 @@ apiClient.interceptors.response.use(
                    };
                    
                    localStorage.setItem("account_tokens", JSON.stringify(currentMap));
-                   console.log("[API] Updated account_tokens map for user:", userId);
                 }
               }
             } catch (syncErr) {
@@ -142,7 +136,6 @@ apiClient.interceptors.response.use(
 
       // Redirect to login if unauthorized and not already on auth pages
       if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth')) {
-        console.log("[API] Redirecting to login due to 401 and failed refresh");
         window.location.href = '/auth/login';
       }
     }
