@@ -40,6 +40,8 @@ services:
       dockerfile: Dockerfile
     image: video-streaming-backend:latest
     container_name: backend-app
+    ports:
+      - "8000:8000"
     expose:
       - "8000"
     env_file: .env

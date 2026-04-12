@@ -103,6 +103,7 @@ import channelRouter from "./routers/channel.routes.js";
 import videoAnalysisRouter from "./routers/videoAnalysis.route.js";
 import roadmapRouter from "./routers/roadmap.routes.js";
 import progressRouter from "./routers/progress.routes.js";
+import feedbackRouter from "./routers/feedback.routes.js";
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/likes", likeRouter);
@@ -117,6 +118,7 @@ app.use("/api/v1/channels", channelRouter);
 app.use("/api/v1/analysis", videoAnalysisRouter);
 app.use("/api/v1/roadmaps", roadmapRouter);
 app.use("/api/v1/progress", progressRouter);
+app.use("/api/v1/feedback", feedbackRouter);
 
 // --- Error Handling ---
 app.use(notFoundHandler);

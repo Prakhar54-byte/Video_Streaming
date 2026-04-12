@@ -8,6 +8,7 @@ export const apiLimiter = rateLimit({
     standardHeaders:true,
     legacyHeaders:false,
     skip:(req)=>req.path==='/ping',
+    validate: { xForwardedForHeader: false },
 })
 
 
@@ -16,18 +17,20 @@ export const authLimiter = rateLimit({
         max : process.env.AUTH_RATE_LIMIT_MAX || 5,
     message:'Too many login attempts',
     skipSuccessfulRequests:true, // Dont count succesful logins
-    skipFailedRequests:false // count all failed attepts
-
+    skipFailedRequests:false, // count all failed attepts
+    validate: { xForwardedForHeader: false },
 })
 export const uploadLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
     max: process.env.UPLOAD_RATE_LIMIT_MAX || 10,
-    message: 'Too many videos uploaded, try again later'
+    message: 'Too many videos uploaded, try again later',
+    validate: { xForwardedForHeader: false },
 });
 
 // Search limiter
 export const searchLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
     max: process.env.SEARCH_RATE_LIMIT_MAX || 30,
-    message: 'Too many search requests'
+    message: 'Too many search requests',
+    validate: { xForwardedForHeader: false },
 });

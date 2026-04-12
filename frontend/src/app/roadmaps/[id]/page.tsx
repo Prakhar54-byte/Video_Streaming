@@ -6,6 +6,7 @@ import {
     CheckCircle2, 
     Lock, 
     ChevronLeft, 
+    ChevronRight,
     Play, 
     Clock, 
     Users, 

@@ -54,8 +54,12 @@ import bcrypt from "bcrypt";
             refreshToken: {
                 type: String,
                 select: false
+            },
+            isAdmin: {
+                type: Boolean,
+                default: false
             }
-    
+     
         },
         {
             timestamps: true

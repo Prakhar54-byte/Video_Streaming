@@ -59,9 +59,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { href: "/videos", icon: Video, label: "Videos" },
     { href: "/subscribed", icon: Bell, label: "Subscribed" },
     { href: "/liked", icon: ThumbsUp, label: "Liked Videos" },
-    { href: "/playlists", icon: ListVideo, label: "Playlists" }, // Added Playlists
+    { href: "/playlists", icon: ListVideo, label: "Playlists" },
     { href: "/history", icon: History, label: "History" },
     { href: "/messages", icon: MessageSquare, label: "Messages" },
+    { href: "/feedback", icon: MessageSquare, label: "Feedback" },
   ];
 
   const channelNavItem = { href: "/my-channel", icon: User, label: "My Channel" };

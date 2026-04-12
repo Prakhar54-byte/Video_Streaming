@@ -8,6 +8,7 @@ interface User {
   avatar: string;
   coverImage?: string;
   isVerified?: boolean;
+  isAdmin?: boolean;
 }
 
 interface AuthStore {

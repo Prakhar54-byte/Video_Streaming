@@ -14,8 +14,6 @@ const connectDB = async () => {
             throw new Error("MONGODB_URL is not defined in environment variables")
         }
 
-        const dbName = process.env.NODE_ENV === 'test' ? `${DB_NAME}-test` : DB_NAME;
-
         const options = {
             ssl: process.env.MONGODB_SSL === 'true' ? {
                 rejectUnauthorized: false
@@ -28,7 +26,10 @@ const connectDB = async () => {
             maxPoolSize: 10,
             minPoolSize: 5,
         }
-        const connectionInstance = await mongoose.connect(`${process.env.MONGODB_URL}/${dbName}`, options)
+        
+        // Use MONGODB_URL directly as it already contains the database name
+        const connectionString = mongoUrl.includes('/') ? mongoUrl : `${mongoUrl}/${DB_NAME}`;
+        const connectionInstance = await mongoose.connect(connectionString, options)
 
         logger.info(`MongoDB connected !! DB HOST: ${connectionInstance.connection.host}`);
 
