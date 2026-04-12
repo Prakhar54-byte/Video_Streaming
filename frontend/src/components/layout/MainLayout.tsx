@@ -6,7 +6,7 @@ import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { 
   Home, Video, MessageSquare, Upload,
-  User, Menu, X, Bell, Sparkles, History, ThumbsUp, ListVideo 
+  User, Menu, X, Bell, Sparkles, History, ThumbsUp, ListVideo
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,9 @@ import apiClient from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserAccountMenu } from "./UserAccountMenu";
+import { TerminalPet } from "@/components/TerminalPet";
+import { KeyboardShortcuts } from "@/components/KeyboardShortcuts";
+import { QuickTools } from "@/components/devtools/QuickTools";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -62,7 +65,6 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     { href: "/playlists", icon: ListVideo, label: "Playlists" },
     { href: "/history", icon: History, label: "History" },
     { href: "/messages", icon: MessageSquare, label: "Messages" },
-    { href: "/feedback", icon: MessageSquare, label: "Feedback" },
   ];
 
   const channelNavItem = { href: "/my-channel", icon: User, label: "My Channel" };
@@ -102,14 +104,17 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           {!sidebarOpen && (
             <Sparkles className="w-8 h-8 text-orange-500 mx-auto" />
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="hover:bg-primary/10"
-          >
-            {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </Button>
+          <div className="flex items-center gap-2">
+            <KeyboardShortcuts />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="hover:bg-primary/10"
+            >
+              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
         </div>
 
         {/* Navigation - Scrollable */}
@@ -176,6 +181,10 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
           </Button>
         </Link>
       )}
+
+      {/* Developer Features */}
+      <TerminalPet />
+      <QuickTools />
     </div>
   );
 }

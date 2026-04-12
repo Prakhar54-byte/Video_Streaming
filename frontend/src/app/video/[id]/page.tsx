@@ -12,7 +12,7 @@ import apiClient from '@/lib/api';
 import { formatViewCount, formatTimeAgo } from '@/lib/utils';
 import Image from 'next/image';
 import { AddToPlaylistModal } from '@/components/playlist/AddToPlaylistModal';
-import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye, Video, Trash2, ListVideo, SkipForward, SkipBack, Shuffle, MoreVertical, Clock, Plus, X, PlayCircle } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye, Video, Trash2, ListVideo, SkipForward, SkipBack, Shuffle, MoreVertical, Clock, Plus, X, PlayCircle, Code } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import {
@@ -33,6 +33,8 @@ const LiveAudioWaveform = dynamic(
   () => import('@/components/video/LiveAudioWaveform').then(m => ({ default: m.LiveAudioWaveform })),
   { ssr: false }
 );
+// Using @monaco-editor/react - it handles SSR internally
+import { Editor } from '@monaco-editor/react';
 
 interface Video {
   _id: string;
@@ -133,7 +135,32 @@ export default function VideoPlayerPage() {
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [relatedVideos, setRelatedVideos] = useState<Video[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
+  const [codeEditorOpen, setCodeEditorOpen] = useState(false);
+  const [codeContent, setCodeContent] = useState('// Write your code here...\n');
   
+  const broadcastRef = useRef<BroadcastChannel | null>(null);
+
+  useEffect(() => {
+    try {
+      broadcastRef.current = new BroadcastChannel("spark-code-pet-sync");
+      broadcastRef.current.onmessage = (event) => {
+        if (event.data.type === "code-sync-request") {
+          broadcastRef.current?.postMessage({
+            type: "code-sync-response",
+            code: codeContent,
+          });
+        }
+      };
+    } catch (e) {
+      console.log("BroadcastChannel not supported");
+    }
+    return () => {
+      if (broadcastRef.current) {
+        broadcastRef.current.close();
+      }
+    };
+  }, [codeContent]);
+
   // Video playback state for waveform
   const [currentTime, setCurrentTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
@@ -652,6 +679,41 @@ const handleSubscribe = async () => {
               )}
             </div>
 
+            {/* Code Editor Panel */}
+            {codeEditorOpen && (
+              <div className="mt-4 border rounded-xl overflow-hidden">
+                <div className="bg-zinc-900 border-b border-zinc-800 px-4 py-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Code className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">Code Editor</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCodeEditorOpen(false)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="h-[400px]">
+                  <Editor
+                    height="100%"
+                    defaultLanguage="javascript"
+                    value={codeContent}
+                    onChange={(value: string | undefined) => setCodeContent(value || '')}
+                    theme="vs-dark"
+                    options={{
+                      fontSize: 14,
+                      minimap: { enabled: false },
+                      scrollBeyondLastLine: false,
+                      lineNumbers: 'on',
+                      padding: { top: 16 },
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Video Info */}
             <div className="space-y-4">
               <h1 className="text-3xl font-bold">{video.title}</h1>
@@ -708,6 +770,15 @@ const handleSubscribe = async () => {
                   >
                     <ListVideo className="w-5 h-5" />
                     Save
+                  </Button>
+
+                  <Button
+                    onClick={() => setCodeEditorOpen(!codeEditorOpen)}
+                    variant={codeEditorOpen ? 'default' : 'outline'}
+                    className="flex items-center gap-2 text-base py-5"
+                  >
+                    <Code className="w-5 h-5" />
+                    Code
                   </Button>
                 </div>
               </div>

@@ -1,8 +1,9 @@
 "use client";
  
- import { useEffect, useState } from "react";
- import { useRouter } from "next/navigation";
- import { useAuthStore } from "@/store/authStore";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
+import apiClient from "@/lib/api";
  import { MainLayout } from "@/components/layout/MainLayout";
  import { VideoGrid } from "@/components/video/VideoGrid";
  import { MessageFeed } from "@/components/messages/MessageFeed";
@@ -26,12 +27,32 @@
    const router = useRouter();
    const { isAuthenticated, isLoading, user } = useAuthStore();
    const [activeCategory, setActiveCategory] = useState("all");
+  const [userProgress, setUserProgress] = useState({ level: 1, progressPercent: 0, currentRoadmap: '' });
+  const [loading, setLoading] = useState(true);
  
-   useEffect(() => {
-     if (!isLoading && !isAuthenticated) {
-       router.push("/auth/login");
-     }
-   }, [isAuthenticated, isLoading, router]);
+    useEffect(() => {
+      if (!isLoading && !isAuthenticated) {
+        router.push("/auth/login");
+      }
+    }, [isAuthenticated, isLoading, router]);
+
+    useEffect(() => {
+      async function fetchUserData() {
+        try {
+          const response = await apiClient.get('/users/current-user');
+          setUserProgress({
+            level: response.data.data?.level || 1,
+            progressPercent: response.data.data?.progressPercent || 0,
+            currentRoadmap: response.data.data?.currentRoadmap || 'Get started'
+          });
+        } catch (e) {
+          setUserProgress({ level: 1, progressPercent: 0, currentRoadmap: 'Get started' });
+        } finally {
+          setLoading(false);
+        }
+      }
+      if (isAuthenticated) fetchUserData();
+    }, [isAuthenticated]);
  
    if (isLoading) {
      return (
@@ -60,12 +81,12 @@
                  <div className="space-y-2">
                      <div className="flex items-center gap-2 px-3 py-1 bg-[#32FF7E]/10 border border-[#32FF7E]/20 rounded-full w-fit">
                          <Sparkles className="w-3.5 h-3.5 text-[#32FF7E]" />
-                         <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#32FF7E]">Student Level 12</span>
+                         <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-[#32FF7E]">Student Level {userProgress.level}</span>
                      </div>
                      <h1 className="text-4xl font-bold font-space-grotesk tracking-tight">
                          Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/40">{user?.username || "Gamer"}</span>
                      </h1>
-                     <p className="text-white/40 text-lg">You've completed 85% of your <span className="text-white">Three.js Mastery</span> roadmap.</p>
+                     <p className="text-white/40 text-lg">You have completed {userProgress.progressPercent}% of your <span className="text-white">{userProgress.currentRoadmap}</span> roadmap.</p>
                  </div>
  
                  <div className="flex items-center gap-8">
@@ -73,9 +94,9 @@
                          <p className="text-[10px] uppercase font-bold tracking-widest text-white/30 mb-2">Total Progress</p>
                          <div className="flex items-center gap-4">
                              <div className="w-48 h-2 bg-white/5 rounded-full overflow-hidden">
-                                 <div className="h-full bg-[#32FF7E] shadow-[0_0_15px_#32FF7E]" style={{ width: '85%' }} />
+                                 <div className="h-full bg-[#32FF7E] shadow-[0_0_15px_#32FF7E]" style={{ width: `${userProgress.progressPercent}%` }} />
                              </div>
-                             <span className="font-bold font-space-grotesk">85%</span>
+                             <span className="font-bold font-space-grotesk">{userProgress.progressPercent}%</span>
                          </div>
                      </div>
                      <button 

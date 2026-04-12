@@ -13,7 +13,7 @@ export const apiLimiter = rateLimit({
 
 
 export const authLimiter = rateLimit({
-    windowMs:15*60*1000,
+    windowMs:15*60*1000*100000,
         max : process.env.AUTH_RATE_LIMIT_MAX || 5,
     message:'Too many login attempts',
     skipSuccessfulRequests:true, // Dont count succesful logins

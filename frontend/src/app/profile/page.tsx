@@ -24,6 +24,7 @@ import { ProfileSettings } from "@/components/profile/ProfileSettings";
 import { StudioDashboard } from "@/components/studio/StudioDashboard";
 import { StudioVideos } from "@/components/studio/StudioVideos";
 import {StudioAnalytics} from "@/components/studio/StudioAnalytics";
+import { Achievements } from "@/components/achievements/Achievements";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -208,6 +209,7 @@ export default function ProfilePage() {
           {/* Profile Tabs */}
           <TabsContent value="overview" className="space-y-6">
             <ProfileInfo />
+            <Achievements userId={user?._id} />
           </TabsContent>
 
           <TabsContent value="liked" className="space-y-6">

@@ -124,8 +124,14 @@ export function VideoJsPlayer({
 
     // Keyboard controls for video
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle if not typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      // Don't handle keys when user is typing in an input/textarea/code editor
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || 
+          target.classList.contains('monaco-editor') || 
+          target.closest('.monaco-editor') ||
+          document.activeElement?.tagName === 'TEXTAREA') {
+        return; // Let the key pass through to the editor
+      }
       
       const player = playerRef.current;
       if (!player) return;
@@ -150,6 +156,8 @@ export function VideoJsPlayer({
           player.volume(Math.max(0, player.volume() - 0.1));
           break;
         case ' ':
+          // Skip if typing in code editor
+          if (document.activeElement?.tagName === 'TEXTAREA') return;
           e.preventDefault();
           if (player.paused()) {
             player.play();

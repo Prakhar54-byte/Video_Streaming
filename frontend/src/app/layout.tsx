@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "sonner";
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { CodePet } from "@/components/CodePet";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,6 +28,7 @@ export default function RootLayout({
           {children}
           <Toaster />
           <Sonner richColors />
+          <CodePet />
         </AuthProvider>
       </body>
     </html>
