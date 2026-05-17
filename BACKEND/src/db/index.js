@@ -1,16 +1,23 @@
 import mongoose from "mongoose";
 import { DB_NAME } from "../constants.js";
 import logger from "../utils/logger.js";
-import { se, th } from "date-fns/locale";
-import { connect } from "http2";
 
+const getConnectionString = (mongoUrl) => {
+    const parsedUrl = new URL(mongoUrl);
+    const hasDatabaseName = parsedUrl.pathname && parsedUrl.pathname !== '/';
+
+    if (hasDatabaseName) {
+        return mongoUrl;
+    }
+
+    parsedUrl.pathname = `/${DB_NAME}`;
+    return parsedUrl.toString();
+};
 
 const connectDB = async () => {
     try {
         const mongoUrl  = process.env.MONGODB_URL ;
-        if(!mongoUrl
-
-        ){
+        if(!mongoUrl){
             throw new Error("MONGODB_URL is not defined in environment variables")
         }
 
@@ -27,8 +34,7 @@ const connectDB = async () => {
             minPoolSize: 5,
         }
         
-        // Use MONGODB_URL directly as it already contains the database name
-        const connectionString = mongoUrl.includes('/') ? mongoUrl : `${mongoUrl}/${DB_NAME}`;
+        const connectionString = getConnectionString(mongoUrl);
         const connectionInstance = await mongoose.connect(connectionString, options)
 
         logger.info(`MongoDB connected !! DB HOST: ${connectionInstance.connection.host}`);

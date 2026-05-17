@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import apiClient from '@/lib/api';
 import { Bell, BellOff, Video, Users, Play, Settings } from 'lucide-react';
 import Image from 'next/image';
+import { toBackendAssetUrl } from '@/lib/utils';
 import { VideoGrid } from '@/components/video/VideoGrid';
 
 interface Channel {
@@ -143,7 +144,7 @@ export default function ChannelPage() {
         <div className="relative h-64 md:h-80 bg-gradient-to-br from-orange-500/20 via-red-500/20 to-yellow-500/20">
           {channel.coverImage ? (
             <Image
-              src={channel.coverImage}
+              src={toBackendAssetUrl(channel.coverImage)}
               alt="Channel cover"
               fill
               className="object-cover"
@@ -161,13 +162,19 @@ export default function ChannelPage() {
             <div className="flex flex-col md:flex-row gap-6 items-start md:items-end">
               {/* Avatar */}
               <div className="relative">
-                <Image
-                  src={channel.avatar || '/placeholder/user-avatar.png'}
-                  alt={channel.fullName}
-                  width={160}
-                  height={160}
-                  className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-background object-cover shadow-2xl"
-                />
+                {channel.avatar ? (
+                  <Image
+                    src={toBackendAssetUrl(channel.avatar)}
+                    alt={channel.fullName}
+                    width={160}
+                    height={160}
+                    className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-background object-cover shadow-2xl"
+                  />
+                ) : (
+                  <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-background bg-gradient-to-br from-orange-500 via-red-500 to-yellow-500 shadow-2xl flex items-center justify-center">
+                    <span className="text-4xl font-bold text-white">{channel.fullName[0]?.toUpperCase()}</span>
+                  </div>
+                )}
               </div>
 
               {/* Channel Details */}

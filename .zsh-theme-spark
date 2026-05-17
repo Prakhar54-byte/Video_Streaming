@@ -1,0 +1,20 @@
+# Spark Terminal Theme for ZSH
+# Install: Copy to ~/.oh-my-zsh/themes/
+
+# Prompt
+PROMPT='%F{9}✦%f %F{15}%~%f 
+%F{9}›%f '
+
+# Right prompt - git status
+RPROMPT='$(git_prompt_info)'
+
+# Colors
+export CLICOLOR=1
+export LSCOLORS=ExfxBxDxCxEgEdAbagacad
+
+# LS colors (dracula-ish)
+export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34:cd=34:su=30:sg=30:tw=30:ow=30'
+alias ls='ls -G'
+
+# Enable colors
+autoload -U colors && colors

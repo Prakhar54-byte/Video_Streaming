@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Clock, MoreVertical, ListPlus, Radio, ListVideo, EyeOff, BookmarkPlus, BookmarkCheck } from "lucide-react";
-import { formatViewCount, formatTimeAgo } from "@/lib/utils";
+import { formatViewCount, formatTimeAgo, toBackendAssetUrl } from "@/lib/utils";
 import apiClient from "@/lib/api";
 import video from "video.js";
 import {
@@ -58,18 +58,7 @@ const backendOrigin = (() => {
     return 'http://localhost:8000';
   })();
 
-  const toBackendAssetUrl = (maybePath?: string) => {
-    if (!maybePath) return '';
-    if (/^https?:\/\//i.test(maybePath)) return maybePath;
-    const normalized = maybePath.replace(/\\/g, '/').replace(/^\//, '');
-    const withoutPublic = normalized.startsWith('public/') ? normalized.slice('public/'.length) : normalized;
-    return `${backendOrigin}/${withoutPublic}`;
-  };
-
-  console.log("Views, ", formatTimeAgo("2023-10-10T10:00:00Z"));
-  
-
-export function VideoCard({ video }: VideoCardProps) {
+  export function VideoCard({ video }: VideoCardProps) {
   const duration = Math.floor(video?.duration);
   const min = Math.floor(duration/60);
   const seconds = duration % 60;
@@ -163,7 +152,7 @@ export function VideoCard({ video }: VideoCardProps) {
         {/* Info Section */}
         <div className="flex gap-3 px-1 items-start">
           <Avatar className="w-9 h-9 flex-shrink-0 border border-white/10">
-            <AvatarImage src={video.owner?.avatar} alt={video.owner?.fullName} />
+            <AvatarImage src={toBackendAssetUrl(video.owner?.avatar)} alt={video.owner?.fullName} />
             <AvatarFallback>{video.owner?.fullName[0]}</AvatarFallback>
           </Avatar>
 

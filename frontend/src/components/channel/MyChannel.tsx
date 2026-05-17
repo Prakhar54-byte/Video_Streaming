@@ -12,6 +12,7 @@ import { useChannelStore } from "@/store/channelStore";
 import { channelApi } from "@/lib/api/channel";
 import { CreateChannelModal } from "./CreateChannelModal";
 import { toast } from "sonner";
+import { toBackendAssetUrl } from "@/lib/utils";
 
 export function MyChannel() {
   const { channels, setChannels, setLoading, isLoading } = useChannelStore();
@@ -127,7 +128,7 @@ export function MyChannel() {
               <CardHeader className="pb-4">
                 <div className="flex items-start gap-4">
                   <Avatar className="w-16 h-16 border-2 border-background -mt-8">
-                    <AvatarImage src={channel.avatar} alt={channel.name} />
+                    <AvatarImage src={toBackendAssetUrl(channel.avatar)} alt={channel.name} />
                     <AvatarFallback className="text-lg">
                       {channel.name[0].toUpperCase()}
                     </AvatarFallback>

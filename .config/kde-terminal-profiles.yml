@@ -1,0 +1,46 @@
+# KDE Plasma Terminal Theme - Spark
+# Apply with: yakuake or konsole
+
+profile:
+  name: Spark
+  command: /bin/bash
+  
+  appearance:
+    transparency: false
+    cursorStyle: Block
+    font: JetBrains Mono, 12pt
+    
+  colors:
+    # Scheme: Dracula-inspired
+    Background: "#0f0f23"
+    Foreground: "#eaeaea"
+    # Black
+    Color0: "#0f0f23"
+    Color0Bold: "#1a1a2e"
+    # Red  
+    Color1: "#e94560"
+    Color1Bold: "#ff6b8a"
+    # Green
+    Color2: "#32ff7e"
+    Color2Bold: "#6bffc4"
+    # Yellow
+    Color3: "#facc15"
+    Color3Bold: "#fde476"
+    # Blue
+    Color4: "#3b82f6"
+    Color4Bold: "#60a5fa"
+    # Magenta
+    Color5: "#a855f7"
+    Color5Bold: "#c084fc"
+    # Cyan
+    Color6: "#06b6d4"
+    Color6Bold: "#22d3ee"
+    # White
+    Color7: "#eaeaea"
+    Color7Bold: "#ffffff"
+    
+  cursor:
+    block: true
+    blink: true
+    
+  scrollback: 10000

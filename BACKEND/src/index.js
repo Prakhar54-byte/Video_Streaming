@@ -3,8 +3,11 @@ import { app } from './app.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import logger from './utils/logger.js';
+import structuredLogger from './utils/structuredLogger.js';
 import { DB_NAME } from './constants.js';
+import IORedis from 'ioredis';
+import { initializeMetricsCollector } from './services/processingMetrics.js';
+import { connectProducer } from '../ingestion/kafka-producers/videoEventProducer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,20 +23,61 @@ const PORT = process.env.PORT || 8080;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const isProd = NODE_ENV === 'production';
 
-logger.info(`Server starting in ${NODE_ENV} mode`);
+structuredLogger.info(`Server starting in ${NODE_ENV} mode`, {}, {
+  port: PORT,
+  nodeVersion: process.version,
+});
 
 // Global Security for Cookies
-// Note: In production, secure should be true (requires HTTPS)
 const cookieOptions = {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'None' : 'Lax'
 };
 
-// ... existing queue handlers if any ...
+// Initialize Redis for metrics
+let redisClient = null;
+if (process.env.REDIS_DISABLED !== 'true') {
+    try {
+        const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
+        redisClient = new IORedis(redisUrl, {
+            maxRetriesPerRequest: null,
+            enableReadyCheck: false,
+            enableOfflineQueue: true,
+            connectTimeout: 10000,
+            retryStrategy: (times) => Math.min(times * 50, 2000),
+        });
+
+        redisClient.on('error', (err) => {
+            structuredLogger.error('Redis connection error', {}, {
+                errorMessage: err.message,
+            });
+        });
+
+        redisClient.on('connect', () => {
+            structuredLogger.info('Redis connected', {});
+        });
+    } catch (error) {
+        structuredLogger.error('Failed to initialize Redis', {}, {
+            errorMessage: error.message,
+        });
+    }
+}
+
+// Initialize metrics collector
+if (redisClient) {
+    initializeMetricsCollector(redisClient);
+    structuredLogger.info('Metrics collector initialized', {});
+}
+
+// Import queue handlers
 import videoProcessingQueue from './queues/videoProcessing.queue.js';
-videoProcessingQueue?.on?.('completed', (job) => logger.info(`Job ${job.id} completed`));
-videoProcessingQueue?.on?.('failed', (job, err) => logger.error(`Job ${job.id} failed: ${err.message}`));
+videoProcessingQueue?.on?.('completed', (job) => 
+    structuredLogger.info(`Job completed`, { jobId: job.id }, { status: 'completed' })
+);
+videoProcessingQueue?.on?.('failed', (job, err) => 
+    structuredLogger.error(`Job failed`, { jobId: job.id }, { errorMessage: err.message })
+);
 
 const requiredEnvVars = [
     'ACCESS_TOKEN_SECRET',
@@ -43,27 +87,60 @@ const requiredEnvVars = [
 
 const missingVars = requiredEnvVars.filter(v => !process.env[v]);
 if (missingVars.length > 0) {
-    logger.error('Missing required environment variables:', missingVars);
+    structuredLogger.error('Missing required environment variables', {}, {
+        missingVars,
+    });
     process.exit(1);
 }
 
 connectDB()
-    .then(() => {
+    .then(async () => {
         const server = app.listen(PORT, () => {
-            logger.info(`SERVER running at port ${PORT}`);
-            logger.info(`CONNECTED TO DB: ${DB_NAME}`);
+            structuredLogger.info(`SERVER running at port ${PORT}`, {}, {
+                database: DB_NAME,
+                environment: NODE_ENV,
+            });
         });
+
+        // Connect Kafka producer in the background so a missing local broker
+        // never blocks HTTP startup during development.
+        if (process.env.KAFKA_ENABLED !== 'false') {
+            connectProducer().catch((error) => {
+                structuredLogger.error('Kafka connection failed', {}, {
+                    errorMessage: error.message,
+                    severity: 'warning',
+                });
+            });
+        }
 
         server.on('error', (err) => {
             if (err?.code === 'EADDRINUSE') {
-                logger.error(`Port ${PORT} is already in use. Stop the other process.`);
+                structuredLogger.error(`Port ${PORT} is already in use`, {}, {
+                    port: PORT,
+                });
                 process.exit(1);
             }
-            logger.error('Server execution error:', err);
+            structuredLogger.error('Server execution error', {}, {
+                errorMessage: err.message,
+            });
             process.exit(1);
+        });
+
+        // Graceful shutdown
+        process.on('SIGINT', () => {
+            structuredLogger.info('Shutting down server', {});
+            server.close(() => {
+                if (redisClient) {
+                    redisClient.disconnect();
+                }
+                process.exit(0);
+            });
         });
     })
     .catch((e) => {
-        logger.error("MONGODB CONNECTION FAILED", e);
+        structuredLogger.error("MONGODB CONNECTION FAILED", {}, {
+            errorMessage: e.message,
+            stack: e.stack,
+        });
         process.exit(1);
     });

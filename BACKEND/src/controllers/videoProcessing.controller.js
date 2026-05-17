@@ -12,16 +12,11 @@ import { Readable } from "stream";
 import { fileURLToPath } from 'url';
 import { exec } from "child_process";
 import util from "util";
+import structuredLogger from "../utils/structuredLogger.js";
+import { createVideoEvent, VIDEO_EVENT_TYPES } from "../schemas/eventSchemas.js";
+import { sendVideoEvent } from "../../ingestion/kafka-producers/videoEventProducer.js";
 
 const execPromise = util.promisify(exec);
-
-// Optional: Import Kafka producer if available
-let sendVideoEvent = async () => {};
-try {
-  const kafkaModule = await import("../../ingestion/kafka-producers/videoEventProducer.js");
-  sendVideoEvent = kafkaModule.sendVideoEvent;
-} catch (error) {
-}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,20 +43,42 @@ export const processUploadedVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Video is already being processed");
   }
 
+  req.setVideoId(videoId);
+
   // Update status to processing
   video.processingStatus = "processing";
   await video.save();
 
-  // Send Kafka event to trigger async processing
-  await sendVideoEvent("video.processing.started", {
-    videoId: video._id,
-    owner: video.owner,
-    videoUrl: video.videoFiles,
-  });
+  // Create and send Kafka event
+  try {
+    const event = createVideoEvent(VIDEO_EVENT_TYPES.PROCESSING_STARTED, {
+      videoId: video._id.toString(),
+      userId: video.owner.toString(),
+      duration: video.duration || 0,
+      metadata: {
+        requestId: req.correlationIds.requestId,
+      },
+    });
+
+    await sendVideoEvent(VIDEO_EVENT_TYPES.PROCESSING_STARTED, event, req.correlationIds);
+  } catch (error) {
+    structuredLogger.error('Failed to send Kafka event', req.correlationIds, {
+      errorMessage: error.message,
+      eventType: VIDEO_EVENT_TYPES.PROCESSING_STARTED,
+    });
+    // Non-blocking: continue even if Kafka fails
+  }
 
   // Start processing asynchronously (don't await)
-  processVideoInBackground(video._id, video.videoFiles).catch((error) => {
-    console.error("Background processing error:", error);
+  processVideoInBackground(video._id, video.videoFiles, req.correlationIds).catch((error) => {
+    structuredLogger.error("Background processing error", req.correlationIds, {
+      errorMessage: error.message,
+    });
+  });
+
+  structuredLogger.info('Video processing started', req.correlationIds, {
+    videoId,
+    owner: video.owner,
   });
 
   return res
@@ -121,10 +138,15 @@ async function resolveInputVideoPath({ videoFiles, workDir, publicRoot }) {
 /**
  * Background processing function
  */
-async function processVideoInBackground(videoId, videoUrl) {
+async function processVideoInBackground(videoId, videoUrl, correlationIds = {}) {
   try {
     const video = await Video.findById(videoId);
-    if (!video) return;
+    if (!video) {
+      structuredLogger.warn('Video not found for processing', correlationIds, {
+        videoId,
+      });
+      return;
+    }
 
     const publicRoot = publicRootDir;
     const workDir = path.join(publicRoot, "temp", `work-video_${videoId}`);

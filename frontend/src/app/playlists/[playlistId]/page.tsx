@@ -11,17 +11,13 @@ import { Trash2, Play, Share2, Shuffle, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
-import { toBackendAssetUrl } from "@/lib/placeholder";
-import { formatDuration } from "@/lib/utils";
+import { toBackendAssetUrl, formatDuration } from "@/lib/utils";
 
 // API base URL for images
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const toUrl = (path: string) => {
-  if (!path) return "/placeholder/video.jpg";
+  if (!path) return "";
   if (path.startsWith("http")) return path;
-  // console.log("path",path);
-  
-  return `${API_BASE}/${path.replace(/^\//, "")}`;
+  return toBackendAssetUrl(path);
 };
 
 // console.log("URL ",toUrl.toString);

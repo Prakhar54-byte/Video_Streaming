@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import {  Mail, Lock } from "lucide-react";
+import { OAuthButtons } from '@/components/OAuthButtons';
 // import { log } from "console";
 
 export default function LoginPage() {
@@ -194,6 +195,21 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-base text-muted-foreground">
+              Don&apos;t have an account?{" "}
+              <Link href="/auth/register" className="text-primary hover:underline font-semibold text-lg transition-colors">
+                Create Account
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+form>
 
           <div className="mt-8 text-center">
             <p className="text-base text-muted-foreground">

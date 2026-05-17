@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/popover";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { cn, toBackendAssetUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import apiClient from "@/lib/api";
 import axios from "axios";
@@ -180,7 +180,7 @@ export function UserAccountMenu({
     <div className="relative flex items-center gap-3">
       <div className="relative">
         <Avatar className={cn("w-10 h-10 ring-2 transition-all", isActive ? "ring-orange-500" : "ring-transparent group-hover:ring-primary/20")}>
-          <AvatarImage src={accountUser.avatar} alt={accountUser.username} />
+          <AvatarImage src={toBackendAssetUrl(accountUser.avatar)} alt={accountUser.username} />
           <AvatarFallback className={cn(isActive ? "bg-gradient-to-br from-orange-500 to-red-500 text-white" : "")}>
             {accountUser.username?.[0]?.toUpperCase() || "U"}
           </AvatarFallback>
@@ -216,7 +216,7 @@ export function UserAccountMenu({
           >
             <div className="flex items-center gap-3 group">
               <Avatar className="w-10 h-10 ring-2 ring-primary/20 group-hover:ring-primary transition-all">
-                <AvatarImage src={user.avatar} alt={user.username}  className="w-10 h-10" />
+                <AvatarImage src={toBackendAssetUrl(user.avatar)} alt={user.username}  className="w-10 h-10" />
                 <AvatarFallback className="bg-gradient-to-br from-orange-500 to-red-500 text-white">
                   {user.username?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
@@ -293,7 +293,7 @@ export function UserAccountMenu({
               }}
             >
               <Avatar className="w-4 h-4">
-                <AvatarImage src={user.avatar} alt={user.username} />
+                <AvatarImage src={toBackendAssetUrl(user.avatar)} alt={user.username} />
                 <AvatarFallback className="text-[10px]">
                   {user.username?.[0]?.toUpperCase()}
                 </AvatarFallback>

@@ -26,7 +26,7 @@ import { StudioVideos } from "@/components/studio/StudioVideos";
 import {StudioAnalytics} from "@/components/studio/StudioAnalytics";
 import { Achievements } from "@/components/achievements/Achievements";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, toBackendAssetUrl } from "@/lib/utils";
 
 export default function ProfilePage() {
   const router = useRouter();

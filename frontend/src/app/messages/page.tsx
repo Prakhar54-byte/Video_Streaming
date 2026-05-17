@@ -12,7 +12,7 @@ import { MessageCircle, Sparkles, Users, User } from "lucide-react";
 import Image from "next/image";
 import apiClient from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { formatTimeAgo } from "@/lib/utils";
+import { formatTimeAgo, toBackendAssetUrl } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 interface Conversation {
@@ -144,13 +144,19 @@ export default function MessagesPage() {
               <div className="flex items-start gap-4">
                 {/* Avatar */}
                 <div className="relative">
-                  <Image
-                    src={conversation.otherUser.avatar || "/placeholder/user-avatar.png"}
-                    alt={conversation.otherUser.fullName}
-                    width={56}
-                    height={56}
-                    className="rounded-full object-cover"
-                  />
+                  {conversation.otherUser.avatar ? (
+                    <Image
+                      src={toBackendAssetUrl(conversation.otherUser.avatar)}
+                      alt={conversation.otherUser.fullName}
+                      width={56}
+                      height={56}
+                      className="rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-500 via-red-500 to-yellow-500 flex items-center justify-center">
+                      <span className="text-xl font-bold text-white">{conversation.otherUser.fullName[0]?.toUpperCase()}</span>
+                    </div>
+                  )}
                   {conversation.unreadCount > 0 && (
                     <motion.div
                       initial={{ scale: 0 }}

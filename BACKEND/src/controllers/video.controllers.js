@@ -591,6 +591,51 @@ const homepageVideos = asyncHandler(async (req, res) => {
     }
 });
 
+const getHomepageStats = asyncHandler(async (req, res) => {
+    const [stats] = await Video.aggregate([
+        {
+            $match: {
+                isPublished: true
+            }
+        },
+        {
+            $group: {
+                _id: null,
+                totalVideos: { $sum: 1 },
+                activeCreatorIds: { $addToSet: "$owner" },
+                totalWatchedSeconds: {
+                    $sum: {
+                        $multiply: [
+                            { $ifNull: ["$duration", 0] },
+                            { $ifNull: ["$views", 0] }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                totalVideos: 1,
+                activeCreators: { $size: "$activeCreatorIds" },
+                totalWatchedHours: { $divide: ["$totalWatchedSeconds", 3600] }
+            }
+        }
+    ]);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            stats || {
+                totalVideos: 0,
+                activeCreators: 0,
+                totalWatchedHours: 0
+            },
+            "Homepage stats fetched successfully"
+        )
+    );
+});
+
 
 
 const addToWatchHistory = asyncHandler(async (req, res) => {
@@ -648,5 +693,6 @@ export {
     deleteVideo,
     togglePublishStatus,
     homepageVideos,
+    getHomepageStats,
     addToWatchHistory,
 }

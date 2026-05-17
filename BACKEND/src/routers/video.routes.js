@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import {
     deleteVideo,
+    getHomepageStats,
     getAllVideos,
     homepageVideos,
     getVideoById,
@@ -37,6 +38,7 @@ router
     );
 
 router.route("/search").get(getAllVideos)
+router.route("/stats/home").get(getHomepageStats)
 
 // router.route("/check-title").get(checkVideoTitle)
 

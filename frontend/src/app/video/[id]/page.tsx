@@ -9,7 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/authStore';
 import { usePlaylistQueueStore } from '@/store/playlistQueueStore';
 import apiClient from '@/lib/api';
-import { formatViewCount, formatTimeAgo } from '@/lib/utils';
+import { formatViewCount, formatTimeAgo, toBackendAssetUrl } from '@/lib/utils';
+import { usePlaybackAnalytics } from '@/hooks/usePlaybackAnalytics';
 import Image from 'next/image';
 import { AddToPlaylistModal } from '@/components/playlist/AddToPlaylistModal';
 import { ThumbsUp, ThumbsDown, Share2, Bell, BellOff, Eye, Video, Trash2, ListVideo, SkipForward, SkipBack, Shuffle, MoreVertical, Clock, Plus, X, PlayCircle, Code } from 'lucide-react';
@@ -168,6 +169,16 @@ export default function VideoPlayerPage() {
   const [volume, setVolume] = useState(1);
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const seekToRef = useRef<((time: number) => void) | null>(null);
+  const {
+    trackEvent,
+    trackQualityChange,
+    trackProgress,
+    trackCompletion,
+    trackError,
+  } = usePlaybackAnalytics({
+    videoId: params.id as string,
+    userId: user?._id,
+  });
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -357,6 +368,8 @@ export default function VideoPlayerPage() {
 
   // Handle video end - auto-play next in playlist, queue, or suggested videos
   const handleVideoEnd = useCallback(() => {
+    trackCompletion(100);
+
     // 1. Playlist mode always auto-plays next (independent of autoplay toggle)
     if (isPlaylistMode && hasNext()) {
       const nextVid = getNextVideo();
@@ -394,7 +407,7 @@ export default function VideoPlayerPage() {
         }
       }
     }
-  }, [isPlaylistMode, hasNext, getNextVideo, router, queuePlaylistId, isAutoplay, isManualQueue, queue, currentIndex, clearQueue, relatedVideos, playedHistory]);
+  }, [trackCompletion, isPlaylistMode, hasNext, getNextVideo, router, queuePlaylistId, isAutoplay, isManualQueue, queue, currentIndex, clearQueue, relatedVideos, playedHistory]);
 
   const handleNextVideo = () => {
     if (hasNext()) {
@@ -655,6 +668,24 @@ const handleSubscribe = async () => {
                   onTimeUpdate={(time, duration) => {
                     setCurrentTime(time);
                     setVideoDuration(duration);
+                    if (duration > 0) {
+                      trackProgress((time / duration) * 100, time);
+                    }
+                  }}
+                  onBufferingStart={() => {
+                    trackEvent('buffering_started');
+                  }}
+                  onBufferingEnd={(bufferingMs) => {
+                    trackEvent('buffering_ended', { bufferingDurationMs: bufferingMs });
+                  }}
+                  onQualityChange={(quality) => {
+                    trackQualityChange(quality);
+                  }}
+                  onSeek={(seekFromPercent, seekToPercent) => {
+                    trackEvent('seek', { seekFromPercent, seekToPercent });
+                  }}
+                  onPlaybackError={(message) => {
+                    trackError(message);
                   }}
                   onPlayerReady={(seekFn) => {
                     seekToRef.current = seekFn;
@@ -798,13 +829,19 @@ const handleSubscribe = async () => {
             <div className="bg-card border rounded-xl p-6">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <Image
-                    src={video.owner?.avatar || '/placeholder/user-avatar.png'}
-                    alt={video.owner?.username || 'User'}
-                    width={56}
-                    height={56}
-                    className="w-14 h-14 rounded-full object-cover"
-                  />
+                  {video.owner?.avatar ? (
+                    <Image
+                      src={toBackendAssetUrl(video.owner.avatar)}
+                      alt={video.owner?.username || 'User'}
+                      width={56}
+                      height={56}
+                      className="w-14 h-14 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-500 via-red-500 to-yellow-500 flex items-center justify-center">
+                      <span className="text-xl font-bold text-white">{video.owner?.username?.[0]?.toUpperCase()}</span>
+                    </div>
+                  )}
                   <div>
                     <h3 className="text-xl font-semibold">{video.owner.fullName}</h3>
                     <p className="text-base text-muted-foreground">@{video.owner.username}</p>
@@ -838,7 +875,7 @@ const handleSubscribe = async () => {
               <div className="flex items-start gap-4">
                 {user?.avatar ? (
                   <Image
-                    src={user.avatar || '/placeholder/user-avatar.png'}
+                    src={toBackendAssetUrl(user.avatar)}
                     alt={user.username || 'User'}
                     width={48}
                     height={48}

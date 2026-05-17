@@ -28,6 +28,11 @@ interface VideoJsPlayerProps {
   introEndTime?: number;
   onEnded?: () => void;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
+  onBufferingStart?: () => void;
+  onBufferingEnd?: (bufferingMs: number) => void;
+  onQualityChange?: (quality: string) => void;
+  onSeek?: (fromPercent: number, toPercent: number) => void;
+  onPlaybackError?: (message: string) => void;
   onPlayerReady?: (seekTo: (time: number) => void) => void;
   onVideoElementReady?: (videoElement: HTMLVideoElement) => void;
   onPlayStateChange?: (isPlaying: boolean) => void;
@@ -54,6 +59,11 @@ export function VideoJsPlayer({
   introEndTime, 
   onEnded,
   onTimeUpdate,
+  onBufferingStart,
+  onBufferingEnd,
+  onQualityChange,
+  onSeek,
+  onPlaybackError,
   onPlayerReady,
   onVideoElementReady,
   onPlayStateChange,
@@ -68,6 +78,8 @@ export function VideoJsPlayer({
   const [isPrivacyProtected, setIsPrivacyProtected] = useState(false);
   const [showEndScreen, setShowEndScreen] = useState(false);
   const didFallbackRef = useRef(false);
+  const bufferingStartedAtRef = useRef<number | null>(null);
+  const seekFromPercentRef = useRef<number | null>(null);
   const [currentQualityLabel, setCurrentQualityLabel] = useState<string>('--');
   
   // Settings menu state
@@ -341,6 +353,36 @@ export function VideoJsPlayer({
           const vol = player.muted() ? 0 : player.volume();
           onVolumeChange?.(vol);
         });
+
+        player.on('waiting', () => {
+          if (bufferingStartedAtRef.current !== null) return;
+          bufferingStartedAtRef.current = Date.now();
+          onBufferingStart?.();
+        });
+
+        const finishBuffering = () => {
+          if (bufferingStartedAtRef.current === null) return;
+          const bufferingMs = Date.now() - bufferingStartedAtRef.current;
+          bufferingStartedAtRef.current = null;
+          onBufferingEnd?.(bufferingMs);
+        };
+
+        player.on('playing', finishBuffering);
+        player.on('canplay', finishBuffering);
+
+        player.on('seeking', () => {
+          const duration = player.duration();
+          if (!duration || !Number.isFinite(duration)) return;
+          seekFromPercentRef.current = Math.min(100, Math.max(0, (player.currentTime() / duration) * 100));
+        });
+
+        player.on('seeked', () => {
+          const duration = player.duration();
+          if (!duration || !Number.isFinite(duration) || seekFromPercentRef.current === null) return;
+          const toPercent = Math.min(100, Math.max(0, (player.currentTime() / duration) * 100));
+          onSeek?.(seekFromPercentRef.current, toPercent);
+          seekFromPercentRef.current = null;
+        });
         
         // Use Video.js events instead of direct tech access for dimension detection
         player.on('loadedmetadata', () => {
@@ -382,6 +424,9 @@ export function VideoJsPlayer({
                 const level = qualityLevels[i];
                 const label = level.height ? `${level.height}p` : 'Auto';
                 setCurrentQualityLabel(label);
+                if (level.height) {
+                  onQualityChange?.(label);
+                }
                 console.log(`[VideoJS] Quality changed to: ${label} (${level.width}x${level.height}, ${Math.round(level.bitrate / 1000)}kbps)`);
                 break;
               }
@@ -416,6 +461,7 @@ export function VideoJsPlayer({
       player.on('error', () => {
         const err = player.error();
         console.error('[VideoJS] ERROR:', err);
+        onPlaybackError?.(err?.message || err?.code?.toString() || 'Playback failed');
         
         const isHls = src.includes('.m3u8');
         if (isHls && fallbackSrc && !didFallbackRef.current) {
@@ -537,6 +583,7 @@ export function VideoJsPlayer({
               qualityLevels[i].enabled = matches;
             }
             setCurrentQualityLabel(selectedQuality.label);
+            onQualityChange?.(selectedQuality.label);
           }
         }
         console.log('[VideoJS] Quality manually set to:', qualityIndex === -1 ? 'Auto' : availableQualities[qualityIndex]?.label);

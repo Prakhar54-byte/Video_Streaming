@@ -7,6 +7,7 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Bell, BellOff, Video, Users, Sparkles } from "lucide-react";
 import Image from "next/image";
+import { toBackendAssetUrl } from "@/lib/utils";
 import apiClient from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -437,13 +438,19 @@ export default function SubscribedPage() {
                 <div className="relative px-6 pb-6">
                   <div className="absolute -top-12 left-6">
                     <div className="relative">
-                      <Image
-                        src={channel.avatar || '/placeholder/user-avatar.png'}
-                        alt={channel.username}
-                        width={96}
-                        height={96}
-                        className="w-24 h-24 rounded-full border-4 border-background object-cover transition-transform duration-300 group-hover:scale-110"
-                      />
+                      {channel.avatar ? (
+                        <Image
+                          src={toBackendAssetUrl(channel.avatar)}
+                          alt={channel.username}
+                          width={96}
+                          height={96}
+                          className="w-24 h-24 rounded-full border-4 border-background object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 rounded-full border-4 border-background bg-gradient-to-br from-orange-500 via-red-500 to-yellow-500 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                          <span className="text-3xl font-bold text-white">{channel.username[0]?.toUpperCase()}</span>
+                        </div>
+                      )}
                       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-orange-500 via-red-500 to-yellow-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
                     </div>
                   </div>

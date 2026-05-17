@@ -7,6 +7,8 @@ import { fileURLToPath } from 'url';
 import helmet from 'helmet'
 import { apiLimiter, authLimiter } from './middlewares/rateLimitor.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware.js';
+import { correlationIdMiddleware, requestLoggingMiddleware, errorCorrelationMiddleware } from './utils/correlationIdMiddleware.js';
+import structuredLogger from './utils/structuredLogger.js';
 
 const app = express();
 
@@ -29,13 +31,17 @@ app.use(cors({
         }
     },
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token', 'Range'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token', 'x-session-id', 'Range'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     exposedHeaders: ['x-access-token', 'Content-Type', 'Authorization', 'Content-Range', 'Accept-Ranges', 'Content-Length'],
     maxAge: 86400
 }));
 
 app.use(helmet());
+
+// Correlation ID Middleware (must be early)
+app.use(correlationIdMiddleware);
+app.use(requestLoggingMiddleware(structuredLogger));
 
 // Body Parsers - Standardized for Production
 app.use(express.json({ limit: '10mb' }));
@@ -90,6 +96,7 @@ app.use(
 );
 
 // --- Routes ---
+import oauthRoutes from "./routers/oauth.routes.js";
 import userRouter from "./routers/user.routes.js";
 import likeRouter from "./routers/like.routes.js";
 import tweetRouter from "./routers/tweet.routes.js";
@@ -104,7 +111,9 @@ import videoAnalysisRouter from "./routers/videoAnalysis.route.js";
 import roadmapRouter from "./routers/roadmap.routes.js";
 import progressRouter from "./routers/progress.routes.js";
 import feedbackRouter from "./routers/feedback.routes.js";
+import analyticsRouter from "./routers/analytics.routes.js";
 
+app.use("/api/v1/auth", oauthRoutes);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/tweets", tweetRouter);
@@ -119,8 +128,12 @@ app.use("/api/v1/analysis", videoAnalysisRouter);
 app.use("/api/v1/roadmaps", roadmapRouter);
 app.use("/api/v1/progress", progressRouter);
 app.use("/api/v1/feedback", feedbackRouter);
+app.use("/api/v1/analytics", analyticsRouter);
+// Backward-compatible mount for older clients.
+app.use("/api/analytics", analyticsRouter);
 
 // --- Error Handling ---
+app.use(errorCorrelationMiddleware(structuredLogger));
 app.use(notFoundHandler);
 app.use(errorHandler);
 

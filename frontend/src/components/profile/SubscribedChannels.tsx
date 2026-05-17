@@ -10,6 +10,7 @@ import apiClient from "@/lib/api";
 import { Users, UserMinus } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import { toBackendAssetUrl } from "@/lib/utils";
 
 interface Channel {
   _id: string;
@@ -130,7 +131,7 @@ export function SubscribedChannels() {
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
                 <Avatar className="w-16 h-16">
-                  <AvatarImage src={channel.avatar} alt={channel.name} />
+                  <AvatarImage src={toBackendAssetUrl(channel.avatar)} alt={channel.name} />
                   <AvatarFallback className="text-lg">
                     {channel?.name?.toUpperCase()}
                   </AvatarFallback>

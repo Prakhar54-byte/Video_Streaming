@@ -9,7 +9,7 @@ import { Trash2, Play, ListEnd } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import Link from "next/link";
-import { formatTimeAgo } from "@/lib/utils"; // Assuming helper exists, or write inline
+import { formatTimeAgo, toBackendAssetUrl } from "@/lib/utils"; // Assuming helper exists, or write inline
 import { toast } from "sonner";
 
 export default function QueuePage() {
@@ -90,7 +90,7 @@ export default function QueuePage() {
                         </div>
                         <div className="relative w-40 aspect-video rounded-md overflow-hidden bg-muted">
                             {video.thumbnail && (
-                                <Image src={video.thumbnail} alt={video.title} fill className="object-cover" />
+                                <Image src={toBackendAssetUrl(video.thumbnail)} alt={video.title} fill className="object-cover" />
                             )}
                             <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1 rounded">
                                 {formatDuration(video.duration)}

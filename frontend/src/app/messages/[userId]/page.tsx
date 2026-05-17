@@ -11,7 +11,7 @@ import { Send, ArrowLeft, Sparkles, Video as VideoIcon, Gift, Trash2 } from "luc
 import Image from "next/image";
 import apiClient from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import { formatTimeAgo } from "@/lib/utils";
+import { formatTimeAgo, toBackendAssetUrl } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
@@ -220,13 +220,19 @@ export default function ConversationPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
 
-            <Image
-              src={otherUser.avatar || "/placeholder/user-avatar.png"}
-              alt={otherUser.fullName}
-              width={40}
-              height={40}
-              className="rounded-full object-cover"
-            />
+            {otherUser.avatar ? (
+              <Image
+                src={toBackendAssetUrl(otherUser.avatar)}
+                alt={otherUser.fullName}
+                width={40}
+                height={40}
+                className="rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 via-red-500 to-yellow-500 flex items-center justify-center">
+                <span className="font-bold text-white">{otherUser.fullName[0]?.toUpperCase()}</span>
+              </div>
+            )}
 
             <div className="flex-1">
               <h2 className="font-semibold">{otherUser.fullName}</h2>

@@ -64,7 +64,6 @@ export const ModernVideoPlayer = forwardRef<ModernVideoPlayerRef, ModernVideoPla
     poster,
     autoPlay = false,
     title,
-    spriteSheetUrl,
     spriteSheetVttUrl,
     introStartTime,
     introEndTime,
@@ -686,5 +685,7 @@ export const ModernVideoPlayer = forwardRef<ModernVideoPlayerRef, ModernVideoPla
     </div>
   );
 });
+
+ModernVideoPlayer.displayName = 'ModernVideoPlayer';
 
 export default ModernVideoPlayer;
