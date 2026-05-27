@@ -10,19 +10,19 @@
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 5%;
     --popover-foreground: 210 40% 98%;
-    --primary: 141 100% 60%; /* #32FF7E */
+    --primary: 195 100% 50%; /* #00d2ff */
     --primary-foreground: 222 47% 5%;
     --secondary: 217 32% 17%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217 32% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 141 100% 60%;
+    --accent: 195 100% 50%;
     --accent-foreground: 222 47% 5%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 32% 17%;
     --input: 217 32% 17%;
-    --ring: 141 100% 60%;
+    --ring: 195 100% 50%;
     --radius: 0.75rem;
   }
 }
@@ -42,10 +42,10 @@
 }
 
 .spark-glow {
-  box-shadow: 0 0 20px rgba(50, 255, 126, 0.2);
+  box-shadow: 0 0 20px rgba(0, 210, 255, 0.2);
 }
 
 .spark-border-glow {
-  border-color: rgba(50, 255, 126, 0.3);
-  box-shadow: 0 0 10px rgba(50, 255, 126, 0.1);
+  border-color: rgba(0, 210, 255, 0.3);
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.1);
 }

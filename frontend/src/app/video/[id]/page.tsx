@@ -7,6 +7,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/store/authStore';
+import { Mascot } from '@/components/Mascot';
 import { usePlaylistQueueStore } from '@/store/playlistQueueStore';
 import apiClient from '@/lib/api';
 import { formatViewCount, formatTimeAgo, toBackendAssetUrl } from '@/lib/utils';
@@ -93,7 +94,7 @@ export default function VideoPlayerPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { user } = useAuthStore();
+  const { user, selectedPet } = useAuthStore();
   
   // Playlist queue store
   const { 
@@ -626,12 +627,17 @@ const handleSubscribe = async () => {
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center justify-center min-h-screen text-center p-6 space-y-6">
+          <div className="bg-card border border-white/10 rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary opacity-5 blur-3xl -mr-16 -mt-16"></div>
+            <Mascot state="learning" level={5} type={selectedPet || 'dog'} />
+            <div className="mt-6 p-4 bg-background/50 rounded-2xl border border-white/5 space-y-2">
+              <p className="text-sm font-semibold text-white">Compiling Stream...</p>
+              <p className="text-xs text-muted-foreground">Your companion is parsing HLS index segments!</p>
+            </div>
+          </div>
         </div>
       </MainLayout>
-
-
     );
   }
 

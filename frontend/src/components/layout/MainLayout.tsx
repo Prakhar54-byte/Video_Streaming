@@ -74,6 +74,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     const baseNavItems = [
         { href: '/', icon: Home, label: 'Home' },
         { href: '/videos', icon: Video, label: 'Videos' },
+        { href: '/my-lab', icon: Sparkles, label: 'My Lab' },
         { href: '/subscribed', icon: Bell, label: 'Subscribed' },
         { href: '/liked', icon: ThumbsUp, label: 'Liked Videos' },
         { href: '/playlists', icon: ListVideo, label: 'Playlists' },
@@ -81,14 +82,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         { href: '/messages', icon: MessageSquare, label: 'Messages' },
     ];
 
-    const channelNavItem = {
-        href: '/my-channel',
-        icon: User,
-        label: 'My Channel',
-    };
-
-    // Only show "My Channel" if user has uploaded videos
-    const navItems = [...baseNavItems, ...(hasChannel ? [channelNavItem] : [])];
+    // Show all base navigation items
+    const navItems = baseNavItems;
 
     const isActive = (href: string) => {
         if (href === '/') return pathname === '/';
@@ -109,15 +104,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
                     {sidebarOpen && (
                         <Link href="/">
                             <div className="flex items-center gap-2">
-                                <Sparkles className="w-8 h-8 text-[#32FF7E]" />
-                                <h1 className="text-2xl font-bold bg-gradient-to-r from-[#32FF7E] via-[#00d2ff] to-[#32FF7E] text-transparent bg-clip-text">
+                                <Sparkles className="w-8 h-8 text-primary" />
+                                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary via-[#00d2ff] to-primary text-transparent bg-clip-text">
                                     Spark
                                 </h1>
                             </div>
                         </Link>
                     )}
                     {!sidebarOpen && (
-                        <Sparkles className="w-8 h-8 text-orange-500 mx-auto" />
+                        <Sparkles className="w-8 h-8 text-primary mx-auto" />
                     )}
                     <div className="flex items-center gap-2">
                         <KeyboardShortcuts />
