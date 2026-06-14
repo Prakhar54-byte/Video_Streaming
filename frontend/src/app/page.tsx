@@ -158,7 +158,7 @@ const formatWatchedHours = (hours: number) => {
              {(activeCategory === "all" || activeCategory === "trending") && (
                <div className="space-y-6">
                  <div className="flex items-center justify-between">
-                     <h2 className="text-2xl font-bold font-space-grotesk tracking-tight">Trending Now</h2>
+                     <h2 className="text-2xl font-bold font-space-grotesk tracking-tight">Trending </h2>
                  </div>
                  <TrendingSection className="pb-4" />
                </div>
